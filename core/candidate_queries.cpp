@@ -1,5 +1,6 @@
 #include "candidate_queries.h"
 #include "data_path.h"
+#include "../common/string_utils.h"
 #include "../contracts/assets/assets.h"
 #include "../local_modes/emoji_query.h"
 #include "../local_modes/jianpin_query.h"
@@ -67,9 +68,7 @@ local_modes::LocalQueryResult CandidateQueries::local(LocalInputMode mode, const
             return result;
         }
         result.candidates.emplace_back("", raw, 0, CandidateSource::Generated);
-        std::string prefix = raw;
-        std::transform(prefix.begin(), prefix.end(), prefix.begin(),
-                       [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
+        std::string prefix = CommonUtils::lowercase_ascii(raw);
         auto completions = english_dictionary().query_prefix(prefix, 1000);
         completions.erase(std::remove_if(completions.begin(), completions.end(),
                                          [&](const WordItem &candidate) {
