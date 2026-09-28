@@ -881,6 +881,15 @@ std::vector<QueryItem> sort_and_limit_query_items(std::vector<QueryItem> items, 
     return items;
 }
 
+std::vector<KeyedQueryItem> sort_and_limit_keyed_query_items(std::vector<KeyedQueryItem> items, int limit)
+{
+    std::sort(items.begin(), items.end(),
+              [](const KeyedQueryItem &lhs, const KeyedQueryItem &rhs) { return lhs.weight > rhs.weight; });
+    if (static_cast<int>(items.size()) > limit)
+        items.resize(static_cast<size_t>(limit));
+    return items;
+}
+
 std::vector<QueryItem> query_single_cut(sqlite3 *db, const Segments &segments, int limit, QuerySource source)
 {
     return without_keys(query_single_cut_keyed(db, segments, limit, source));
@@ -1164,13 +1173,7 @@ std::vector<KeyedQueryItem> query_segments_keyed_flat(const Segments &segments, 
 
     auto items = query_single_cut_keyed(db.get(), segments, limit, source);
     deduplicate_keyed_items_by_value(items);
-    std::sort(items.begin(), items.end(),
-              [](const KeyedQueryItem &lhs, const KeyedQueryItem &rhs) { return lhs.weight > rhs.weight; });
-    if (static_cast<int>(items.size()) > limit)
-    {
-        items.resize(static_cast<size_t>(limit));
-    }
-    return items;
+    return sort_and_limit_keyed_query_items(std::move(items), limit);
 }
 
 std::vector<KeyedQueryItem> query_segments_keyed_flat(const Segments &segments, sqlite3 *db,
@@ -1184,13 +1187,7 @@ std::vector<KeyedQueryItem> query_segments_keyed_flat(const Segments &segments, 
 
     auto items = query_single_cut_keyed(db, statement_cache, segments, limit, source);
     deduplicate_keyed_items_by_value(items);
-    std::sort(items.begin(), items.end(),
-              [](const KeyedQueryItem &lhs, const KeyedQueryItem &rhs) { return lhs.weight > rhs.weight; });
-    if (static_cast<int>(items.size()) > limit)
-    {
-        items.resize(static_cast<size_t>(limit));
-    }
-    return items;
+    return sort_and_limit_keyed_query_items(std::move(items), limit);
 }
 
 std::vector<KeyedQueryItem> query_exact_segmentations_keyed_flat(const std::vector<Segments> &segmentations,
