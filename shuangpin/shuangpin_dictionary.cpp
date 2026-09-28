@@ -663,12 +663,6 @@ std::string ShuangpinDictionary::get_quanpin() const
     return CommonUtils::remove_apostrophe_delimiters(quanpin_str);
 }
 
-std::string ShuangpinDictionary::get_quanpin_seg() const
-{
-    string quanpin_str = ShuangpinUtil::convert_seg_shuangpin_to_seg_complete_pinyin(_pinyin_segmentation, profile_);
-    return quanpin_str;
-}
-
 int ShuangpinDictionary::create_word(string pinyin, string word)
 {
     return create_word_from_quanpin(shuangpin::normalize_input_with_delimiters(pinyin, profile_), std::move(word));
@@ -986,70 +980,6 @@ int ShuangpinDictionary::insert_word_to_active_helpcode_cache(const std::string 
     const bool updated_single = insert_into_cache(_cached_buffer_sgl, pinyin);
     const bool updated_reversed_single = insert_into_cache(_cached_buffer_sgl_reversed, pinyin);
     return updated_single || updated_reversed_single ? 0 : -1;
-}
-
-bool ShuangpinDictionary::is_all_complete_pinyin()
-{
-    bool res = ShuangpinUtil::is_all_complete_pinyin(_pinyin_sequence, _pinyin_segmentation);
-    return res;
-}
-
-bool ShuangpinDictionary::is_all_complete_pure_pinyin()
-{
-    bool res = ShuangpinUtil::is_all_complete_pinyin( //
-        _pure_pinyin_sequence,                        //
-        ShuangpinUtil::pinyin_segmentation(_pure_pinyin_sequence, profile_));
-    return res;
-}
-
-std::string ShuangpinDictionary::get_pinyin_segmentation_with_cases()
-{
-    string res;
-    int index = 0;
-
-    if (_pinyin_segmentation.empty() || _pinyin_sequence_with_cases.empty())
-        return res;
-
-    string extracted_pinyin = "";
-    for (size_t i = 0; i < _pinyin_segmentation.size(); ++i)
-    {
-        if (_pinyin_segmentation[i] == '\'')
-        {
-            continue;
-        }
-        else
-        {
-            extracted_pinyin += _pinyin_segmentation[i];
-        }
-    }
-
-    if (extracted_pinyin != CommonUtils::lowercase_ascii(_pinyin_sequence_with_cases))
-    {
-        return res;
-    }
-
-    for (size_t i = 0; i < _pinyin_segmentation.size(); ++i)
-    {
-        if (_pinyin_segmentation[i] == '\'')
-        {
-            res += _pinyin_segmentation[i];
-            continue;
-        }
-        else
-        {
-            if (_pinyin_segmentation[i] == _pinyin_sequence_with_cases[index])
-            {
-                res += _pinyin_segmentation[i];
-            }
-            else if (_pinyin_segmentation[i] == _pinyin_sequence_with_cases[index] + ('a' - 'A'))
-            {
-                res += _pinyin_sequence_with_cases[index];
-            }
-        }
-        index += 1;
-    }
-
-    return res;
 }
 
 int ShuangpinDictionary::insert_word_to_cached_buffer_series(const std::string &pinyin,

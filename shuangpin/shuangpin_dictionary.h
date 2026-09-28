@@ -172,12 +172,7 @@ class ShuangpinDictionary
     int insert_word_to_active_helpcode_cache(const std::string &pinyin, const std::string &word, CandidateSource source,
                                              const std::string &double_helpcodes = {});
 
-    bool is_all_complete_pinyin();
-    bool is_all_complete_pure_pinyin();
-    std::string get_pinyin_segmentation_with_cases();
-
     std::string get_quanpin() const;
-    std::string get_quanpin_seg() const;
 
     void reset_state();
     void reset_cache();
