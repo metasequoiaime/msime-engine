@@ -949,56 +949,17 @@ int QuanpinDictionary::check_data(const std::string &sql_str)
 
 int QuanpinDictionary::insert_data(const std::string &sql_str)
 {
-    if (db_ == nullptr)
-    {
-        return ERROR_CODE;
-    }
-
-    sqlite3_stmt *stmt = nullptr;
-    if (sqlite3_prepare_v2(db_.get(), sql_str.c_str(), -1, &stmt, 0) != SQLITE_OK)
-    {
-        (void)0;
-        return ERROR_CODE;
-    }
-    Statement guard(stmt);
-    const bool ok = sqlite3_step(stmt) == SQLITE_DONE;
-    return ok ? OK : ERROR_CODE;
+    return metasequoia::sqlite_execute_statement(db_.get(), sql_str) ? OK : ERROR_CODE;
 }
 
 int QuanpinDictionary::update_data(const std::string &sql_str)
 {
-    if (db_ == nullptr)
-    {
-        return ERROR_CODE;
-    }
-
-    sqlite3_stmt *stmt = nullptr;
-    if (sqlite3_prepare_v2(db_.get(), sql_str.c_str(), -1, &stmt, 0) != SQLITE_OK)
-    {
-        (void)0;
-        return ERROR_CODE;
-    }
-    Statement guard(stmt);
-    const bool ok = sqlite3_step(stmt) == SQLITE_DONE;
-    return ok ? OK : ERROR_CODE;
+    return metasequoia::sqlite_execute_statement(db_.get(), sql_str) ? OK : ERROR_CODE;
 }
 
 int QuanpinDictionary::delete_data(const std::string &sql_str)
 {
-    if (db_ == nullptr)
-    {
-        return ERROR_CODE;
-    }
-
-    sqlite3_stmt *stmt = nullptr;
-    if (sqlite3_prepare_v2(db_.get(), sql_str.c_str(), -1, &stmt, 0) != SQLITE_OK)
-    {
-        (void)0;
-        return ERROR_CODE;
-    }
-    Statement guard(stmt);
-    const bool ok = sqlite3_step(stmt) == SQLITE_DONE;
-    return ok ? OK : ERROR_CODE;
+    return metasequoia::sqlite_execute_statement(db_.get(), sql_str) ? OK : ERROR_CODE;
 }
 
 std::string QuanpinDictionary::build_sql_for_updating_word(const std::string &word)

@@ -71,6 +71,14 @@ void run(bool capacity)
               "shared SQLite row query missed an existing row");
         check(!sqlite_query_has_row(reader, "SELECT value FROM marker WHERE value = 2"),
               "shared SQLite row query reported a missing row");
+        check(sqlite_execute_statement(reader, "INSERT INTO marker VALUES(2)"),
+              "shared SQLite execution failed to insert a row");
+        check(sqlite_query_has_row(reader, "SELECT value FROM marker WHERE value = 2"),
+              "shared SQLite execution did not write the row");
+        check(!sqlite_execute_statement(reader, "INSERT INTO missing_table VALUES(1)"),
+              "shared SQLite execution accepted invalid SQL");
+        check(!sqlite_execute_statement(nullptr, "INSERT INTO marker VALUES(3)"),
+              "shared SQLite execution accepted a missing database");
         const auto word_rows = sqlite_query_word_items(reader, "SELECT key,jp,value,weight FROM word_rows");
         check(word_rows.size() == 1 && word_rows.front().pinyin == "ni" && word_rows.front().word == "你" &&
                   word_rows.front().weight == 42 && word_rows.front().canonical_pinyin == "ni" &&
