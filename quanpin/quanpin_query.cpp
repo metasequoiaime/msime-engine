@@ -904,6 +904,33 @@ std::string build_sql_for_creating_word(const std::string &pinyin)
     return sql;
 }
 
+std::string build_sql_for_checking_word(const std::string &key, const std::string &value)
+{
+    const auto cuts = cut_pinyin_by_mode(key, "correction");
+    if (cuts.empty())
+    {
+        return {};
+    }
+
+    const std::string table = build_table_name(cuts.front());
+    return "select 1 from " + table + " where key = '" + CommonUtils::escape_sql_literal(key) + "' and value = '" +
+           CommonUtils::escape_sql_literal(value) + "';";
+}
+
+std::string build_sql_for_inserting_word(const std::string &key, const std::string &jp, const std::string &value)
+{
+    const auto cuts = cut_pinyin_by_mode(key, "correction");
+    if (cuts.empty())
+    {
+        return {};
+    }
+
+    const std::string table = build_table_name(cuts.front());
+    return "insert into " + table + " (key, jp, value, weight) values ('" + CommonUtils::escape_sql_literal(key) +
+           "', '" + CommonUtils::escape_sql_literal(jp) + "', '" + CommonUtils::escape_sql_literal(value) +
+           "', '10000');";
+}
+
 std::string segments_to_jianpin(const Segments &segments)
 {
     return segments_to_jianpin_impl(segments);

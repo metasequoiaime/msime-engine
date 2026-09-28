@@ -730,11 +730,11 @@ int ShuangpinDictionary::create_word_from_quanpin(string pinyin, string word)
     {
         return ERROR_CODE;
     }
-    if (check_data(quanpin_db_.get(), build_quanpin_sql_for_checking_word(pinyin, jp, word)))
+    if (check_data(quanpin_db_.get(), quanpin::build_sql_for_checking_word(pinyin, word)))
     {
         return OK;
     }
-    if (insert_data(quanpin_db_.get(), build_quanpin_sql_for_inserting_word(pinyin, jp, word)) != OK)
+    if (insert_data(quanpin_db_.get(), quanpin::build_sql_for_inserting_word(pinyin, jp, word)) != OK)
     {
         return ERROR_CODE;
     }
@@ -958,33 +958,6 @@ std::string ShuangpinDictionary::normalize_shuangpin_to_quanpin_segmentation(con
 std::string ShuangpinDictionary::normalize_shuangpin_to_quanpin_input(const std::string &pinyin) const
 {
     return CommonUtils::remove_apostrophe_delimiters(normalize_shuangpin_to_quanpin_segmentation(pinyin));
-}
-
-std::string ShuangpinDictionary::build_quanpin_sql_for_checking_word(const std::string &key, const std::string &jp,
-                                                                     const std::string &value) const
-{
-    const auto cuts = quanpin::cut_pinyin_by_mode(key, "correction");
-    if (cuts.empty())
-    {
-        return "";
-    }
-    const std::string table = quanpin::build_table_name(cuts.front());
-    return fmt::format("select 1 from {} where key = '{}' and value = '{}';", table,
-                       CommonUtils::escape_sql_literal(key), CommonUtils::escape_sql_literal(value));
-}
-
-std::string ShuangpinDictionary::build_quanpin_sql_for_inserting_word(const std::string &key, const std::string &jp,
-                                                                      const std::string &value) const
-{
-    const auto cuts = quanpin::cut_pinyin_by_mode(key, "correction");
-    if (cuts.empty())
-    {
-        return "";
-    }
-    const std::string table = quanpin::build_table_name(cuts.front());
-    return fmt::format("insert into {} (key, jp, value, weight) values ('{}', '{}', '{}', '{}');", table,
-                       CommonUtils::escape_sql_literal(key), CommonUtils::escape_sql_literal(jp),
-                       CommonUtils::escape_sql_literal(value), 10000);
 }
 
 std::string ShuangpinDictionary::build_quanpin_sql_for_updating_word(const std::string &word) const
