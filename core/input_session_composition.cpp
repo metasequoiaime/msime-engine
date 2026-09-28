@@ -801,21 +801,7 @@ void InputSession::apply_pending_sequence()
     const std::string raw_input_with_cases =
         has_pending_pinyin_sequence_with_cases_ ? pending_pinyin_sequence_with_cases_ : raw_input;
 
-    switch (current_scheme_type())
-    {
-    case SchemeType::Shuangpin:
-        engine_.replace_shuangpin_raw_input(raw_input, raw_input_with_cases);
-        break;
-    case SchemeType::Quanpin:
-        engine_.replace_quanpin_raw_input(raw_input, raw_input_with_cases);
-        break;
-    case SchemeType::Wubi:
-        engine_.replace_wubi_raw_input(raw_input, raw_input_with_cases);
-        break;
-    case SchemeType::JapaneseRomaji:
-        engine_.replace_japanese_raw_input(raw_input, raw_input_with_cases);
-        break;
-    }
+    engine_.replace_active_raw_input(raw_input, raw_input_with_cases);
     clear_pending_sequence();
     online_requests_.invalidate();
     update_mixed_candidates();
