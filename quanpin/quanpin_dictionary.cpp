@@ -266,18 +266,7 @@ std::vector<WordItem> QuanpinDictionary::query_exact(const std::string &raw_inpu
 std::optional<WordItem> QuanpinDictionary::find_candidate(const std::string &key, const std::string &value)
 {
     const std::string table = quanpin::build_table_name(quanpin::split_segments(key));
-    if (!db_ || table.empty())
-        return std::nullopt;
-    sqlite3_stmt *stmt = nullptr;
-    const std::string sql = "SELECT weight FROM \"" + table + "\" WHERE key=?1 AND value=?2 LIMIT 1";
-    if (sqlite3_prepare_v2(db_.get(), sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
-        return std::nullopt;
-    Statement guard(stmt);
-    if (sqlite3_bind_text(stmt, 1, key.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
-        sqlite3_bind_text(stmt, 2, value.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
-        sqlite3_step(stmt) != SQLITE_ROW)
-        return std::nullopt;
-    return WordItem(key, value, sqlite3_column_int64(stmt, 0), CandidateSource::Database, key);
+    return metasequoia::sqlite_query_word_item(db_.get(), table, key, value);
 }
 
 bool QuanpinDictionary::expand_initial_candidates(const std::string &code, std::vector<WordItem> &candidates)

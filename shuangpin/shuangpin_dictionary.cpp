@@ -2,7 +2,6 @@
 #include "../core/candidate_utils.h"
 #include "shuangpin_dictionary.h"
 #include "../user_dictionary/user_dictionary_journal.h"
-#include "../common/sqlite_statement.h"
 #include "../common/sqlite_data_version.h"
 #include "../common/sqlite_query.h"
 #include "../common/helpcode_utils.h"
@@ -28,8 +27,6 @@ using namespace std;
 
 namespace
 {
-using Statement = metasequoia::SqliteStatement;
-
 std::string double_helpcode_cache_key(const std::string &pinyin, const std::string &help_codes)
 {
     return pinyin + ":" + help_codes;
@@ -888,18 +885,7 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::query_from_quanpin_da
 std::optional<WordItem> ShuangpinDictionary::find_candidate(const std::string &key, const std::string &value)
 {
     const std::string table = quanpin::build_table_name(quanpin::split_segments(key));
-    if (!quanpin_db_ || table.empty())
-        return std::nullopt;
-    sqlite3_stmt *stmt = nullptr;
-    const std::string sql = "SELECT weight FROM \"" + table + "\" WHERE key=?1 AND value=?2 LIMIT 1";
-    if (sqlite3_prepare_v2(quanpin_db_.get(), sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
-        return std::nullopt;
-    Statement guard(stmt);
-    if (sqlite3_bind_text(stmt, 1, key.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
-        sqlite3_bind_text(stmt, 2, value.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
-        sqlite3_step(stmt) != SQLITE_ROW)
-        return std::nullopt;
-    return WordItem(key, value, sqlite3_column_int64(stmt, 0), CandidateSource::Database, key);
+    return metasequoia::sqlite_query_word_item(quanpin_db_.get(), table, key, value);
 }
 
 vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::query_initial_from_quanpin_database(const std::string &code,
