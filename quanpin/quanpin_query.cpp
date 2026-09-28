@@ -881,6 +881,12 @@ std::vector<QueryItem> sort_and_limit_query_items(std::vector<QueryItem> items, 
     return items;
 }
 
+void stable_sort_keyed_query_items_by_weight(std::vector<KeyedQueryItem> &items)
+{
+    std::stable_sort(items.begin(), items.end(),
+                     [](const KeyedQueryItem &lhs, const KeyedQueryItem &rhs) { return lhs.weight > rhs.weight; });
+}
+
 std::vector<KeyedQueryItem> sort_and_limit_keyed_query_items(std::vector<KeyedQueryItem> items, int limit)
 {
     std::sort(items.begin(), items.end(),
@@ -1223,8 +1229,7 @@ std::vector<KeyedQueryItem> query_exact_segmentations_keyed_flat(const std::vect
         auto rows = run_keyed_batch_query(db, statement_cache, table, keys, limit);
         result.insert(result.end(), std::make_move_iterator(rows.begin()), std::make_move_iterator(rows.end()));
     }
-    std::stable_sort(result.begin(), result.end(),
-                     [](const KeyedQueryItem &lhs, const KeyedQueryItem &rhs) { return lhs.weight > rhs.weight; });
+    stable_sort_keyed_query_items_by_weight(result);
     return result;
 }
 
@@ -1259,8 +1264,7 @@ std::vector<KeyedQueryItem> query_longer_phrases_keyed(const Segments &segments,
     }
 
     deduplicate_keyed_items_by_value(result);
-    std::stable_sort(result.begin(), result.end(),
-                     [](const KeyedQueryItem &lhs, const KeyedQueryItem &rhs) { return lhs.weight > rhs.weight; });
+    stable_sort_keyed_query_items_by_weight(result);
     if (static_cast<int>(result.size()) > limit)
     {
         result.resize(static_cast<std::size_t>(limit));
