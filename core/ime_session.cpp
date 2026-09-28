@@ -213,21 +213,15 @@ bool ImeSession::cycle_japanese_kana_variant()
 
 void ImeSession::replace_active_raw_input(const std::string &raw_input, const std::string &raw_input_with_cases)
 {
-    switch (scheme_->type())
+    if (scheme_->type() == SchemeType::Wubi)
     {
-    case SchemeType::Quanpin:
-        replace_quanpin_raw_input(raw_input, raw_input_with_cases);
-        return;
-    case SchemeType::Shuangpin:
-        replace_shuangpin_raw_input(raw_input, raw_input_with_cases);
-        return;
-    case SchemeType::Wubi:
-        replace_wubi_raw_input(raw_input, raw_input_with_cases);
-        return;
-    case SchemeType::JapaneseRomaji:
-        replace_japanese_raw_input(raw_input, raw_input_with_cases);
-        return;
+        if (wubi_scheme_ == nullptr)
+            return;
+        // Host-driven replacements use the configured mixed-pinyin limit rather than the previous query result.
+        wubi_scheme_->set_extended_length_allowed(wubi_options_.mixed_pinyin);
     }
+    scheme_->set_raw_input(raw_input, raw_input_with_cases);
+    refresh_candidates();
 }
 
 std::vector<WordItem> ImeSession::query_raw_candidates(const std::string &raw_input,
