@@ -642,10 +642,7 @@ std::vector<WordItem> QuanpinDictionary::merge_alternative_segmentations(
     std::vector<WordItem> merged_full = primary_full;
     merged_full.insert(merged_full.end(), alternative_full.begin(), alternative_full.end());
     sort_candidates_by_weight(merged_full);
-    std::unordered_set<std::string> seen_full_words;
-    merged_full.erase(std::remove_if(merged_full.begin(), merged_full.end(),
-                                     [&](const WordItem &item) { return !seen_full_words.insert(item.word).second; }),
-                      merged_full.end());
+    deduplicate_candidates_by_word(merged_full);
 
     // Promote an alternative only when its best weight is at least one percent
     // of the primary reading's top weight; rare re-segmentations are noise.
