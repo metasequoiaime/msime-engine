@@ -34,17 +34,6 @@ std::string double_helpcode_cache_key(const std::string &pinyin, const std::stri
     return pinyin + ":" + help_codes;
 }
 
-std::string escape_sql_text(std::string text)
-{
-    size_t pos = 0;
-    while ((pos = text.find('\'', pos)) != std::string::npos)
-    {
-        text.insert(pos, 1, '\'');
-        pos += 2;
-    }
-    return text;
-}
-
 } // namespace
 
 ShuangpinDictionary::ShuangpinDictionary(const ShuangpinProfile &profile, metasequoia::RuntimePaths paths)
@@ -1065,8 +1054,8 @@ std::string ShuangpinDictionary::build_quanpin_sql_for_checking_word(const std::
         return "";
     }
     const std::string table = quanpin::build_table_name(cuts.front());
-    return fmt::format("select 1 from {} where key = '{}' and value = '{}';", table, escape_sql_text(key),
-                       escape_sql_text(value));
+    return fmt::format("select 1 from {} where key = '{}' and value = '{}';", table,
+                       CommonUtils::escape_sql_literal(key), CommonUtils::escape_sql_literal(value));
 }
 
 std::string ShuangpinDictionary::build_quanpin_sql_for_inserting_word(const std::string &key, const std::string &jp,
@@ -1079,7 +1068,8 @@ std::string ShuangpinDictionary::build_quanpin_sql_for_inserting_word(const std:
     }
     const std::string table = quanpin::build_table_name(cuts.front());
     return fmt::format("insert into {} (key, jp, value, weight) values ('{}', '{}', '{}', '{}');", table,
-                       escape_sql_text(key), escape_sql_text(jp), escape_sql_text(value), 10000);
+                       CommonUtils::escape_sql_literal(key), CommonUtils::escape_sql_literal(jp),
+                       CommonUtils::escape_sql_literal(value), 10000);
 }
 
 std::string ShuangpinDictionary::build_quanpin_sql_for_updating_word(const std::string &word) const
@@ -1115,7 +1105,7 @@ std::string ShuangpinDictionary::build_quanpin_sql_for_updating_word(std::string
     const std::string table = quanpin::build_table_name(segments);
     return fmt::format("update {0} set weight = ( select MAX(weight) + 1 from {0} AS sub where sub.key = '{1}') "
                        "where key = '{1}' and value = '{2}';",
-                       table, escape_sql_text(pinyin), escape_sql_text(word));
+                       table, CommonUtils::escape_sql_literal(pinyin), CommonUtils::escape_sql_literal(word));
 }
 
 std::string ShuangpinDictionary::build_quanpin_sql_for_deleting_canonical_word(const std::string &canonical_pinyin,
@@ -1135,7 +1125,7 @@ std::string ShuangpinDictionary::build_quanpin_sql_for_deleting_canonical_word(c
     }
 
     return fmt::format("delete from {} where key = '{}' and value = '{}';", quanpin::build_table_name(cuts.front()),
-                       escape_sql_text(normalized), escape_sql_text(word));
+                       CommonUtils::escape_sql_literal(normalized), CommonUtils::escape_sql_literal(word));
 }
 
 bool ShuangpinDictionary::do_validate(string key, string jp, string value) const
