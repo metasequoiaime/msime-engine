@@ -154,63 +154,14 @@ class ShuangpinDictionary
     CircularBuffer<std::string, std::vector<WordItem>> _cached_buffer_series; // 缓存拼音序列对应的所有结果
 
   public:
-    // Getters and setters
-    bool get_full_help_mode()
-    {
-        return this->_is_full_help_mode;
-    }
-    void set_full_help_mode(bool is_full_help_mode)
-    {
-        this->_is_full_help_mode = is_full_help_mode;
-    }
-
-    int get_help_mode_raw_pos()
-    {
-        return this->_help_mode_raw_pos;
-    }
-    void set_help_mode_raw_pos(int raw_pos)
-    {
-        this->_help_mode_raw_pos = raw_pos;
-    }
-
     const std::string &get_pinyin_sequence()
     {
         return this->_pinyin_sequence;
     }
 
-    void set_pinyin_sequence(const std::string &pinyin_sequence)
-    {
-        this->_pinyin_sequence = pinyin_sequence;
-    }
-
-    const std::string &get_pinyin_sequence_with_cases()
-    {
-        return this->_pinyin_sequence_with_cases;
-    }
-
-    void set_pinyin_sequence_with_cases(const std::string &pinyin_sequence)
-    {
-        this->_pinyin_sequence_with_cases = pinyin_sequence;
-    }
-
-    const std::string &get_pinyin_segmentation()
-    {
-        return this->_pinyin_segmentation;
-    }
-
-    const std::string &get_pure_pinyin_sequence()
-    {
-        return this->_pure_pinyin_sequence;
-    }
-
     const std::vector<WordItem> &get_current_candidate_list() const
     {
         return this->_cur_candidate_list;
-    }
-
-    const std::vector<WordItem> &get_cur_candiate_list() const
-    {
-        return get_current_candidate_list();
     }
 
     int insert_word_to_cached_buffer_series(const std::string &pinyin, const std::vector<std::string> &words,
