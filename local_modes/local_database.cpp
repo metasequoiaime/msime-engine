@@ -2,6 +2,7 @@
 #include "local_database.h"
 
 #include "../common/sqlite_database.h"
+#include "../common/sqlite_statement.h"
 #include "../core/data_path.h"
 
 #include <algorithm>
@@ -92,6 +93,41 @@ std::string prefix_upper_bound(const std::string &prefix)
     std::string result = prefix;
     result.push_back(static_cast<char>(0x7f));
     return result;
+}
+
+bool query_prefix_rows(sqlite3 *database, const std::vector<std::string> &prefixes, const char *sql, int limit,
+                       const std::function<void(sqlite3_stmt *)> &on_row)
+{
+    if (database == nullptr || prefixes.empty() || sql == nullptr || limit <= 0 || !on_row)
+    {
+        return false;
+    }
+    for (const std::string &prefix : prefixes)
+    {
+        sqlite3_stmt *raw_statement = nullptr;
+        if (sqlite3_prepare_v2(database, sql, -1, &raw_statement, nullptr) != SQLITE_OK)
+        {
+            return false;
+        }
+        metasequoia::SqliteStatement statement(raw_statement);
+        const std::string upper_bound = prefix_upper_bound(prefix);
+        if (sqlite3_bind_text(statement.get(), 1, prefix.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
+            sqlite3_bind_text(statement.get(), 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
+            sqlite3_bind_int(statement.get(), 3, limit) != SQLITE_OK)
+        {
+            return false;
+        }
+        int step_result = SQLITE_ROW;
+        while ((step_result = sqlite3_step(statement.get())) == SQLITE_ROW)
+        {
+            on_row(statement.get());
+        }
+        if (step_result != SQLITE_DONE)
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 void close_cached_local_databases()
