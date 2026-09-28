@@ -246,7 +246,7 @@ std::vector<std::string> KanaForRomajiPrefix(std::string_view pending)
     std::vector<std::string> kana;
     for (const auto &entry : RomajiTable())
     {
-        if (entry.first.size() >= prefix.size() && entry.first.compare(0, prefix.size(), prefix) == 0)
+        if (CommonUtils::starts_with(entry.first, prefix))
         {
             kana.push_back(entry.second);
         }

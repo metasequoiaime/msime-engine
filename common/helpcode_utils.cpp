@@ -55,7 +55,7 @@ std::string trim(const std::string &text)
 std::string custom_schema_stem(const std::string &schema)
 {
     const std::string prefix = HelpcodeUtils::kCustomHelpcodeSchemaPrefix;
-    if (schema.size() <= prefix.size() || schema.compare(0, prefix.size(), prefix) != 0)
+    if (schema.size() <= prefix.size() || !CommonUtils::starts_with(schema, prefix))
         return {};
     std::string stem = schema.substr(prefix.size());
     if (stem.front() == '.' || stem.find_first_of("/\\:*?\"<>|") != std::string::npos)
