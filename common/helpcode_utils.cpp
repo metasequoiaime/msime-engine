@@ -1,5 +1,6 @@
 #include "helpcode_utils.h"
 #include "../contracts/assets/assets.h"
+#include "string_utils.h"
 #include "../core/data_path.h"
 #include <mutex>
 #include <stdexcept>
@@ -275,7 +276,7 @@ std::string::size_type count_han_chars(const std::string &words)
 
 std::string::size_type count_utf8_chars(const std::string &text)
 {
-    return utf8::distance(text.begin(), text.end());
+    return CommonUtils::count_utf8_chars(text);
 }
 
 std::string compute_helpcodes(const std::string &words, bool uppercase_all, const Keymap *configured_keymap)

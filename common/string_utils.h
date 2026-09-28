@@ -7,6 +7,7 @@ namespace CommonUtils
 {
 std::wstring string_to_wstring(const std::string &str);
 std::string wstring_to_string(const std::wstring &wstr);
+std::string::size_type count_utf8_chars(const std::string &text);
 std::vector<std::string> split_by_delimiter(const std::string &text, char delimiter);
 std::string remove_apostrophe_delimiters(const std::string &text);
 std::string escape_sql_literal(std::string text);
