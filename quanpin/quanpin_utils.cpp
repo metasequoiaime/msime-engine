@@ -395,6 +395,33 @@ bool is_complete_pinyin_input(const std::string &pinyin)
     return true;
 }
 
+std::string to_google_spelling(const std::string &segmentation)
+{
+    static const std::unordered_map<std::string, std::string> kSpellings = {
+        {"jv", "ju"},   {"qv", "qu"},   {"xv", "xu"},   {"yv", "yu"},   {"jve", "jue"},
+        {"qve", "que"}, {"xve", "xue"}, {"yve", "yue"}, {"lve", "lue"}, {"nve", "nue"},
+    };
+
+    std::string result;
+    result.reserve(segmentation.size());
+    size_t chunk_start = 0;
+    while (true)
+    {
+        const size_t separator = segmentation.find('\'', chunk_start);
+        const size_t chunk_end = separator == std::string::npos ? segmentation.size() : separator;
+        const std::string chunk = segmentation.substr(chunk_start, chunk_end - chunk_start);
+        const auto found = kSpellings.find(chunk);
+        result += found == kSpellings.end() ? chunk : found->second;
+        if (separator == std::string::npos)
+        {
+            break;
+        }
+        result += '\'';
+        chunk_start = separator + 1;
+    }
+    return result;
+}
+
 size_t detect_active_helpcode_length(const std::string &raw_input, const std::string &raw_input_with_cases)
 {
     const auto &input_with_cases = raw_input_with_cases.empty() ? raw_input : raw_input_with_cases;

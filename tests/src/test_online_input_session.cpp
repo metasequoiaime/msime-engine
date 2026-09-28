@@ -119,6 +119,14 @@ int main()
                     query->ai_eligible && !query->identity.empty(),
                 "Quanpin exposed the wrong online query state.");
 
+        metasequoia::InputSession manually_segmented(SchemeType::Quanpin);
+        type(manually_segmented, "qi'e'huan");
+        const auto manually_segmented_query = manually_segmented.online_query();
+        require(manually_segmented_query.has_value() && manually_segmented_query->query_text == "qi'e'huan",
+                "Quanpin cloud queries dropped the user's manual syllable boundaries.");
+        require(quanpin::to_google_spelling("nve'dai'lve") == "nue'dai'lue",
+                "Google spelling conversion did not preserve segments while rewriting v spellings.");
+
         require(quanpin.apply_online_candidate(*query, "泥", CandidateSource::CloudSuggestion),
                 "A current cloud candidate was rejected.");
         require(quanpin.candidates().size() >= 3 && quanpin.candidates()[1].word == "泥" &&
