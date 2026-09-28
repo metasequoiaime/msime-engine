@@ -114,7 +114,6 @@ class ShuangpinDictionary
         std::vector<WordItem> &filtered_list,        //
         const std::string &help_codes                //
     );
-    std::vector<WordItem> select_complete_data(sqlite3 *target_db, const std::string &sql_str);
     int check_data(sqlite3 *target_db, const std::string &sql_str);
     int insert_data(sqlite3 *target_db, const std::string &sql_str);
     int update_data(sqlite3 *target_db, const std::string &sql_str);

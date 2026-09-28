@@ -55,7 +55,9 @@ void run(bool capacity)
         "CREATE INDEX idx_quick_parases_key_weight ON quick_parases(key,weight DESC);");
     {
         const auto version_db = root / "version.db";
-        sql(version_db, "CREATE TABLE marker(value INTEGER);");
+        sql(version_db, "CREATE TABLE marker(value INTEGER);"
+                        "CREATE TABLE word_rows(key TEXT,jp TEXT,value TEXT,weight INTEGER);"
+                        "INSERT INTO word_rows VALUES('ni','n','你',42);");
         sqlite3 *reader = nullptr;
         check(sqlite3_open(path_to_utf8(version_db).c_str(), &reader) == SQLITE_OK, "open version reader");
         sqlite3_int64 version = -1;
@@ -69,6 +71,11 @@ void run(bool capacity)
               "shared SQLite row query missed an existing row");
         check(!sqlite_query_has_row(reader, "SELECT value FROM marker WHERE value = 2"),
               "shared SQLite row query reported a missing row");
+        const auto word_rows = sqlite_query_word_items(reader, "SELECT key,jp,value,weight FROM word_rows");
+        check(word_rows.size() == 1 && word_rows.front().pinyin == "ni" && word_rows.front().word == "你" &&
+                  word_rows.front().weight == 42 && word_rows.front().canonical_pinyin == "ni" &&
+                  word_rows.front().source == CandidateSource::Database,
+              "shared SQLite word query mapped dictionary columns incorrectly");
         sqlite3_close(reader);
     }
     check(EnglishDictionary::ensure_schema(path_to_utf8(resources / assets::english_dictionary)), "English schema");
