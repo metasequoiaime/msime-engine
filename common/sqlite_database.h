@@ -3,6 +3,7 @@
 #include <sqlite3.h>
 
 #include <memory>
+#include <string>
 
 namespace metasequoia
 {
@@ -18,4 +19,12 @@ struct SqliteDatabaseCloser
 };
 
 using SqliteDatabase = std::unique_ptr<sqlite3, SqliteDatabaseCloser>;
+
+inline SqliteDatabase sqlite_open_database(const std::string &path, int flags)
+{
+    sqlite3 *raw = nullptr;
+    if (sqlite3_open_v2(path.c_str(), &raw, flags, nullptr) != SQLITE_OK)
+        return {};
+    return SqliteDatabase(raw);
+}
 } // namespace metasequoia
