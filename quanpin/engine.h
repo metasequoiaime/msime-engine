@@ -17,7 +17,6 @@ class QuanpinEngine
     std::vector<WordItem> query(const QueryRequest &request);
     bool expand_initial_candidates(const QueryRequest &request, std::vector<WordItem> &candidates);
     std::optional<WordItem> find_candidate(const std::string &key, const std::string &value);
-    int handleVkCode(ImeKeyCode vk, ImeModifierMask modifiers_down, ImeCharacter wch = 0);
     int create_word(std::string pinyin, std::string word);
     int create_word_from_canonical_pinyin(std::string pinyin, std::string word);
     int update_weight_by_pinyin_and_word(std::string pinyin, std::string word);
