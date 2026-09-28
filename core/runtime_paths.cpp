@@ -1,4 +1,5 @@
 #include "runtime_paths.h"
+#include "../common/path_utils.h"
 #include "../common/string_utils.h"
 #include "data_path.h"
 #include "../common/sqlite_database.h"
@@ -29,12 +30,6 @@ std::filesystem::path normalized_root(const std::filesystem::path &path)
     if (result.filename().empty())
         result = result.parent_path();
     return result;
-}
-
-bool roots_overlap(const std::filesystem::path &first, const std::filesystem::path &second)
-{
-    const auto common = std::mismatch(first.begin(), first.end(), second.begin(), second.end());
-    return common.first == first.end() || common.second == second.end();
 }
 
 void copy_database(const std::filesystem::path &source, const std::filesystem::path &target)
@@ -131,8 +126,8 @@ RuntimePaths prepare_runtime_paths(const std::filesystem::path &resources, const
     const auto resource_root = normalized_root(resources);
     const auto user_root = normalized_root(user_data);
     const auto cache_root = normalized_root(cache);
-    if (roots_overlap(resource_root, user_root) || roots_overlap(resource_root, cache_root) ||
-        roots_overlap(user_root, cache_root))
+    if (CommonUtils::paths_overlap(resource_root, user_root) || CommonUtils::paths_overlap(resource_root, cache_root) ||
+        CommonUtils::paths_overlap(user_root, cache_root))
         throw std::invalid_argument("Resource, user-data and cache directories must not overlap");
     std::filesystem::create_directories(user_data);
     std::filesystem::create_directories(cache);
