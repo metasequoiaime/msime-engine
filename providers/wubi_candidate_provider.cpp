@@ -1,4 +1,5 @@
 #include "wubi_candidate_provider.h"
+#include "../core/candidate_utils.h"
 #include "../contracts/assets/assets.h"
 #include "../core/data_path.h"
 #include "../quanpin/quanpin_query.h"
@@ -80,12 +81,15 @@ std::vector<WordItem> WubiCandidateProvider::collect_rows(sqlite3_stmt *statemen
     {
         const auto *key = reinterpret_cast<const char *>(sqlite3_column_text(statement, 0));
         const auto *value = reinterpret_cast<const char *>(sqlite3_column_text(statement, 1));
-        if (key == nullptr || value == nullptr || !seen.insert(value).second)
+        if (key == nullptr || value == nullptr)
         {
             continue;
         }
-        candidates.emplace_back(key, value, sqlite3_column_int64(statement, 2));
-        candidates.back().scheme = SchemeType::Wubi;
+        if (append_unique_candidate(candidates, seen, key, value, sqlite3_column_int64(statement, 2),
+                                    CandidateSource::Database, {}))
+        {
+            candidates.back().scheme = SchemeType::Wubi;
+        }
     }
 
     if (result != SQLITE_DONE)
