@@ -213,7 +213,7 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generateSeries( //
             if (pos != string::npos)
             {
                 seg_pinyin = seg_pinyin.substr(0, pos);
-                pure_pinyin = boost::algorithm::replace_all_copy(seg_pinyin, "'", "");
+                pure_pinyin = CommonUtils::remove_apostrophe_delimiters(seg_pinyin);
                 vector<ShuangpinDictionary::WordItem> sub_pinyin_cand = generate(pure_pinyin, seg_pinyin);
                 candidate_list.insert(candidate_list.end(), sub_pinyin_cand.begin(), sub_pinyin_cand.end());
             }
@@ -706,8 +706,7 @@ std::string ShuangpinDictionary::get_quanpin() const
 {
 
     string quanpin_str = ShuangpinUtil::convert_seg_shuangpin_to_seg_complete_pinyin(_pinyin_segmentation, profile_);
-    quanpin_str.erase(std::remove(quanpin_str.begin(), quanpin_str.end(), '\''), quanpin_str.end());
-    return quanpin_str;
+    return CommonUtils::remove_apostrophe_delimiters(quanpin_str);
 }
 
 std::string ShuangpinDictionary::get_quanpin_seg() const
