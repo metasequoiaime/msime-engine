@@ -27,21 +27,7 @@ ICandidateProvider &ProviderRegistry::resolve(SchemeType scheme_type)
 
 void ProviderRegistry::reset_cache(SchemeType scheme_type)
 {
-    switch (scheme_type)
-    {
-    case SchemeType::Quanpin:
-    case SchemeType::Shuangpin:
-        pinyin_provider_.reset_cache();
-        return;
-    case SchemeType::Wubi:
-        wubi_provider_.reset_cache();
-        return;
-    case SchemeType::JapaneseRomaji:
-        japanese_provider_.reset_cache();
-        return;
-    default:
-        throw std::runtime_error("Unknown scheme type.");
-    }
+    resolve(scheme_type).reset_cache();
 }
 
 int ProviderRegistry::create_word(SchemeType scheme_type, std::string pinyin, std::string word)
