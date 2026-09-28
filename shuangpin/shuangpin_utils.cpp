@@ -161,22 +161,6 @@ string ShuangpinUtil::pinyin_segmentation(string sp_str, const ShuangpinProfile 
  * @return std::string
  */
 /**
- * @brief Extract preview without helpcodes
- *
- * @param candidate UTF-8 string
- * @return string Pure hanzi string
- */
-string ShuangpinUtil::extract_preview(string candidate)
-{
-    size_t start_pos = candidate.find('(');
-    if (start_pos != string::npos)
-    {
-        return candidate.substr(0, start_pos);
-    }
-    return candidate;
-}
-
-/**
  * @brief Check if all pinyin is quanpin
  *
  * @param pure_pinyin Pure shuangpin
