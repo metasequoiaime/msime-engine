@@ -390,6 +390,18 @@ class SqliteDb
     metasequoia::SqliteDatabase db_;
 };
 
+void append_keyed_query_rows(std::vector<KeyedQueryItem> &rows, sqlite3_stmt *statement)
+{
+    while (sqlite3_step(statement) == SQLITE_ROW)
+    {
+        const unsigned char *key = sqlite3_column_text(statement, 0);
+        const unsigned char *value = sqlite3_column_text(statement, 1);
+        rows.push_back(KeyedQueryItem{key == nullptr ? "" : reinterpret_cast<const char *>(key),
+                                      value == nullptr ? "" : reinterpret_cast<const char *>(value),
+                                      sqlite3_column_int64(statement, 2)});
+    }
+}
+
 std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, const std::string &sql, const std::string &value, int limit)
 {
     sqlite3_stmt *stmt = nullptr;
@@ -403,17 +415,7 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, const std::string &sql,
     sqlite3_bind_int(stmt, 2, limit);
 
     std::vector<KeyedQueryItem> rows;
-    while (sqlite3_step(stmt) == SQLITE_ROW)
-    {
-        const unsigned char *key = sqlite3_column_text(stmt, 0);
-        const unsigned char *value_text = sqlite3_column_text(stmt, 1);
-        const std::int64_t weight = sqlite3_column_int64(stmt, 2);
-        rows.push_back(KeyedQueryItem{
-            key == nullptr ? "" : reinterpret_cast<const char *>(key),
-            value_text == nullptr ? "" : reinterpret_cast<const char *>(value_text),
-            weight,
-        });
-    }
+    append_keyed_query_rows(rows, stmt);
     return rows;
 }
 
@@ -441,17 +443,7 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, metasequoia::SqliteStat
     sqlite3_bind_int(stmt, 2, limit);
 
     std::vector<KeyedQueryItem> rows;
-    while (sqlite3_step(stmt) == SQLITE_ROW)
-    {
-        const unsigned char *key = sqlite3_column_text(stmt, 0);
-        const unsigned char *value_text = sqlite3_column_text(stmt, 1);
-        const std::int64_t weight = sqlite3_column_int64(stmt, 2);
-        rows.push_back(KeyedQueryItem{
-            key == nullptr ? "" : reinterpret_cast<const char *>(key),
-            value_text == nullptr ? "" : reinterpret_cast<const char *>(value_text),
-            weight,
-        });
-    }
+    append_keyed_query_rows(rows, stmt);
     sqlite3_reset(stmt);
     sqlite3_clear_bindings(stmt);
     return rows;
@@ -472,16 +464,7 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, const std::string &sql,
     sqlite3_bind_int(stmt, 3, limit);
 
     std::vector<KeyedQueryItem> rows;
-    while (sqlite3_step(stmt) == SQLITE_ROW)
-    {
-        const unsigned char *key = sqlite3_column_text(stmt, 0);
-        const unsigned char *value_text = sqlite3_column_text(stmt, 1);
-        rows.push_back(KeyedQueryItem{
-            key == nullptr ? "" : reinterpret_cast<const char *>(key),
-            value_text == nullptr ? "" : reinterpret_cast<const char *>(value_text),
-            sqlite3_column_int64(stmt, 2),
-        });
-    }
+    append_keyed_query_rows(rows, stmt);
     return rows;
 }
 
@@ -511,16 +494,7 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, metasequoia::SqliteStat
     sqlite3_bind_int(stmt, 3, limit);
 
     std::vector<KeyedQueryItem> rows;
-    while (sqlite3_step(stmt) == SQLITE_ROW)
-    {
-        const unsigned char *key = sqlite3_column_text(stmt, 0);
-        const unsigned char *value_text = sqlite3_column_text(stmt, 1);
-        rows.push_back(KeyedQueryItem{
-            key == nullptr ? "" : reinterpret_cast<const char *>(key),
-            value_text == nullptr ? "" : reinterpret_cast<const char *>(value_text),
-            sqlite3_column_int64(stmt, 2),
-        });
-    }
+    append_keyed_query_rows(rows, stmt);
     sqlite3_reset(stmt);
     sqlite3_clear_bindings(stmt);
     return rows;
@@ -571,16 +545,7 @@ std::vector<KeyedQueryItem> run_keyed_batch_query(sqlite3 *db, metasequoia::Sqli
     sqlite3_bind_int(stmt, static_cast<int>(keys.size() + 1), limit);
 
     std::vector<KeyedQueryItem> rows;
-    while (sqlite3_step(stmt) == SQLITE_ROW)
-    {
-        const unsigned char *key = sqlite3_column_text(stmt, 0);
-        const unsigned char *value_text = sqlite3_column_text(stmt, 1);
-        rows.push_back(KeyedQueryItem{
-            key == nullptr ? "" : reinterpret_cast<const char *>(key),
-            value_text == nullptr ? "" : reinterpret_cast<const char *>(value_text),
-            sqlite3_column_int64(stmt, 2),
-        });
-    }
+    append_keyed_query_rows(rows, stmt);
     sqlite3_reset(stmt);
     sqlite3_clear_bindings(stmt);
     return rows;
@@ -1019,13 +984,7 @@ std::vector<KeyedQueryItem> query_initial(sqlite3 *db, const std::string &prefix
     sqlite3_bind_int(stmt, 3, limit);
 
     std::vector<KeyedQueryItem> rows;
-    while (sqlite3_step(stmt) == SQLITE_ROW)
-    {
-        const auto *key = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
-        const auto *value = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1));
-        rows.push_back(
-            KeyedQueryItem{key == nullptr ? "" : key, value == nullptr ? "" : value, sqlite3_column_int64(stmt, 2)});
-    }
+    append_keyed_query_rows(rows, stmt);
     return rows;
 }
 
