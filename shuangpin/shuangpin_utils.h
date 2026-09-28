@@ -1,14 +1,7 @@
 #pragma once
 
-#include "../core/data_path.h"
 #include "shuangpin_profile.h"
-#include <filesystem>
 #include <string>
-
-namespace shuangpin
-{
-std::filesystem::path get_data_file_path(const std::filesystem::path &relative_path);
-} // namespace shuangpin
 
 class ShuangpinUtil
 {
