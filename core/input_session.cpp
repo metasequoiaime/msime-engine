@@ -696,7 +696,7 @@ std::vector<std::string> InputSession::candidate_annotations() const
     for (const auto &item : items)
     {
         std::string annotation;
-        if (enabled && item.source != CandidateSource::EnglishDictionary)
+        if (enabled && !is_english_candidate_source(item.source))
             annotation = HelpcodeUtils::compute_helpcodes(item.word, uppercase_all, keymap);
         if (annotation.empty())
             annotation = item.corrected_from;
@@ -1008,9 +1008,9 @@ std::optional<std::string> InputSession::learn_candidate(std::size_t index)
         return std::nullopt;
     }
     const bool temporary_english = local_input_mode_ == LocalInputMode::TemporaryEnglish;
-    if ((dedicated_english_mode_ || temporary_english) &&
-        candidates()[index].source == CandidateSource::EnglishDictionary && frequency_adjustment_configured_ &&
-        frequency_adjustment_.mode != FrequencyAdjustmentMode::Disabled && index != 0)
+    if ((dedicated_english_mode_ || temporary_english) && is_english_candidate_source(candidates()[index].source) &&
+        frequency_adjustment_configured_ && frequency_adjustment_.mode != FrequencyAdjustmentMode::Disabled &&
+        index != 0)
     {
         return adjust_candidate_frequency(index, frequency_adjustment_, false);
     }
@@ -1048,7 +1048,7 @@ KeyResult InputSession::pin_candidate(std::size_t index)
     if (index >= candidates().size())
         return {};
     const auto source = candidates()[index].source;
-    if (source != CandidateSource::EnglishDictionary &&
+    if (!is_english_candidate_source(source) &&
         (!is_dictionary_candidate_source(source) || scheme() == SchemeType::JapaneseRomaji))
         return {};
 
@@ -1070,7 +1070,7 @@ std::optional<std::string> InputSession::adjust_candidate_frequency(std::size_t 
                                                                     FrequencyAdjustmentOptions options, bool force_top)
 {
     const WordItem &selected = candidates()[index];
-    if (selected.source == CandidateSource::EnglishDictionary)
+    if (is_english_candidate_source(selected.source))
     {
         std::string context = dedicated_english_mode_ ? dedicated_english_preedit_
                                                       : (local_input_mode_ == LocalInputMode::TemporaryEnglish
@@ -1079,7 +1079,7 @@ std::optional<std::string> InputSession::adjust_candidate_frequency(std::size_t 
         context = CommonUtils::lowercase_ascii(std::move(context));
         std::vector<WordItem> ranked_candidates;
         std::copy_if(candidates().begin(), candidates().end(), std::back_inserter(ranked_candidates),
-                     [](const WordItem &candidate) { return candidate.source == CandidateSource::EnglishDictionary; });
+                     [](const WordItem &candidate) { return is_english_candidate_source(candidate.source); });
         const bool adjusted = user_dictionary::adjust_english_candidate_ranking(
             path_to_utf8(paths_.dictionary(assets::english_dictionary)),
             path_to_utf8(paths_.user(assets::user_journal)), "english:" + context, ranked_candidates, selected.pinyin,

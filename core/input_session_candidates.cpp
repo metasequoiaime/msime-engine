@@ -86,7 +86,7 @@ void InputSession::apply_candidate_positions(std::vector<WordItem> &items)
     else if (local_input_mode_ == LocalInputMode::SuperJianpin)
         user_dictionary::apply_fixed_positions(journal, position_context(false), items, false);
     if (std::any_of(items.begin(), items.end(),
-                    [](const auto &item) { return item.source == CandidateSource::EnglishDictionary; }))
+                    [](const auto &item) { return is_english_candidate_source(item.source); }))
         user_dictionary::apply_fixed_positions(journal, position_context(true), items, false, {}, true);
 }
 
@@ -95,7 +95,7 @@ KeyResult InputSession::set_candidate_position(std::size_t index, int position)
     if (position < 0 || position > 5 || index >= candidates().size())
         return {};
     const auto selected = candidates()[index];
-    const bool english = selected.source == CandidateSource::EnglishDictionary;
+    const bool english = is_english_candidate_source(selected.source);
     if (!english && (!is_dictionary_candidate_source(selected.source) || scheme() == SchemeType::JapaneseRomaji))
         return {};
     const bool wubi = selected.scheme == SchemeType::Wubi && local_input_mode_ != LocalInputMode::SuperJianpin;
@@ -123,7 +123,7 @@ KeyResult InputSession::remove_candidate(std::size_t index)
     if (index >= candidates().size())
         return {};
     const auto selected = candidates()[index];
-    const bool english = selected.source == CandidateSource::EnglishDictionary;
+    const bool english = is_english_candidate_source(selected.source);
     if (!english && (!is_dictionary_candidate_source(selected.source) || scheme() == SchemeType::JapaneseRomaji ||
                      HelpcodeUtils::count_utf8_chars(selected.word) <= 1))
         return {};

@@ -640,7 +640,7 @@ bool adjust_english_candidate_ranking(const std::string &english_db_path, const 
     }
 
     const auto selected = std::find_if(ordered_candidates.begin(), ordered_candidates.end(), [&](const WordItem &item) {
-        return item.source == CandidateSource::EnglishDictionary && item.pinyin == entry_key && item.word == value;
+        return is_english_candidate_source(item.source) && item.pinyin == entry_key && item.word == value;
     });
     if (selected == ordered_candidates.end())
     {
