@@ -14,6 +14,17 @@ decltype(auto) route_pinyin_scheme(SchemeType scheme, QuanpinHandler quanpin_han
     return quanpin_handler();
 }
 
+template <typename QuanpinHandler, typename ShuangpinHandler, typename UnsupportedHandler>
+decltype(auto) route_supported_pinyin_scheme(SchemeType scheme, QuanpinHandler quanpin_handler,
+                                             ShuangpinHandler shuangpin_handler, UnsupportedHandler unsupported_handler)
+{
+    if (scheme == SchemeType::Shuangpin)
+        return shuangpin_handler();
+    if (scheme == SchemeType::Quanpin)
+        return quanpin_handler();
+    return unsupported_handler();
+}
+
 template <typename HelpcodeQuery, typename QuanpinHandler, typename ShuangpinSeriesHandler,
           typename ShuangpinActiveHandler>
 int route_cached_candidate_request(SchemeType scheme, HelpcodeQuery helpcode_query, QuanpinHandler quanpin_handler,
@@ -44,19 +55,9 @@ std::vector<WordItem> PinyinCandidateProvider::query(const QueryRequest &request
         return {};
     }
 
-    std::vector<WordItem> candidates;
-    if (request.scheme == SchemeType::Shuangpin)
-    {
-        candidates = shuangpin_engine_.query(request);
-    }
-    else if (request.scheme == SchemeType::Quanpin)
-    {
-        candidates = quanpin_engine_.query(request);
-    }
-    else
-    {
-        return {};
-    }
+    std::vector<WordItem> candidates = route_supported_pinyin_scheme(
+        request.scheme, [&] { return quanpin_engine_.query(request); },
+        [&] { return shuangpin_engine_.query(request); }, [] { return std::vector<WordItem>{}; });
     for (WordItem &item : candidates)
         item.scheme = request.scheme;
     return candidates;
@@ -64,15 +65,9 @@ std::vector<WordItem> PinyinCandidateProvider::query(const QueryRequest &request
 
 bool PinyinCandidateProvider::expand_initial_candidates(const QueryRequest &request, std::vector<WordItem> &candidates)
 {
-    if (request.scheme == SchemeType::Shuangpin)
-    {
-        return shuangpin_engine_.expand_initial_candidates(request, candidates);
-    }
-    if (request.scheme == SchemeType::Quanpin)
-    {
-        return quanpin_engine_.expand_initial_candidates(request, candidates);
-    }
-    return false;
+    return route_supported_pinyin_scheme(
+        request.scheme, [&] { return quanpin_engine_.expand_initial_candidates(request, candidates); },
+        [&] { return shuangpin_engine_.expand_initial_candidates(request, candidates); }, [] { return false; });
 }
 
 void PinyinCandidateProvider::reset_cache()
