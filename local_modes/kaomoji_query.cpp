@@ -1,6 +1,5 @@
 #include "../contracts/assets/assets.h"
 #include "../common/string_utils.h"
-#include "../common/sqlite_statement.h"
 #include "kaomoji_query.h"
 #include "local_database.h"
 #include "query_prefixes.h"
@@ -16,12 +15,6 @@
 
 namespace metasequoia::local_modes
 {
-namespace
-{
-using Statement = metasequoia::SqliteStatement;
-
-} // namespace
-
 LocalQueryResult query_kaomoji(const std::string &code, SchemeType scheme, int limit, const ShuangpinProfile &profile)
 {
     return query_kaomoji(code, scheme, data_file_path(metasequoia::assets::other_dictionary), limit, profile);
@@ -58,35 +51,15 @@ LocalQueryResult query_kaomoji(const std::string &code, SchemeType scheme, const
     constexpr const char *kSql = "SELECT kaomoji,sort_order FROM kaomoji "
                                  "WHERE (pinyin>=?1 AND pinyin<?2) OR (jianpin>=?1 AND jianpin<?2) "
                                  "ORDER BY sort_order LIMIT ?3";
-    for (const std::string &prefix : prefixes)
-    {
-        sqlite3_stmt *raw_statement = nullptr;
-        if (sqlite3_prepare_v2(database.get(), kSql, -1, &raw_statement, nullptr) != SQLITE_OK)
-        {
-            return database_query_failure("Kaomoji database could not be queried.");
-        }
-        Statement statement(raw_statement);
-        const std::string upper_bound = prefix_upper_bound(prefix);
-        if (sqlite3_bind_text(statement.get(), 1, prefix.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
-            sqlite3_bind_text(statement.get(), 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
-            sqlite3_bind_int(statement.get(), 3, limit) != SQLITE_OK)
-        {
-            return database_query_failure("Kaomoji database could not be queried.");
-        }
-
-        int step_result = SQLITE_ROW;
-        while ((step_result = sqlite3_step(statement.get())) == SQLITE_ROW)
-        {
-            const auto *text = reinterpret_cast<const char *>(sqlite3_column_text(statement.get(), 0));
+    if (!query_prefix_rows(database.get(), prefixes, kSql, limit, [&](sqlite3_stmt *statement) {
+            const auto *text = reinterpret_cast<const char *>(sqlite3_column_text(statement, 0));
             if (text != nullptr && seen.insert(text).second)
             {
-                entries.push_back({text, sqlite3_column_int(statement.get(), 1)});
+                entries.push_back({text, sqlite3_column_int(statement, 1)});
             }
-        }
-        if (step_result != SQLITE_DONE)
-        {
-            return database_query_failure("Kaomoji database could not be queried.");
-        }
+        }))
+    {
+        return database_query_failure("Kaomoji database could not be queried.");
     }
 
     std::stable_sort(entries.begin(), entries.end(),

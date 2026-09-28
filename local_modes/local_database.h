@@ -3,8 +3,10 @@
 #include <sqlite3.h>
 
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace metasequoia::local_modes
 {
@@ -21,6 +23,11 @@ std::shared_ptr<sqlite3> open_local_database(const std::filesystem::path &path);
 
 // Exclusive upper bound for a bytewise prefix range over normalized local-mode keys.
 std::string prefix_upper_bound(const std::string &prefix);
+
+// Runs a normalized prefix-range query and invokes on_row for each returned row.
+// The callback owns row extraction; false means prepare, bind, or step failed.
+bool query_prefix_rows(sqlite3 *database, const std::vector<std::string> &prefixes, const char *sql, int limit,
+                       const std::function<void(sqlite3_stmt *)> &on_row);
 
 // Drops the shared connections so dictionary files can be deleted or replaced.
 // Each connection closes once the last query using it returns.
