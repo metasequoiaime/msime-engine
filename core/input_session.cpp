@@ -668,6 +668,10 @@ const std::vector<WordItem> &InputSession::candidates() const
     {
         return mixed_candidates_;
     }
+    if (prefix_candidates_active_)
+    {
+        return prefix_candidates_;
+    }
     return engine_.get_candidates();
 }
 
@@ -863,10 +867,79 @@ std::optional<std::string> InputSession::update_local_candidates()
 
 void InputSession::update_mixed_candidates()
 {
-    mixed_candidates_ = candidate_queries_.mixed(engine_.get_candidates(), engine_.get_request().raw_input, scheme(),
-                                                 english_input_options_, mixed_expressive_options_,
-                                                 dedicated_english_mode_, local_input_mode_);
+    refresh_prefix_candidates();
+    const auto &decoded = prefix_candidates_active_ ? prefix_candidates_ : engine_.get_candidates();
+    const std::string association_input =
+        prefix_candidates_active_ ? prefix_query_input_ : engine_.get_request().raw_input;
+    mixed_candidates_ = candidate_queries_.mixed(decoded, association_input, scheme(), english_input_options_,
+                                                 mixed_expressive_options_, dedicated_english_mode_, local_input_mode_);
     apply_candidate_positions(mixed_candidates_);
+}
+
+void InputSession::set_caret(std::optional<std::size_t> caret)
+{
+    if (caret.has_value())
+    {
+        *caret = std::min(*caret, editing_text().size());
+    }
+    caret_ = caret;
+}
+
+std::size_t InputSession::quantized_prefix_end() const
+{
+    const std::string &raw = get_pinyin_sequence_with_cases();
+    if (!caret_.has_value())
+    {
+        return raw.size();
+    }
+    const std::vector<std::size_t> boundaries = segment_raw_boundaries();
+    if (boundaries.empty())
+    {
+        return raw.size();
+    }
+    return *std::prev(std::upper_bound(boundaries.begin(), boundaries.end(), caret_position()));
+}
+
+std::size_t InputSession::prefix_end() const
+{
+    return quantized_prefix_end();
+}
+
+std::string InputSession::pending_suffix() const
+{
+    const std::string &raw = get_pinyin_sequence_with_cases();
+    const std::size_t end = quantized_prefix_end();
+    return end < raw.size() ? raw.substr(end) : std::string{};
+}
+
+void InputSession::refresh_prefix_candidates()
+{
+    prefix_candidates_active_ = false;
+    if (!caret_.has_value() || dedicated_english_mode_ || local_input_mode_ != LocalInputMode::None)
+    {
+        prefix_candidates_.clear();
+        prefix_query_input_.clear();
+        return;
+    }
+
+    const std::string &raw_with_cases = get_pinyin_sequence_with_cases();
+    const std::size_t end = quantized_prefix_end();
+    if (end >= raw_with_cases.size())
+    {
+        prefix_candidates_.clear();
+        prefix_query_input_.clear();
+        return;
+    }
+
+    std::string prefix = raw_with_cases.substr(0, end);
+    std::transform(prefix.begin(), prefix.end(), prefix.begin(),
+                   [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
+    if (prefix_query_input_ != prefix)
+    {
+        prefix_candidates_ = engine_.query_raw_candidates(prefix, raw_with_cases.substr(0, end));
+        prefix_query_input_ = prefix;
+    }
+    prefix_candidates_active_ = true;
 }
 
 void InputSession::update_dedicated_english_candidates()
@@ -891,6 +964,9 @@ void InputSession::update_dedicated_english_candidates()
 void InputSession::reset_composition()
 {
     caret_.reset();
+    prefix_candidates_.clear();
+    prefix_query_input_.clear();
+    prefix_candidates_active_ = false;
     immediate_phrase_progress_ = {};
     clear_pending_sequence();
     online_requests_.invalidate();

@@ -299,6 +299,9 @@ void InputSession::reset_cache()
     engine_.reset_cache();
     if (canonical_phrase_engine_)
         canonical_phrase_engine_->reset_cache();
+    // Keep the visible prefix list stable until the next refresh, but force its text query to be
+    // repeated after the provider cache is invalidated.
+    prefix_query_input_.clear();
 }
 
 const std::vector<WordItem> &InputSession::get_candidates() const

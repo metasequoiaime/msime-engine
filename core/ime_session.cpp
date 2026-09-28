@@ -233,6 +233,23 @@ void ImeSession::replace_active_raw_input(const std::string &raw_input, const st
     }
 }
 
+std::vector<WordItem> ImeSession::query_raw_candidates(const std::string &raw_input,
+                                                       const std::string &raw_input_with_cases)
+{
+    // A throwaway scheme keeps the live scheme's key strokes and composition untouched while a
+    // caret prefix is decoded independently.
+    const std::unique_ptr<IInputScheme> query_scheme = create_scheme(scheme_->type());
+    query_scheme->set_raw_input(raw_input, raw_input_with_cases);
+    QueryRequest request = query_scheme->build_request();
+    apply_request_options(request);
+    ApplyShuangpinHelpcodeSegmentation(request, shuangpin_profile_);
+    if (!request.valid)
+    {
+        return {};
+    }
+    return provider_registry_.resolve(request.scheme).query(request);
+}
+
 int ImeSession::cache_dynamic_candidate_for_current_request(const std::string &word, CandidateSource source)
 {
     return provider_registry_.cache_dynamic_candidate_for_request(state_.request, word, source);
@@ -282,14 +299,7 @@ void ImeSession::refresh_candidates()
 {
     state_.preedit = scheme_->get_preedit();
     state_.request = scheme_->build_request();
-    state_.request.enable_shuangpin_helpcode = enable_shuangpin_helpcode_;
-    state_.request.enable_quanpin_helpcode = enable_quanpin_helpcode_;
-    state_.request.sentence_alternatives = sentence_alternatives_;
-    state_.request.enable_quanpin_autocorrect_transposition =
-        (quanpin_autocorrect_types_ & quanpin::kAutocorrectTransposition) != 0;
-    state_.request.enable_quanpin_autocorrect_neighbor =
-        (quanpin_autocorrect_types_ & quanpin::kAutocorrectNeighbor) != 0;
-    state_.request.fuzzy_pinyin = fuzzy_pinyin_;
+    apply_request_options(state_.request);
     ApplyShuangpinHelpcodeSegmentation(state_.request, shuangpin_profile_);
 
     state_.answered_by_pinyin_fallback = false;
@@ -326,13 +336,7 @@ void ImeSession::refresh_candidates()
         QuanpinScheme pinyin;
         pinyin.set_raw_input(state_.request.raw_input, state_.request.raw_input_with_cases);
         QueryRequest fallback = pinyin.build_request();
-        fallback.enable_quanpin_helpcode = enable_quanpin_helpcode_;
-        fallback.sentence_alternatives = sentence_alternatives_;
-        fallback.enable_quanpin_autocorrect_transposition =
-            (quanpin_autocorrect_types_ & quanpin::kAutocorrectTransposition) != 0;
-        fallback.enable_quanpin_autocorrect_neighbor =
-            (quanpin_autocorrect_types_ & quanpin::kAutocorrectNeighbor) != 0;
-        fallback.fuzzy_pinyin = fuzzy_pinyin_;
+        apply_request_options(fallback);
         // The same physical keys produced these letters, so the strokes carry over rather than
         // reaching the provider empty.
         fallback.key_strokes = state_.request.key_strokes;
@@ -350,6 +354,17 @@ void ImeSession::refresh_candidates()
             }
         }
     }
+}
+
+void ImeSession::apply_request_options(QueryRequest &request) const
+{
+    request.enable_shuangpin_helpcode = enable_shuangpin_helpcode_;
+    request.enable_quanpin_helpcode = enable_quanpin_helpcode_;
+    request.sentence_alternatives = sentence_alternatives_;
+    request.enable_quanpin_autocorrect_transposition =
+        (quanpin_autocorrect_types_ & quanpin::kAutocorrectTransposition) != 0;
+    request.enable_quanpin_autocorrect_neighbor = (quanpin_autocorrect_types_ & quanpin::kAutocorrectNeighbor) != 0;
+    request.fuzzy_pinyin = fuzzy_pinyin_;
 }
 
 std::unique_ptr<IInputScheme> ImeSession::create_scheme(SchemeType scheme_type) const

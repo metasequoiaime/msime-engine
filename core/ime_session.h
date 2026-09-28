@@ -38,6 +38,8 @@ class ImeSession
     // has to shorten the live composition, and under the wubi fallback the pinyin-shaped
     // caller would otherwise address a scheme that is not the active one and be ignored.
     void replace_active_raw_input(const std::string &raw_input, const std::string &raw_input_with_cases);
+    // Decode an independent raw spelling while preserving the live scheme and request state.
+    std::vector<WordItem> query_raw_candidates(const std::string &raw_input, const std::string &raw_input_with_cases);
     void reset();
     void reset_cache();
     int create_word(std::string pinyin, std::string word);
@@ -66,6 +68,7 @@ class ImeSession
     }
 
   private:
+    void apply_request_options(QueryRequest &request) const;
     void refresh_candidates();
     void bind_wubi_scheme();
     SchemeType candidate_scheme() const;
