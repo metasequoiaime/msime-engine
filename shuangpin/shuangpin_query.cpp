@@ -1,9 +1,9 @@
 #include "shuangpin_query.h"
 
+#include "../common/string_utils.h"
 #include "../common/helpcode_utils.h"
 #include "shuangpin_utils.h"
 #include <algorithm>
-#include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 
 namespace shuangpin
@@ -113,7 +113,7 @@ std::string normalize_input_with_delimiters(const std::string &raw_input, const 
 
 std::string remove_manual_delimiters(const std::string &text)
 {
-    return boost::replace_all_copy(text, "'", "");
+    return CommonUtils::remove_apostrophe_delimiters(text);
 }
 
 std::string normalize_input(const std::string &raw_input, const ShuangpinProfile &profile)
