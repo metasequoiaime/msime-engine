@@ -766,7 +766,11 @@ int ShuangpinDictionary::update_weight_by_word(string word)
 int ShuangpinDictionary::update_weight_by_pinyin_and_word(string pinyin, string word)
 {
     const auto direct_cuts = quanpin::cut_pinyin_by_mode(remove_delimiters(pinyin), "correction");
-    if (direct_cuts.empty() ||
+    // A correction cut that merely reproduces the input may still consist of
+    // incomplete initials (for example qbtmuo -> q'b't'mu'o). Only a complete
+    // pinyin reading is safe to treat as an already-canonical key; otherwise
+    // normalize the caller's Shuangpin input first.
+    if (direct_cuts.empty() || !quanpin::has_only_complete_pinyin_segments(direct_cuts.front()) ||
         remove_delimiters(quanpin::join_segments(direct_cuts.front())) != remove_delimiters(pinyin))
     {
         pinyin = normalize_shuangpin_to_quanpin_input(pinyin);
@@ -1039,8 +1043,10 @@ std::string ShuangpinDictionary::build_quanpin_sql_for_updating_word(const std::
 
 std::string ShuangpinDictionary::build_quanpin_sql_for_updating_word(std::string pinyin, const std::string &word) const
 {
-    pinyin = normalize_shuangpin_to_quanpin_input(pinyin);
-    const auto cuts = quanpin::cut_pinyin_by_mode(pinyin, "correction");
+    // The caller has already normalized the key to canonical Quanpin. Running
+    // it through the active Shuangpin profile again can split a valid key into
+    // unrelated syllables before building the UPDATE statement.
+    const auto cuts = quanpin::cut_pinyin_by_mode(remove_delimiters(pinyin), "correction");
     if (cuts.empty())
     {
         return "";

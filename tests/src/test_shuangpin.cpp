@@ -94,6 +94,18 @@ std::size_t index_of(const std::vector<WordItem> &candidates, const std::string 
     return static_cast<std::size_t>(std::distance(candidates.begin(), found));
 }
 
+std::int64_t weight_of(const std::vector<WordItem> &candidates, const std::string &word, const std::string &context)
+{
+    const auto found = std::find_if(candidates.begin(), candidates.end(), [&](const WordItem &item) {
+        return item.word == word;
+    });
+    if (found == candidates.end())
+    {
+        throw std::runtime_error(context + " did not return " + word + "; actual:" + describe(candidates));
+    }
+    return found->weight;
+}
+
 std::vector<std::string> words_of(const std::vector<WordItem> &candidates)
 {
     std::vector<std::string> words;
@@ -131,6 +143,8 @@ void prepare_fixture(const std::filesystem::path &directory)
                      "CREATE TABLE tbl_1_s(key TEXT, jp TEXT, value TEXT, weight INTEGER);"
                      "INSERT INTO tbl_1_s VALUES('shi', 's', '使', 200);"
                      "INSERT INTO tbl_1_s VALUES('shi', 's', '是', 100);"
+                     "CREATE TABLE tbl_3_q(key TEXT, jp TEXT, value TEXT, weight INTEGER);"
+                     "INSERT INTO tbl_3_q VALUES('qin''tian''shuo', 'qts', '秦天朔', 100);"
                      "COMMIT;");
     // helpcode.txt is the file of the default "lantian" schema, which the dictionary loads from
     // RuntimePaths::resources.
@@ -155,6 +169,24 @@ void testManualDelimiterDisablesSingleHelpcode(const metasequoia::RuntimePaths &
                 describe(delimited) + " vs" + describe(without_helpcode));
 }
 
+void testThreeSyllableWeightUpdate(const metasequoia::RuntimePaths &paths)
+{
+    ShuangpinDictionary dictionary(GetXiaoheShuangpinProfile(), paths);
+    const std::string raw_input = "qbtmuo";
+    const std::string segmentation = shuangpin::segment_input(raw_input);
+    require(shuangpin::to_quanpin_segmentation(segmentation) == "qin'tian'shuo",
+            "The three-syllable Shuangpin fixture did not normalize to its canonical reading.");
+
+    const auto before = dictionary.generateSeries(raw_input, segmentation);
+    const auto old_weight = weight_of(before, "秦天朔", "Three-syllable Shuangpin before pin");
+    require(dictionary.update_weight_by_pinyin_and_word(raw_input, "秦天朔") == ShuangpinDictionary::OK,
+            "Three-syllable Shuangpin weight update failed.");
+
+    const auto after = dictionary.generateSeries(raw_input, segmentation);
+    require(weight_of(after, "秦天朔", "Three-syllable Shuangpin after pin") > old_weight,
+            "Three-syllable Shuangpin weight update did not change the canonical row.");
+}
+
 int run_test()
 {
     const auto unique_suffix = std::to_string(std::chrono::high_resolution_clock::now().time_since_epoch().count());
@@ -166,6 +198,7 @@ int run_test()
     const metasequoia::RuntimePaths paths{data_directory, data_directory, data_directory, data_directory};
     require(shuangpin::is_complete_input("yo"), "The complete Shuangpin syllable yo was rejected.");
     testManualDelimiterDisablesSingleHelpcode(paths);
+    testThreeSyllableWeightUpdate(paths);
     return 0;
 }
 } // namespace
