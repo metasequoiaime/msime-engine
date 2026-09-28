@@ -5,7 +5,6 @@
 
 #include <sqlite3.h>
 #include <atomic>
-#include <cctype>
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
@@ -16,6 +15,7 @@
 #include <mutex>
 #include <numeric>
 #include "../core/data_path.h"
+#include "../common/string_utils.h"
 #include "../common/sqlite_database.h"
 #include "../common/sqlite_statement.h"
 #include "../english/english_dictionary.h"
@@ -787,9 +787,7 @@ bool learn_entered_english_word(const std::string &english_db_path, const std::s
                      [](unsigned char ch) { return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'); }))
         return false;
 
-    std::string word = display;
-    std::transform(word.begin(), word.end(), word.begin(),
-                   [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+    std::string word = CommonUtils::lowercase_ascii(display);
     weight = (std::max)(std::int64_t{0}, weight);
     if (!EnglishDictionary::ensure_schema(english_db_path))
         return false;

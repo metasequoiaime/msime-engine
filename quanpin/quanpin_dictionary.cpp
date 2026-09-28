@@ -68,17 +68,7 @@ std::string series_cache_key(const std::string &raw_input, const std::string &se
 // remain distinct so an alias rewrite is visible as a corrected candidate.
 std::string fold_autocorrect_letters(const std::string &text)
 {
-    std::string folded;
-    folded.reserve(text.size());
-    for (const char ch : text)
-    {
-        if (ch == '\'')
-        {
-            continue;
-        }
-        folded.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
-    }
-    return folded;
+    return CommonUtils::lowercase_ascii(CommonUtils::remove_apostrophe_delimiters(text));
 }
 
 struct SeriesQueryResolution

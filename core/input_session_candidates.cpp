@@ -7,7 +7,6 @@
 #include "../local_modes/jianpin_query.h"
 #include "../quanpin/quanpin_utils.h"
 #include <algorithm>
-#include <cctype>
 
 namespace metasequoia
 {
@@ -25,8 +24,7 @@ std::string InputSession::position_context(bool english, bool wubi) const
                                                     : (local_input_mode_ == LocalInputMode::TemporaryEnglish
                                                            ? local_preedit_.substr(1)
                                                            : engine_.get_request().raw_input_with_cases);
-        std::transform(input.begin(), input.end(), input.begin(),
-                       [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        input = CommonUtils::lowercase_ascii(std::move(input));
         return "english:" + input;
     }
     if (local_input_mode_ == LocalInputMode::SuperJianpin)
