@@ -103,10 +103,6 @@ int scan_limit(int limit, bool filter_initials)
     return std::max(limit * 32, 512);
 }
 
-LocalQueryResult query_failure(const char *diagnostic)
-{
-    return {{}, std::string(diagnostic)};
-}
 } // namespace
 
 std::string jianpin_ranking_context(const std::string &code, SchemeType scheme, const ShuangpinProfile &profile)
@@ -143,7 +139,7 @@ LocalQueryResult query_jianpin(const std::string &code, SchemeType scheme, const
     const std::shared_ptr<sqlite3> database = open_local_database(database_path);
     if (!database)
     {
-        return query_failure("Super-jianpin database is unavailable.");
+        return database_query_failure("Super-jianpin database is unavailable.");
     }
 
     const std::string jianpin = quanpin::segments_to_jianpin(segments);
@@ -153,13 +149,13 @@ LocalQueryResult query_jianpin(const std::string &code, SchemeType scheme, const
     sqlite3_stmt *raw_statement = nullptr;
     if (sqlite3_prepare_v2(database.get(), sql.c_str(), -1, &raw_statement, nullptr) != SQLITE_OK)
     {
-        return query_failure("Super-jianpin database could not be queried.");
+        return database_query_failure("Super-jianpin database could not be queried.");
     }
     Statement statement(raw_statement);
     if (sqlite3_bind_text(statement.get(), 1, jianpin.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
         sqlite3_bind_int(statement.get(), 2, scan_limit(limit, filter_initials)) != SQLITE_OK)
     {
-        return query_failure("Super-jianpin database could not be queried.");
+        return database_query_failure("Super-jianpin database could not be queried.");
     }
 
     const std::string matched_code = quanpin::join_segments(segments);
@@ -187,7 +183,7 @@ LocalQueryResult query_jianpin(const std::string &code, SchemeType scheme, const
     }
     if (step_result != SQLITE_DONE && step_result != SQLITE_ROW)
     {
-        return query_failure("Super-jianpin database could not be queried.");
+        return database_query_failure("Super-jianpin database could not be queried.");
     }
     return result;
 }

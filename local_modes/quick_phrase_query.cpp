@@ -22,10 +22,6 @@ bool valid_prefix(const std::string &prefix)
                                           [](unsigned char character) { return character >= 'a' && character <= 'z'; });
 }
 
-QuickPhraseQueryResult query_failure(const char *diagnostic)
-{
-    return {{}, std::string(diagnostic)};
-}
 } // namespace
 
 QuickPhraseQueryResult query_quick_phrases(const std::string &prefix, int limit)
@@ -42,13 +38,13 @@ QuickPhraseQueryResult query_quick_phrases(const std::string &prefix, const std:
     }
     if (database_path.empty())
     {
-        return query_failure("Quick phrase database is unavailable.");
+        return database_query_failure("Quick phrase database is unavailable.");
     }
 
     const std::shared_ptr<sqlite3> database = open_local_database(database_path);
     if (!database)
     {
-        return query_failure("Quick phrase database is unavailable.");
+        return database_query_failure("Quick phrase database is unavailable.");
     }
 
     constexpr const char *kSql = "SELECT key,value,weight FROM quick_parases WHERE key>=?1 AND key<?2 "
@@ -56,7 +52,7 @@ QuickPhraseQueryResult query_quick_phrases(const std::string &prefix, const std:
     sqlite3_stmt *raw_statement = nullptr;
     if (sqlite3_prepare_v2(database.get(), kSql, -1, &raw_statement, nullptr) != SQLITE_OK)
     {
-        return query_failure("Quick phrase database could not be queried.");
+        return database_query_failure("Quick phrase database could not be queried.");
     }
     Statement statement(raw_statement);
     const std::string upper_bound = prefix_upper_bound(prefix);
@@ -64,7 +60,7 @@ QuickPhraseQueryResult query_quick_phrases(const std::string &prefix, const std:
         sqlite3_bind_text(statement.get(), 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
         sqlite3_bind_int(statement.get(), 3, limit) != SQLITE_OK)
     {
-        return query_failure("Quick phrase database could not be queried.");
+        return database_query_failure("Quick phrase database could not be queried.");
     }
 
     QuickPhraseQueryResult result;
@@ -81,7 +77,7 @@ QuickPhraseQueryResult query_quick_phrases(const std::string &prefix, const std:
     }
     if (step_result != SQLITE_DONE)
     {
-        return query_failure("Quick phrase database could not be queried.");
+        return database_query_failure("Quick phrase database could not be queried.");
     }
     return result;
 }
