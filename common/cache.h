@@ -3,6 +3,7 @@
 #include <list>
 #include <optional>
 #include <unordered_map>
+#include <utility>
 
 template <typename Key, typename Value> class CircularBuffer
 {
@@ -40,6 +41,20 @@ template <typename Key, typename Value> class CircularBuffer
             return it->second.first;
         }
         return std::nullopt;
+    }
+
+    template <typename Function> bool update_if_cached(const Key &key, Function function)
+    {
+        auto cached = get(key);
+        if (!cached)
+            return false;
+
+        auto value = std::move(*cached);
+        if (!function(value))
+            return false;
+
+        insert(key, value);
+        return true;
     }
 
     // Presence test for callers that only need to know whether a key is cached: get() returns the value by value, so
