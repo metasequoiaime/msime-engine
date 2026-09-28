@@ -20,10 +20,6 @@ namespace
 {
 using Statement = metasequoia::SqliteStatement;
 
-LocalQueryResult query_failure(const char *diagnostic)
-{
-    return {{}, std::string(diagnostic)};
-}
 } // namespace
 
 LocalQueryResult query_kaomoji(const std::string &code, SchemeType scheme, int limit, const ShuangpinProfile &profile)
@@ -40,7 +36,7 @@ LocalQueryResult query_kaomoji(const std::string &code, SchemeType scheme, const
     }
     if (database_path.empty())
     {
-        return query_failure("Kaomoji database is unavailable.");
+        return database_query_failure("Kaomoji database is unavailable.");
     }
 
     const std::string lower = CommonUtils::lowercase_ascii(code);
@@ -57,7 +53,7 @@ LocalQueryResult query_kaomoji(const std::string &code, SchemeType scheme, const
     const std::shared_ptr<sqlite3> database = open_local_database(database_path);
     if (!database)
     {
-        return query_failure("Kaomoji database is unavailable.");
+        return database_query_failure("Kaomoji database is unavailable.");
     }
 
     struct Entry
@@ -75,7 +71,7 @@ LocalQueryResult query_kaomoji(const std::string &code, SchemeType scheme, const
         sqlite3_stmt *raw_statement = nullptr;
         if (sqlite3_prepare_v2(database.get(), kSql, -1, &raw_statement, nullptr) != SQLITE_OK)
         {
-            return query_failure("Kaomoji database could not be queried.");
+            return database_query_failure("Kaomoji database could not be queried.");
         }
         Statement statement(raw_statement);
         const std::string upper_bound = prefix_upper_bound(prefix);
@@ -83,7 +79,7 @@ LocalQueryResult query_kaomoji(const std::string &code, SchemeType scheme, const
             sqlite3_bind_text(statement.get(), 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
             sqlite3_bind_int(statement.get(), 3, limit) != SQLITE_OK)
         {
-            return query_failure("Kaomoji database could not be queried.");
+            return database_query_failure("Kaomoji database could not be queried.");
         }
 
         int step_result = SQLITE_ROW;
@@ -97,7 +93,7 @@ LocalQueryResult query_kaomoji(const std::string &code, SchemeType scheme, const
         }
         if (step_result != SQLITE_DONE)
         {
-            return query_failure("Kaomoji database could not be queried.");
+            return database_query_failure("Kaomoji database could not be queried.");
         }
     }
 
