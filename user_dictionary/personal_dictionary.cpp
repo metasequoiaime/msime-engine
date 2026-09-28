@@ -39,7 +39,7 @@ PersonalDictionaryValidation validate_personal_dictionary_entry(PersonalDictiona
                 break;
             start = end + 1;
         }
-        if (count > 64 || count != static_cast<std::size_t>(utf8::distance(entry.value.begin(), entry.value.end())))
+        if (count > 64 || count != CommonUtils::count_utf8_chars(entry.value))
             return invalid("Each character must have one pinyin syllable (maximum 64)");
         break;
     }
