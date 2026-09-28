@@ -338,10 +338,8 @@ bool EnglishDictionary::ensure_query_statement()
 
     if (!db_)
     {
-        sqlite3 *raw = nullptr;
-        const int status = sqlite3_open_v2(db_path_.c_str(), &raw, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, nullptr);
-        metasequoia::SqliteDatabase opened(raw);
-        if (status != SQLITE_OK)
+        auto opened = metasequoia::sqlite_open_database(db_path_, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX);
+        if (!opened)
         {
             close_database();
             return false;
@@ -397,11 +395,8 @@ bool EnglishDictionary::ensure_cache_statements()
         return false;
     if (!cache_db_)
     {
-        sqlite3 *raw = nullptr;
-        const int status =
-            sqlite3_open_v2(gloss_cache_path_.c_str(), &raw, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, nullptr);
-        metasequoia::SqliteDatabase opened(raw);
-        if (status != SQLITE_OK)
+        auto opened = metasequoia::sqlite_open_database(gloss_cache_path_, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX);
+        if (!opened)
         {
             close_cache();
             return false;
