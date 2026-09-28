@@ -30,6 +30,7 @@ class JapaneseCandidateProvider : public ICandidateProvider
     int cache_dynamic_candidate_for_request(const QueryRequest &, const std::string &, CandidateSource) override;
 
   private:
+    void bind_query_statement(const std::string &raw_input_with_cases, const std::string &raw_input);
     bool ensure_query_statement();
     void close_database();
 
