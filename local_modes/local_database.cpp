@@ -90,6 +90,13 @@ std::shared_ptr<sqlite3> open_local_database(const std::filesystem::path &path)
     return connection;
 }
 
+std::string prefix_upper_bound(const std::string &prefix)
+{
+    std::string result = prefix;
+    result.push_back(static_cast<char>(0x7f));
+    return result;
+}
+
 void close_cached_local_databases()
 {
     const std::lock_guard<std::mutex> guard(cache_mutex());
