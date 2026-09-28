@@ -30,6 +30,11 @@ char lowercase_ascii_char(unsigned char character)
     return static_cast<char>(std::tolower(character));
 }
 
+char uppercase_ascii_char(unsigned char character)
+{
+    return static_cast<char>(std::toupper(character));
+}
+
 std::string::size_type count_utf8_chars(const std::string &text)
 {
     return utf8::distance(text.begin(), text.end());
