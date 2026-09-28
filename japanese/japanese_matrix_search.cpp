@@ -1,24 +1,11 @@
 #include "japanese_matrix_search.h"
+#include "../common/string_utils.h"
 #include <algorithm>
 #include <unordered_set>
 
 namespace
 {
 constexpr std::int64_t kUnknownKanaCost = 12000;
-
-std::vector<size_t> Utf8Boundaries(const std::string &text)
-{
-    std::vector<size_t> boundaries{0};
-    size_t index = 0;
-    while (index < text.size())
-    {
-        const unsigned char lead = static_cast<unsigned char>(text[index]);
-        size_t length = lead < 0x80 ? 1 : (lead >> 5) == 0x6 ? 2 : (lead >> 4) == 0xE ? 3 : 4;
-        index = (std::min)(text.size(), index + length);
-        boundaries.push_back(index);
-    }
-    return boundaries;
-}
 
 struct MatrixNode
 {
@@ -85,7 +72,7 @@ std::vector<SentenceCandidate> JapaneseMatrixSearch::SearchReading(const std::st
         return result;
     }
 
-    const auto boundaries = Utf8Boundaries(reading);
+    const auto boundaries = CommonUtils::utf8_boundaries(reading);
     const size_t mora_count = boundaries.size() - 1;
     std::vector<std::vector<MatrixNode>> rows(mora_count + 1);
     rows[0].push_back({{}, 0, 0});

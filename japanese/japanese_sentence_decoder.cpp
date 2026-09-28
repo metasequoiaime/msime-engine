@@ -56,19 +56,6 @@ size_t FirstUtf8CodePointLength(std::string_view text)
     return (std::min)(length, text.size());
 }
 
-std::vector<size_t> Utf8Boundaries(const std::string &text)
-{
-    std::vector<size_t> boundaries{0};
-    size_t index = 0;
-    while (index < text.size())
-    {
-        const unsigned char lead = static_cast<unsigned char>(text[index]);
-        size_t length = lead < 0x80 ? 1 : (lead >> 5) == 0x6 ? 2 : (lead >> 4) == 0xE ? 3 : 4;
-        index = (std::min)(text.size(), index + length);
-        boundaries.push_back(index);
-    }
-    return boundaries;
-}
 } // namespace
 
 namespace japanese
@@ -366,7 +353,7 @@ std::vector<SentenceCandidate> JapaneseSentenceDecoder::Decode(const std::string
         std::int64_t cost;
         std::uint16_t right_id;
     };
-    const auto boundaries = Utf8Boundaries(reading);
+    const auto boundaries = CommonUtils::utf8_boundaries(reading);
     std::vector<std::vector<Path>> paths(reading.size() + 1);
     paths[0].push_back({{}, 0, 0});
     const size_t beam = (std::max)(size_t{16}, limit * 4);
