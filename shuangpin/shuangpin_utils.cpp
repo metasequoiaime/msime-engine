@@ -3,7 +3,6 @@
 #include <spdlog/spdlog.h>
 #include <vector>
 #include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/case_conv.hpp>
 #include "../common/string_utils.h"
 #include "shuangpin_utils.h"
 #include "../core/data_path.h"
@@ -127,7 +126,7 @@ string ShuangpinUtil::pinyin_segmentation(string sp_str, const ShuangpinProfile 
         {
             // Try to cut two chars to test
             string cur_sp = sp_str.substr(range_start, 2);
-            if (is_accepted_syllable_code(boost::algorithm::to_lower_copy(cur_sp), profile))
+            if (is_accepted_syllable_code(CommonUtils::lowercase_ascii(cur_sp), profile))
             {
                 res = res + "'" + cur_sp;
                 range_start += 2;
