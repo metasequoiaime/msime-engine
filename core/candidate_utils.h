@@ -3,6 +3,7 @@
 #include "word_item.h"
 
 #include <algorithm>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_set>
@@ -116,6 +117,44 @@ inline void insert_cached_candidate(std::vector<WordItem> &candidates, const std
     {
         move_candidate_source_to_position(candidates, CandidateSource::AiSuggestion, 2);
     }
+}
+
+template <typename Query>
+inline std::optional<std::vector<WordItem>> expand_limited_initial_candidates(std::string_view code,
+                                                                              std::vector<WordItem> &candidates,
+                                                                              Query query)
+{
+    if (code.size() != 1)
+        return std::nullopt;
+
+    const size_t limited_count = count_limited_initial_candidates(candidates, code);
+    constexpr size_t kInitialCandidateLimit = 24;
+    if (limited_count != kInitialCandidateLimit)
+        return std::nullopt;
+
+    auto expanded = query();
+    if (expanded.size() <= limited_count)
+        return std::nullopt;
+
+    std::vector<WordItem> merged;
+    merged.reserve(candidates.size() - limited_count + expanded.size());
+    bool inserted = false;
+    for (auto &item : candidates)
+    {
+        if (is_limited_initial_candidate(item, code))
+        {
+            if (!inserted)
+            {
+                merged.insert(merged.end(), expanded.begin(), expanded.end());
+                inserted = true;
+            }
+            continue;
+        }
+        merged.push_back(std::move(item));
+    }
+
+    candidates = std::move(merged);
+    return expanded;
 }
 
 template <typename Row>

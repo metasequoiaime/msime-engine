@@ -509,42 +509,10 @@ bool ShuangpinDictionary::expand_initial_candidates()
 bool ShuangpinDictionary::expand_initial_candidates(const std::string &code, std::vector<WordItem> &candidates,
                                                     const std::string &series_cache_key)
 {
-    if (code.size() != 1)
-    {
+    if (!expand_limited_initial_candidates(code, candidates,
+                                           [&] { return query_initial_from_quanpin_database(code, INT_MAX); }))
         return false;
-    }
 
-    const size_t limited_count = count_limited_initial_candidates(candidates, code);
-    constexpr size_t kInitialCandidateLimit = 24;
-    if (limited_count != kInitialCandidateLimit)
-    {
-        return false;
-    }
-
-    auto expanded = query_initial_from_quanpin_database(code, INT_MAX);
-    if (expanded.size() <= limited_count)
-    {
-        return false;
-    }
-
-    std::vector<WordItem> merged;
-    merged.reserve(candidates.size() - limited_count + expanded.size());
-    bool inserted = false;
-    for (auto &item : candidates)
-    {
-        if (is_limited_initial_candidate(item, code))
-        {
-            if (!inserted)
-            {
-                merged.insert(merged.end(), expanded.begin(), expanded.end());
-                inserted = true;
-            }
-            continue;
-        }
-        merged.push_back(std::move(item));
-    }
-
-    candidates = std::move(merged);
     if (!series_cache_key.empty())
     {
         _cached_buffer_series.insert(series_cache_key, candidates);
