@@ -180,12 +180,6 @@ std::int64_t clamp_managed_weight(std::int64_t weight)
     return weight;
 }
 
-size_t utf8_char_count(const std::string &text)
-{
-    return static_cast<size_t>(
-        std::count_if(text.begin(), text.end(), [](unsigned char ch) { return (ch & 0xC0) != 0x80; }));
-}
-
 std::string candidate_dictionary_key(const WordItem &item, const std::string &context_key)
 {
     if (!item.canonical_pinyin.empty())
@@ -195,7 +189,7 @@ std::string candidate_dictionary_key(const WordItem &item, const std::string &co
     if (context_segments.size() <= 1)
         return item_key;
     auto item_segments = context_segments;
-    const size_t char_count = utf8_char_count(item.word);
+    const size_t char_count = CommonUtils::count_utf8_chars(item.word);
     if (char_count > 0 && item_segments.size() > char_count)
         item_segments.resize(char_count);
     item_key.clear();
