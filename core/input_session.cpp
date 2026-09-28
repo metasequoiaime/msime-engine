@@ -2,6 +2,7 @@
 #include "input_session.h"
 
 #include "../common/helpcode_utils.h"
+#include "../common/string_utils.h"
 #include "../local_modes/date_time_query.h"
 #include "../local_modes/emoji_query.h"
 #include "../local_modes/jianpin_query.h"
@@ -15,7 +16,6 @@
 #include "data_path.h"
 
 #include <algorithm>
-#include <cctype>
 #include <iterator>
 #include <unordered_set>
 #include <utility>
@@ -939,9 +939,7 @@ void InputSession::refresh_prefix_candidates()
         return;
     }
 
-    std::string prefix = raw_with_cases.substr(0, end);
-    std::transform(prefix.begin(), prefix.end(), prefix.begin(),
-                   [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
+    std::string prefix = CommonUtils::lowercase_ascii(raw_with_cases.substr(0, end));
     if (prefix_query_input_ != prefix)
     {
         prefix_candidates_ = engine_.query_raw_candidates(prefix, raw_with_cases.substr(0, end));
@@ -958,9 +956,7 @@ void InputSession::update_dedicated_english_candidates()
         return;
     }
 
-    std::string prefix = dedicated_english_preedit_;
-    std::transform(prefix.begin(), prefix.end(), prefix.begin(),
-                   [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
+    std::string prefix = CommonUtils::lowercase_ascii(dedicated_english_preedit_);
     dedicated_english_candidates_ = candidate_queries_.english_dictionary().query_prefix(prefix, 1000);
     apply_candidate_positions(dedicated_english_candidates_);
     if (dedicated_english_candidates_.empty())
@@ -1082,8 +1078,7 @@ std::optional<std::string> InputSession::adjust_candidate_frequency(std::size_t 
                                                       : (local_input_mode_ == LocalInputMode::TemporaryEnglish
                                                              ? local_preedit_.substr(1)
                                                              : engine_.get_request().raw_input);
-        std::transform(context.begin(), context.end(), context.begin(),
-                       [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
+        context = CommonUtils::lowercase_ascii(std::move(context));
         std::vector<WordItem> ranked_candidates;
         std::copy_if(candidates().begin(), candidates().end(), std::back_inserter(ranked_candidates),
                      [](const WordItem &candidate) { return candidate.source == CandidateSource::EnglishDictionary; });

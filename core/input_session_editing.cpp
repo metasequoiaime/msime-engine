@@ -1,8 +1,8 @@
 #include "input_session.h"
+#include "../common/string_utils.h"
 #include "../shuangpin/shuangpin_query.h"
 #include "../shuangpin/shuangpin_utils.h"
 #include <algorithm>
-#include <cctype>
 
 namespace metasequoia
 {
@@ -226,9 +226,7 @@ KeyResult InputSession::replace_editing_text(std::string text, std::size_t caret
     else
     {
         const auto payload = local_input_mode_ == LocalInputMode::TemporaryJapanese ? text.substr(1) : text;
-        auto normalized = payload;
-        std::transform(normalized.begin(), normalized.end(), normalized.begin(),
-                       [](unsigned char value) { return static_cast<char>(std::tolower(value)); });
+        auto normalized = CommonUtils::lowercase_ascii(payload);
         set_pinyin_sequence(normalized);
         set_pinyin_sequence_with_cases(payload);
         apply_pending_sequence();
