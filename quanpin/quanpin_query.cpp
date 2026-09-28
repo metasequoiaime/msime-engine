@@ -398,6 +398,10 @@ class SqliteDb
             }
             throw std::runtime_error(message);
         }
+        // Keep ad-hoc query connections consistent with the dictionary
+        // objects: a concurrent commit should be waited out, not reported as
+        // an empty result.
+        sqlite3_busy_timeout(db_, kDictionaryBusyTimeoutMs);
     }
 
     ~SqliteDb()

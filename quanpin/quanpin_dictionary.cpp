@@ -144,6 +144,13 @@ QuanpinDictionary::QuanpinDictionary(std::string db_path, metasequoia::RuntimePa
         sqlite3_close(db_);
         db_ = nullptr;
     }
+    else
+    {
+        // Learning and settings writes briefly hold the commit lock. Waiting
+        // here prevents a query that lands in that window from becoming an
+        // empty candidate page.
+        sqlite3_busy_timeout(db_, quanpin::kDictionaryBusyTimeoutMs);
+    }
 
     quanpin::warm_up(db_, statement_cache_);
     // Mapping the tables and checking they are sorted is a sequential pass over fifteen megabytes. Left to the first

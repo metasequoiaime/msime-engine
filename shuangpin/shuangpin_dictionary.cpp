@@ -64,6 +64,9 @@ ShuangpinDictionary::ShuangpinDictionary(const ShuangpinProfile &profile, metase
     }
     else
     {
+        // See QuanpinDictionary's constructor: readers must wait out a commit
+        // rather than fail with SQLITE_BUSY.
+        sqlite3_busy_timeout(quanpin_db_, quanpin::kDictionaryBusyTimeoutMs);
         quanpin::warm_up(quanpin_db_, quanpin_statement_cache_);
         // Off the typing path, for the reason QuanpinDictionary's constructor gives.
         quanpin::NgramTable::shared(paths_.dictionary(quanpin::kBigramFileName));
