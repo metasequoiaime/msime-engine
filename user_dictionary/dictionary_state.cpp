@@ -23,10 +23,8 @@ void require(bool condition)
 }
 Database open(const std::filesystem::path &file, int flags)
 {
-    sqlite3 *raw = nullptr;
-    const int status = sqlite3_open_v2(path_to_utf8(file).c_str(), &raw, flags | SQLITE_OPEN_FULLMUTEX, nullptr);
-    Database db(raw);
-    require(status == SQLITE_OK);
+    auto db = metasequoia::sqlite_open_database(path_to_utf8(file), flags | SQLITE_OPEN_FULLMUTEX);
+    require(db != nullptr);
     sqlite3_busy_timeout(db.get(), 5000);
     return db;
 }
@@ -36,10 +34,8 @@ void execute(sqlite3 *db, const char *sql)
 }
 Statement prepare(sqlite3 *db, const char *sql)
 {
-    sqlite3_stmt *raw = nullptr;
-    const int status = sqlite3_prepare_v2(db, sql, -1, &raw, nullptr);
-    Statement result(raw);
-    require(status == SQLITE_OK);
+    auto result = metasequoia::sqlite_prepare_statement(db, sql);
+    require(result != nullptr);
     return result;
 }
 void bind(sqlite3_stmt *s, int index, const std::string &value)

@@ -48,10 +48,8 @@ const char *kind_name(DictionaryKind kind)
 
 Db open_database(const std::string &path, int flags)
 {
-    sqlite3 *raw = nullptr;
-    const int status = sqlite3_open_v2(path.c_str(), &raw, flags | SQLITE_OPEN_FULLMUTEX, nullptr);
-    Db database(raw);
-    if (status != SQLITE_OK)
+    auto database = metasequoia::sqlite_open_database(path, flags | SQLITE_OPEN_FULLMUTEX);
+    if (!database)
         return {};
     sqlite3_busy_timeout(database.get(), 5000);
     return database;
@@ -59,10 +57,7 @@ Db open_database(const std::string &path, int flags)
 
 Stmt prepare(sqlite3 *db, const std::string &sql)
 {
-    sqlite3_stmt *raw = nullptr;
-    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &raw, nullptr) != SQLITE_OK)
-        return {};
-    return Stmt(raw);
+    return metasequoia::sqlite_prepare_statement(db, sql);
 }
 
 bool execute_sql(sqlite3 *db, const char *sql)
