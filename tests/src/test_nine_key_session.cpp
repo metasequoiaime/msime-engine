@@ -42,6 +42,12 @@ int main()
     require(unique_candidates.size() == 1 && unique_candidates.front().word == "third" &&
                 seen_words.count("third") == 1,
             "Candidate collection did not honor an existing word set.");
+    std::vector<WordItem> appended_candidates;
+    require(
+        append_unique_candidate(appended_candidates, seen_words, "code", "fourth", 4, CandidateSource::Database) &&
+            !append_unique_candidate(appended_candidates, seen_words, "code", "fourth", 3, CandidateSource::Database) &&
+            appended_candidates.size() == 1 && appended_candidates.front().word == "fourth",
+        "Single candidate append did not filter duplicates.");
 
     const auto directory =
         std::filesystem::temp_directory_path() /
