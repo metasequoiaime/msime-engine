@@ -115,6 +115,23 @@ inline std::vector<WordItem> take_unique_candidates(std::vector<WordItem> candid
     return unique;
 }
 
+inline bool append_unique_candidate(std::vector<WordItem> &target, std::unordered_set<std::string> &seen_words,
+                                    const std::string &pinyin, const std::string &word, std::int64_t weight,
+                                    CandidateSource source, const std::string &canonical_pinyin)
+{
+    if (word.empty() || !seen_words.insert(word).second)
+        return false;
+    target.emplace_back(pinyin, word, weight, source, canonical_pinyin);
+    return true;
+}
+
+inline bool append_unique_candidate(std::vector<WordItem> &target, std::unordered_set<std::string> &seen_words,
+                                    const std::string &pinyin, const std::string &word, std::int64_t weight,
+                                    CandidateSource source = CandidateSource::Database)
+{
+    return append_unique_candidate(target, seen_words, pinyin, word, weight, source, pinyin);
+}
+
 inline void append_unique_candidates(std::vector<WordItem> &target, std::vector<WordItem> extra)
 {
     std::unordered_set<std::string> seen_words;

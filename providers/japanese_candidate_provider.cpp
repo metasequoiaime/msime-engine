@@ -34,15 +34,6 @@ SharedDecoder SharedSentenceDecoder(const std::string &path)
     return model;
 }
 
-void AppendUnique(std::vector<WordItem> &items, std::unordered_set<std::string> &seen, const std::string &code,
-                  const std::string &value, std::int64_t weight, CandidateSource source = CandidateSource::Database)
-{
-    if (!value.empty() && seen.insert(value).second)
-    {
-        items.emplace_back(code, value, weight, source, code);
-    }
-}
-
 std::string EscapeLikePrefix(const std::string &code)
 {
     std::string escaped;
@@ -84,8 +75,10 @@ std::vector<WordItem> JapaneseCandidateProvider::query(const QueryRequest &reque
     // long-vowel mark while retaining an explicit plain-hyphen fallback.
     if (request.raw_input == "-")
     {
-        AppendUnique(candidates, seen, request.raw_input_with_cases, "ー", 1000000, CandidateSource::Generated);
-        AppendUnique(candidates, seen, request.raw_input_with_cases, "-", 999999, CandidateSource::Generated);
+        append_unique_candidate(candidates, seen, request.raw_input_with_cases, "ー", 1000000,
+                                CandidateSource::Generated);
+        append_unique_candidate(candidates, seen, request.raw_input_with_cases, "-", 999999,
+                                CandidateSource::Generated);
         return candidates;
     }
     const auto conversion = japanese::ConvertRomaji(request.raw_input);
@@ -93,10 +86,10 @@ std::vector<WordItem> JapaneseCandidateProvider::query(const QueryRequest &reque
 
     if (kana_first)
     {
-        AppendUnique(candidates, seen, request.raw_input_with_cases, conversion.hiragana, 1000000,
-                     CandidateSource::Generated);
-        AppendUnique(candidates, seen, request.raw_input_with_cases, japanese::HiraganaToKatakana(conversion.hiragana),
-                     999999, CandidateSource::Generated);
+        append_unique_candidate(candidates, seen, request.raw_input_with_cases, conversion.hiragana, 1000000,
+                                CandidateSource::Generated);
+        append_unique_candidate(candidates, seen, request.raw_input_with_cases,
+                                japanese::HiraganaToKatakana(conversion.hiragana), 999999, CandidateSource::Generated);
     }
 
     if (!sentence_decoder_)
@@ -113,21 +106,21 @@ std::vector<WordItem> JapaneseCandidateProvider::query(const QueryRequest &reque
             for (const auto &kana : pending_kana)
             {
                 for (const auto &lemma : sentence_decoder_->PrefixLemmas(conversion.hiragana + kana, 24))
-                    AppendUnique(candidates, seen, request.raw_input_with_cases, lemma.surface,
-                                 980000 - lemma.word_cost, CandidateSource::Database);
+                    append_unique_candidate(candidates, seen, request.raw_input_with_cases, lemma.surface,
+                                            980000 - lemma.word_cost, CandidateSource::Database);
             }
         }
         else if (conversion.pending.empty() && conversion.hiragana.size() >= 6)
         {
             for (const auto &lemma : sentence_decoder_->PrefixLemmas(conversion.hiragana, 16))
-                AppendUnique(candidates, seen, request.raw_input_with_cases, lemma.surface, 980000 - lemma.word_cost,
-                             CandidateSource::Database);
+                append_unique_candidate(candidates, seen, request.raw_input_with_cases, lemma.surface,
+                                        980000 - lemma.word_cost, CandidateSource::Database);
         }
         japanese::JapaneseMatrixSearch search(*sentence_decoder_);
         for (const auto &sentence : search.SearchConverted(conversion, 12))
         {
-            AppendUnique(candidates, seen, request.raw_input_with_cases, sentence.text, 900000 - sentence.cost,
-                         CandidateSource::Database);
+            append_unique_candidate(candidates, seen, request.raw_input_with_cases, sentence.text,
+                                    900000 - sentence.cost, CandidateSource::Database);
         }
     }
 
@@ -147,17 +140,17 @@ std::vector<WordItem> JapaneseCandidateProvider::query(const QueryRequest &reque
             const auto *value = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_.get(), 1));
             if (code && value)
             {
-                AppendUnique(candidates, seen, code, value, sqlite3_column_int64(query_statement_.get(), 2));
+                append_unique_candidate(candidates, seen, code, value, sqlite3_column_int64(query_statement_.get(), 2));
             }
         }
     }
 
     if (!conversion.hiragana.empty() && !kana_first)
     {
-        AppendUnique(candidates, seen, request.raw_input_with_cases, conversion.hiragana, 1000000,
-                     CandidateSource::Generated);
-        AppendUnique(candidates, seen, request.raw_input_with_cases, japanese::HiraganaToKatakana(conversion.hiragana),
-                     999999, CandidateSource::Generated);
+        append_unique_candidate(candidates, seen, request.raw_input_with_cases, conversion.hiragana, 1000000,
+                                CandidateSource::Generated);
+        append_unique_candidate(candidates, seen, request.raw_input_with_cases,
+                                japanese::HiraganaToKatakana(conversion.hiragana), 999999, CandidateSource::Generated);
     }
 
     const auto dynamic = dynamic_candidates_.get(request.raw_input);
