@@ -294,10 +294,7 @@ void NineKeySession::refresh()
             return !a.fuzzy;
         return a.weight > b.weight;
     });
-    std::unordered_set<std::string> seen;
-    candidates_.erase(std::remove_if(candidates_.begin(), candidates_.end(),
-                                     [&seen](const auto &item) { return !seen.insert(item.word).second; }),
-                      candidates_.end());
+    deduplicate_candidates_by_word(candidates_);
     if (candidates_.size() > 128)
         candidates_.resize(128);
     auto english = english_candidates();

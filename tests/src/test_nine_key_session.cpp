@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
+#include "core/candidate_utils.h"
 #include "contracts/assets/assets.h"
 
 using namespace metasequoia;
@@ -28,6 +29,13 @@ void type(Session &session, const std::string &digits)
 }
 int main()
 {
+    std::vector<WordItem> duplicate_candidates{WordItem("a", "first", 3), WordItem("b", "second", 2),
+                                               WordItem("c", "first", 1)};
+    deduplicate_candidates_by_word(duplicate_candidates);
+    require(duplicate_candidates.size() == 2 && duplicate_candidates[0].word == "first" &&
+                duplicate_candidates[1].word == "second",
+            "Candidate word deduplication did not preserve the first occurrence.");
+
     const auto directory =
         std::filesystem::temp_directory_path() /
         ("msime-nine-key-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
