@@ -1008,18 +1008,7 @@ int ShuangpinDictionary::insert_word_to_cached_buffer_series(const std::string &
 
     auto list = _cached_buffer_series.get(pinyin).value_or(std::vector<WordItem>{});
 
-    // Keep at most one cloud/AI suggestion in the series cache for this key.
-    if (is_online_candidate_source(source))
-    {
-        erase_candidates_by_source(list, source);
-    }
-
-    insert_unique_candidate_by_source_priority(list, pinyin, word, source);
-
-    if (source == CandidateSource::CloudSuggestion)
-    {
-        move_candidate_source_to_position(list, CandidateSource::AiSuggestion, 2);
-    }
+    insert_cached_candidate(list, pinyin, word, source);
 
     _cached_buffer_series.insert(pinyin, list);
     return 0;
@@ -1035,11 +1024,7 @@ int ShuangpinDictionary::insert_word_to_active_helpcode_cache(const std::string 
         if (auto opt = cache.get(cache_key))
         {
             auto list = opt.value();
-            if (is_online_candidate_source(source))
-            {
-                erase_candidates_by_source(list, source);
-            }
-            insert_unique_candidate_by_source_priority(list, pinyin, word, source);
+            insert_cached_candidate(list, pinyin, word, source);
             cache.insert(cache_key, list);
             return true;
         }

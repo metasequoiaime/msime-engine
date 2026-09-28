@@ -877,18 +877,7 @@ int QuanpinDictionary::insert_word_to_series_cache_key(const std::string &cache_
         return insert_word_to_series_cache_key(cache_key, pinyin, std::vector<std::string>{word}, source);
     auto list = series_cache_.get(cache_key).value_or(std::vector<WordItem>{});
 
-    // Keep at most one cloud/AI suggestion in the series cache for this key.
-    if (is_online_candidate_source(source))
-    {
-        erase_candidates_by_source(list, source);
-    }
-
-    insert_unique_candidate_by_source_priority(list, pinyin, word, source);
-
-    if (source == CandidateSource::CloudSuggestion)
-    {
-        move_candidate_source_to_position(list, CandidateSource::AiSuggestion, 2);
-    }
+    insert_cached_candidate(list, pinyin, word, source);
 
     series_cache_.insert(cache_key, list);
     return OK;

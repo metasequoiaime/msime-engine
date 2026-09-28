@@ -102,6 +102,22 @@ inline void move_candidate_source_to_position(std::vector<WordItem> &candidates,
     candidates.insert(candidates.begin() + std::min(position, candidates.size()), std::move(moved));
 }
 
+inline void insert_cached_candidate(std::vector<WordItem> &candidates, const std::string &pinyin,
+                                    const std::string &word, CandidateSource source)
+{
+    if (is_online_candidate_source(source))
+    {
+        erase_candidates_by_source(candidates, source);
+    }
+
+    insert_unique_candidate_by_source_priority(candidates, pinyin, word, source);
+
+    if (source == CandidateSource::CloudSuggestion)
+    {
+        move_candidate_source_to_position(candidates, CandidateSource::AiSuggestion, 2);
+    }
+}
+
 inline std::vector<WordItem> take_unique_candidates(std::vector<WordItem> candidates,
                                                     std::unordered_set<std::string> &seen_words)
 {
