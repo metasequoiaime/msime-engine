@@ -102,17 +102,28 @@ inline void move_candidate_source_to_position(std::vector<WordItem> &candidates,
     candidates.insert(candidates.begin() + std::min(position, candidates.size()), std::move(moved));
 }
 
+inline std::vector<WordItem> take_unique_candidates(std::vector<WordItem> candidates,
+                                                    std::unordered_set<std::string> &seen_words)
+{
+    std::vector<WordItem> unique;
+    unique.reserve(candidates.size());
+    for (auto &candidate : candidates)
+    {
+        if (seen_words.insert(candidate.word).second)
+            unique.push_back(std::move(candidate));
+    }
+    return unique;
+}
+
 inline void append_unique_candidates(std::vector<WordItem> &target, std::vector<WordItem> extra)
 {
     std::unordered_set<std::string> seen_words;
     seen_words.reserve(target.size() + extra.size());
     for (const auto &item : target)
         seen_words.insert(item.word);
-    for (auto &item : extra)
-    {
-        if (seen_words.insert(item.word).second)
-            target.push_back(std::move(item));
-    }
+    auto unique = take_unique_candidates(std::move(extra), seen_words);
+    for (auto &item : unique)
+        target.push_back(std::move(item));
 }
 
 inline void deduplicate_candidates_by_word(std::vector<WordItem> &candidates)

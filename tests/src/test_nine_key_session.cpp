@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include "core/candidate_utils.h"
 #include "contracts/assets/assets.h"
+#include <unordered_set>
 
 using namespace metasequoia;
 void require(bool ok, const char *message)
@@ -35,6 +36,12 @@ int main()
     require(duplicate_candidates.size() == 2 && duplicate_candidates[0].word == "first" &&
                 duplicate_candidates[1].word == "second",
             "Candidate word deduplication did not preserve the first occurrence.");
+    std::unordered_set<std::string> seen_words{"first"};
+    const auto unique_candidates =
+        take_unique_candidates(std::vector<WordItem>{WordItem("a", "first", 3), WordItem("b", "third", 1)}, seen_words);
+    require(unique_candidates.size() == 1 && unique_candidates.front().word == "third" &&
+                seen_words.count("third") == 1,
+            "Candidate collection did not honor an existing word set.");
 
     const auto directory =
         std::filesystem::temp_directory_path() /

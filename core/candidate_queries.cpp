@@ -1,4 +1,5 @@
 #include "candidate_queries.h"
+#include "candidate_utils.h"
 #include "data_path.h"
 #include "../common/string_utils.h"
 #include "../contracts/assets/assets.h"
@@ -123,16 +124,7 @@ std::vector<WordItem> CandidateQueries::mixed(std::vector<WordItem> candidates, 
     }
 
     const auto collect_unique = [&](std::vector<WordItem> candidates) {
-        std::vector<WordItem> unique;
-        unique.reserve(candidates.size());
-        for (auto &candidate : candidates)
-        {
-            if (seen.insert(candidate.word).second)
-            {
-                unique.push_back(std::move(candidate));
-            }
-        }
-        return unique;
+        return take_unique_candidates(std::move(candidates), seen);
     };
 
     std::vector<WordItem> english_candidates;
