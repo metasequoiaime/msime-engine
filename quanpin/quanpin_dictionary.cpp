@@ -437,8 +437,7 @@ std::vector<WordItem> QuanpinDictionary::query_series(const std::string &raw_inp
         // A sentence neither source produced on its own, assembled from one source's frame and the
         // other's disputed span. It only exists when it outscored both, so it goes in front of them.
         if (sentences.hybrid_leads(lattice_options.repair_margin) &&
-            std::none_of(result.begin(), result.end(),
-                         [&](const WordItem &item) { return item.word == sentences.best_hybrid; }))
+            !contains_candidate_word(result, sentences.best_hybrid))
         {
             const auto at =
                 static_cast<std::ptrdiff_t>(quanpin::whole_sentence_insert_position(result, segments.size()));
