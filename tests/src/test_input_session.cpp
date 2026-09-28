@@ -338,7 +338,7 @@ int run_test()
             // Generated or Fallback: the Google sentence is inserted as Fallback first and the lattice merge
             // skips the duplicate, so which of the two labels survives is not part of the contract.
             require((sentence.source == CandidateSource::Generated || sentence.source == CandidateSource::Fallback) &&
-                        !sentence.canonical_pinyin.empty(),
+                        !sentence.canonical_pinyin.empty() && sentence.sentence_association,
                     "The remaining composition did not offer a generated whole-sentence candidate with a reading.");
             require(sentence_learning.select_candidate(sentence_index).commit == "特乐好" &&
                         !sentence_learning.has_composition(),
@@ -1079,7 +1079,8 @@ int run_test()
     require(unicode_session.preedit() == "U4e00" && unicode_session.candidates().size() == 1 &&
                 unicode_session.candidates().front().word == "一" &&
                 unicode_session.candidates().front().pinyin == "U+4E00" &&
-                unicode_session.candidates().front().source == CandidateSource::Generated,
+                unicode_session.candidates().front().source == CandidateSource::Generated &&
+                !unicode_session.candidates().front().sentence_association,
             "Unicode mode did not produce the Windows-compatible BMP candidate.");
     const auto unicode_commit = unicode_session.select_candidate(0);
     require(unicode_commit.handled && unicode_commit.commit == "一" && !unicode_session.has_composition() &&
