@@ -26,11 +26,11 @@ std::string normalize_code(const std::string &code)
     normalized.reserve(code.size());
     for (unsigned char character : code)
     {
-        if (character >= 'A' && character <= 'Z')
+        if (CommonUtils::is_ascii_uppercase(character))
         {
             character = static_cast<unsigned char>(character - 'A' + 'a');
         }
-        if (character < 'a' || character > 'z')
+        if (!CommonUtils::is_ascii_lowercase(character))
         {
             return {};
         }

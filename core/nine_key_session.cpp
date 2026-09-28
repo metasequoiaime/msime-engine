@@ -37,7 +37,7 @@ std::string encode(const std::string &pinyin)
     constexpr char keys[] = "22233344455566677778889999";
     std::string result;
     for (char c : pinyin)
-        if (c >= 'a' && c <= 'z')
+        if (CommonUtils::is_ascii_lowercase(static_cast<unsigned char>(c)))
             result += keys[c - 'a'];
     return result;
 }
@@ -81,7 +81,7 @@ std::string DigitsForWord(const std::string &word)
     for (const unsigned char raw : word)
     {
         const char letter = CommonUtils::lowercase_ascii_char(raw);
-        if (letter < 'a' || letter > 'z')
+        if (!CommonUtils::is_ascii_lowercase(static_cast<unsigned char>(letter)))
             return {};
         for (char digit = '2'; digit <= '9'; ++digit)
         {

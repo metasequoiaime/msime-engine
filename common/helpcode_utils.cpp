@@ -173,7 +173,9 @@ SharedKeymap load_helpcode_keymap(const std::filesystem::path &resources, const 
         if (pos == std::string::npos || pos == 0)
             continue;
         const auto code = line.substr(pos + 1, 2);
-        if (code.empty() || !std::all_of(code.begin(), code.end(), [](char ch) { return ch >= 'a' && ch <= 'z'; }))
+        if (code.empty() || !std::all_of(code.begin(), code.end(), [](char ch) {
+                return CommonUtils::is_ascii_lowercase(static_cast<unsigned char>(ch));
+            }))
             continue;
         (*result)[line.substr(0, pos)] = code;
     }
@@ -346,7 +348,7 @@ bool is_quanpin_single_help_mode(const std::string &pinyin_with_cases)
     }
 
     const char help_code = pinyin_with_cases.back();
-    return help_code >= 'A' && help_code <= 'Z';
+    return CommonUtils::is_ascii_uppercase(static_cast<unsigned char>(help_code));
 }
 
 bool is_quanpin_double_help_mode(const std::string &pinyin_with_cases)

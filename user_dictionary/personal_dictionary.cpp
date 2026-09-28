@@ -1,4 +1,5 @@
 #include <metasequoia/personal_dictionary.h>
+#include "../common/string_utils.h"
 #include "../quanpin/quanpin_utils.h"
 #include <utf8.h>
 #include <algorithm>
@@ -18,9 +19,9 @@ PersonalDictionaryValidation validate_personal_dictionary_entry(PersonalDictiona
         if ((ch < 32 && !(quick && (ch == '\n' || ch == '\t'))) || ch == 127)
             return invalid("The word contains an unsupported control character");
     for (char &ch : entry.key)
-        if (ch >= 'A' && ch <= 'Z')
-            ch = static_cast<char>(ch - 'A' + 'a');
-    auto letters = [](unsigned char ch) { return ch >= 'a' && ch <= 'z'; };
+        if (CommonUtils::is_ascii_uppercase(static_cast<unsigned char>(ch)))
+            ch = CommonUtils::lowercase_ascii_char(static_cast<unsigned char>(ch));
+    auto letters = [](unsigned char ch) { return CommonUtils::is_ascii_lowercase(ch); };
     switch (entry.kind)
     {
     case PersonalDictionaryKind::Pinyin: {
@@ -55,8 +56,8 @@ PersonalDictionaryValidation validate_personal_dictionary_entry(PersonalDictiona
     case PersonalDictionaryKind::English: {
         std::string normalized = entry.value;
         for (char &ch : normalized)
-            if (ch >= 'A' && ch <= 'Z')
-                ch = static_cast<char>(ch - 'A' + 'a');
+            if (CommonUtils::is_ascii_uppercase(static_cast<unsigned char>(ch)))
+                ch = CommonUtils::lowercase_ascii_char(static_cast<unsigned char>(ch));
         if (entry.key.size() > 64 || !std::all_of(entry.key.begin(), entry.key.end(), letters) ||
             normalized != entry.key)
             return invalid("English code must match the word's letters, ignoring case");

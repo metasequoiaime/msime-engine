@@ -1,5 +1,6 @@
 #include "../contracts/assets/assets.h"
 #include "english_dictionary.h"
+#include "../common/string_utils.h"
 #include "../core/data_path.h"
 #include "../common/sqlite_database.h"
 #include "../common/sqlite_statement.h"
@@ -18,8 +19,8 @@ using Statement = metasequoia::SqliteStatement;
 
 bool IsLowerAsciiWord(const std::string &value)
 {
-    return !value.empty() &&
-           std::all_of(value.begin(), value.end(), [](unsigned char ch) { return ch >= 'a' && ch <= 'z'; });
+    return !value.empty() && std::all_of(value.begin(), value.end(),
+                                         [](unsigned char ch) { return CommonUtils::is_ascii_lowercase(ch); });
 }
 
 Statement prepare_statement(sqlite3 *database, const char *sql)
