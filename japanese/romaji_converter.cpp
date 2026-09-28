@@ -1,7 +1,7 @@
 #include "romaji_converter.h"
 
+#include "../common/string_utils.h"
 #include <algorithm>
-#include <cctype>
 #include <unordered_map>
 #include <utf8/cpp17.h>
 #include <vector>
@@ -53,9 +53,7 @@ namespace japanese
 {
 RomajiConversion ConvertRomaji(std::string_view input)
 {
-    std::string normalized(input);
-    std::transform(normalized.begin(), normalized.end(), normalized.begin(),
-                   [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+    const std::string normalized = CommonUtils::lowercase_ascii(std::string(input));
 
     RomajiConversion result;
     const auto &table = RomajiTable();
@@ -243,9 +241,7 @@ std::vector<std::string> KanaForRomajiPrefix(std::string_view pending)
 {
     if (pending.empty())
         return {};
-    std::string prefix(pending);
-    std::transform(prefix.begin(), prefix.end(), prefix.begin(),
-                   [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+    const std::string prefix = CommonUtils::lowercase_ascii(std::string(pending));
 
     std::vector<std::string> kana;
     for (const auto &entry : RomajiTable())
