@@ -22,7 +22,6 @@
 #include <utility>
 #include <cstdlib>
 #include <climits>
-#include <fmt/xchar.h>
 #include <utf8/cpp17.h>
 
 using namespace std;
@@ -990,10 +989,7 @@ std::string ShuangpinDictionary::build_quanpin_sql_for_updating_word(std::string
         return "";
     }
 
-    const std::string table = quanpin::build_table_name(segments);
-    return fmt::format("update {0} set weight = ( select MAX(weight) + 1 from {0} AS sub where sub.key = '{1}') "
-                       "where key = '{1}' and value = '{2}';",
-                       table, CommonUtils::escape_sql_literal(pinyin), CommonUtils::escape_sql_literal(word));
+    return quanpin::build_sql_for_updating_word(segments, pinyin, word);
 }
 
 std::string ShuangpinDictionary::build_quanpin_sql_for_deleting_canonical_word(const std::string &canonical_pinyin,
@@ -1012,8 +1008,7 @@ std::string ShuangpinDictionary::build_quanpin_sql_for_deleting_canonical_word(c
         return "";
     }
 
-    return fmt::format("delete from {} where key = '{}' and value = '{}';", quanpin::build_table_name(cuts.front()),
-                       CommonUtils::escape_sql_literal(normalized), CommonUtils::escape_sql_literal(word));
+    return quanpin::build_sql_for_deleting_word(cuts.front(), normalized, word);
 }
 
 bool ShuangpinDictionary::do_validate(string key, string jp, string value) const

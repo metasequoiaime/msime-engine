@@ -931,6 +931,21 @@ std::string build_sql_for_inserting_word(const std::string &key, const std::stri
            "', '10000');";
 }
 
+std::string build_sql_for_updating_word(const Segments &segments, const std::string &key, const std::string &value)
+{
+    const std::string table = build_table_name(segments);
+    const std::string escaped_key = CommonUtils::escape_sql_literal(key);
+    return "update " + table + " set weight = ( select MAX(weight) + 1 from " + table + " AS sub where sub.key = '" +
+           escaped_key + "') where key = '" + escaped_key + "' and value = '" + CommonUtils::escape_sql_literal(value) +
+           "';";
+}
+
+std::string build_sql_for_deleting_word(const Segments &segments, const std::string &key, const std::string &value)
+{
+    return "delete from " + build_table_name(segments) + " where key = '" + CommonUtils::escape_sql_literal(key) +
+           "' and value = '" + CommonUtils::escape_sql_literal(value) + "';";
+}
+
 std::string segments_to_jianpin(const Segments &segments)
 {
     return segments_to_jianpin_impl(segments);
