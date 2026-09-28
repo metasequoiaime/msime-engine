@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../common/sqlite_database.h"
+#include "../common/sqlite_statement.h"
 #include "../core/word_item.h"
 #include <cstddef>
 #include <sqlite3.h>
@@ -42,13 +44,13 @@ class EnglishDictionary
   private:
     std::string db_path_;
     std::string gloss_cache_path_;
-    sqlite3 *db_ = nullptr;
-    sqlite3 *cache_db_ = nullptr;
-    sqlite3_stmt *query_statement_ = nullptr;
-    sqlite3_stmt *en_zh_statement_ = nullptr;
-    sqlite3_stmt *zh_en_statement_ = nullptr;
-    sqlite3_stmt *cache_en_zh_statement_ = nullptr;
-    sqlite3_stmt *cache_zh_en_statement_ = nullptr;
+    metasequoia::SqliteDatabase db_;
+    metasequoia::SqliteDatabase cache_db_;
+    metasequoia::SqliteStatement query_statement_;
+    metasequoia::SqliteStatement en_zh_statement_;
+    metasequoia::SqliteStatement zh_en_statement_;
+    metasequoia::SqliteStatement cache_en_zh_statement_;
+    metasequoia::SqliteStatement cache_zh_en_statement_;
     std::unordered_map<std::string, std::string> custom_en_zh_;
     std::unordered_map<std::string, std::string> custom_zh_en_;
 };
