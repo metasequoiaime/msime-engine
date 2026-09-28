@@ -15,6 +15,18 @@ inline bool contains_candidate_word(const std::vector<WordItem> &candidates, std
                        [word](const WordItem &item) { return item.word == word; });
 }
 
+inline bool is_limited_initial_candidate(const WordItem &item, std::string_view code)
+{
+    return item.source == CandidateSource::Database && item.pinyin == code;
+}
+
+inline std::size_t count_limited_initial_candidates(const std::vector<WordItem> &candidates, std::string_view code)
+{
+    return static_cast<std::size_t>(std::count_if(candidates.begin(), candidates.end(), [code](const WordItem &item) {
+        return is_limited_initial_candidate(item, code);
+    }));
+}
+
 inline void append_unique_candidates(std::vector<WordItem> &target, std::vector<WordItem> extra)
 {
     std::unordered_set<std::string> seen_words;

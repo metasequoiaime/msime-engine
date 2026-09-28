@@ -286,11 +286,7 @@ bool QuanpinDictionary::expand_initial_candidates(const std::string &code, std::
         return false;
     }
 
-    const auto is_limited_initial = [&](const WordItem &item) {
-        return item.source == CandidateSource::Database && item.pinyin == code;
-    };
-    const size_t limited_count =
-        static_cast<size_t>(std::count_if(candidates.begin(), candidates.end(), is_limited_initial));
+    const size_t limited_count = count_limited_initial_candidates(candidates, code);
     constexpr size_t kInitialCandidateLimit = 24;
     if (limited_count != kInitialCandidateLimit)
     {
@@ -313,7 +309,7 @@ bool QuanpinDictionary::expand_initial_candidates(const std::string &code, std::
     bool inserted = false;
     for (auto &item : candidates)
     {
-        if (is_limited_initial(item))
+        if (is_limited_initial_candidate(item, code))
         {
             if (!inserted)
             {
