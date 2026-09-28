@@ -8,7 +8,6 @@
 namespace shuangpin
 {
 std::string get_local_appdata_path();
-std::string get_app_name();
 std::filesystem::path get_data_file_path(const std::filesystem::path &relative_path);
 } // namespace shuangpin
 
@@ -16,7 +15,6 @@ class ShuangpinUtil
 {
   public:
     static std::string get_local_appdata_path();
-    static const std::string app_name;
 
     static std::string cvt_single_sp_to_pinyin(std::string sp_str,
                                                const ShuangpinProfile &profile = GetXiaoheShuangpinProfile());
