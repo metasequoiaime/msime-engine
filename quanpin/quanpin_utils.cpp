@@ -135,6 +135,17 @@ bool has_only_complete_pinyin_segments(const Segments &segments)
                        [&](const std::string &segment) { return valid_pinyin.find(segment) != valid_pinyin.end(); });
 }
 
+bool has_expected_complete_pinyin_segments(const Segments &segments, std::size_t expected_count)
+{
+    if (segments.empty() || segments.size() != expected_count)
+    {
+        return false;
+    }
+
+    return std::all_of(segments.begin(), segments.end(),
+                       [](const std::string &segment) { return is_complete_pinyin_input(segment); });
+}
+
 bool looks_like_syllable_with_jianpin_tail(const std::string &pinyin)
 {
     // Manual delimiters express user-intent boundaries and never enter the

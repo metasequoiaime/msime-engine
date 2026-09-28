@@ -25,6 +25,10 @@ const std::vector<std::string> &intact_pinyin_list();
 const std::unordered_set<std::string> &intact_pinyin_set();
 const std::unordered_set<std::string> &prefix_pinyin_set();
 bool has_only_complete_pinyin_segments(const Segments &segments);
+// Validates explicit canonical segmentation for a word: each segment must be
+// complete pinyin input and the caller-supplied count must match the word's
+// Han-character count.
+bool has_expected_complete_pinyin_segments(const Segments &segments, std::size_t expected_count);
 SyllableGraph build_syllable_graph(const std::string &pinyin);
 std::vector<Segments> enumerate_complete_segmentations(const SyllableGraph &graph, size_t path_limit = 32);
 std::vector<std::string> cut_one_piece_greedy(const std::string &pinyin, bool intact_only);

@@ -716,11 +716,7 @@ int ShuangpinDictionary::create_word(string pinyin, string word)
 int ShuangpinDictionary::create_word_from_quanpin(string pinyin, string word)
 {
     const auto segments = quanpin::split_segments(pinyin);
-    const size_t han_count = HelpcodeUtils::count_han_chars(word);
-    if (segments.empty() || segments.size() != han_count ||
-        std::any_of(segments.begin(), segments.end(), [](const std::string &segment) {
-            return segment.empty() || !quanpin::is_complete_pinyin_input(segment);
-        }))
+    if (!quanpin::has_expected_complete_pinyin_segments(segments, HelpcodeUtils::count_han_chars(word)))
     {
         return ERROR_CODE;
     }

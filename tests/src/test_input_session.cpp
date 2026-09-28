@@ -1002,6 +1002,15 @@ int run_test()
                 "A spelling only a minimum-segment cut can split was rejected as incomplete pinyin.");
         require(!quanpin::is_complete_pinyin_input("nih") && !quanpin::is_complete_pinyin_input("zhonguo"),
                 "An unsplittable spelling was accepted as complete pinyin.");
+        require(quanpin::has_expected_complete_pinyin_segments({"ni", "hao"}, 2),
+                "Complete canonical pinyin segments were rejected.");
+        require(quanpin::has_expected_complete_pinyin_segments({"nihao"}, 1),
+                "A complete multi-syllable canonical segment was rejected.");
+        require(!quanpin::has_expected_complete_pinyin_segments({}, 1) &&
+                    !quanpin::has_expected_complete_pinyin_segments({"ni"}, 2) &&
+                    !quanpin::has_expected_complete_pinyin_segments({"nih"}, 1) &&
+                    !quanpin::has_expected_complete_pinyin_segments({""}, 1),
+                "Invalid canonical pinyin segments were accepted.");
         require(quanpin::detect_active_helpcode_length("jinianriz", "jinianriZ") == 1 &&
                     quanpin::strip_active_helpcodes("jinianriz", "jinianriZ") == "jinianri",
                 "The helpcode letter was not stripped from a spelling greedy segmentation cannot cut.");
