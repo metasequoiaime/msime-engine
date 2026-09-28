@@ -1,11 +1,11 @@
 #include <algorithm>
-#include <cctype>
 #include <unordered_set>
 #include <utf8.h>
 #include <spdlog/spdlog.h>
 #include <vector>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
+#include "../common/string_utils.h"
 #include "shuangpin_utils.h"
 #include "../core/data_path.h"
 #include "../quanpin/quanpin_utils.h"
@@ -294,8 +294,7 @@ std::string ShuangpinUtil::GetFullHelpCodes(std::string pinyin)
 
     const bool reverse = pinyin[pinyin.size() - 2] >= 'A' && pinyin[pinyin.size() - 2] <= 'Z';
     std::string help_codes = pinyin.substr(pinyin.size() - 2, 2);
-    std::transform(help_codes.begin(), help_codes.end(), help_codes.begin(),
-                   [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+    help_codes = CommonUtils::lowercase_ascii(help_codes);
     if (reverse)
     {
         std::swap(help_codes[0], help_codes[1]);
