@@ -815,10 +815,8 @@ int QuanpinDictionary::create_word_from_canonical_pinyin(std::string pinyin, std
 
     pinyin = quanpin::join_segments(segments);
     const std::string jp = quanpin::segments_to_jianpin(segments);
-    if (!do_validate(pinyin, jp, word))
-    {
-        return ERROR_CODE;
-    }
+    // The caller supplied explicit canonical segmentation. Re-running the greedy correction
+    // validator would erase those boundaries and reject valid readings such as qi'e'huan.
     if (check_data(build_sql_for_checking_word(pinyin, jp, word)))
     {
         return OK;

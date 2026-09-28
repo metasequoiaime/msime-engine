@@ -455,7 +455,13 @@ std::optional<std::string> InputSession::learn_sentence_candidate(const WordItem
         return std::nullopt;
     }
 
-    const std::string canonical = normalize_canonical_pinyin_for_word(selected.canonical_pinyin, selected.word);
+    const bool online_candidate =
+        selected.source == CandidateSource::CloudSuggestion || selected.source == CandidateSource::AiSuggestion;
+    const std::string selected_canonical =
+        selected.canonical_pinyin.empty() && online_candidate && is_all_complete_pure_pinyin()
+            ? get_pinyin_segmentation()
+            : selected.canonical_pinyin;
+    const std::string canonical = normalize_canonical_pinyin_for_word(selected_canonical, selected.word);
     if (canonical.empty() || quanpin::split_segments(canonical).size() > kMaxLearnedSentenceSyllables)
     {
         return std::nullopt;

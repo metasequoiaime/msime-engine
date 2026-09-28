@@ -42,6 +42,20 @@ class Database
         }
     }
 
+    std::int64_t query_integer(const char *sql)
+    {
+        sqlite3_stmt *statement = nullptr;
+        if (sqlite3_prepare_v2(database_, sql, -1, &statement, nullptr) != SQLITE_OK ||
+            sqlite3_step(statement) != SQLITE_ROW)
+        {
+            sqlite3_finalize(statement);
+            throw std::runtime_error("Failed to query the online-candidate test dictionary.");
+        }
+        const auto value = sqlite3_column_int64(statement, 0);
+        sqlite3_finalize(statement);
+        return value;
+    }
+
   private:
     sqlite3 *database_ = nullptr;
 };
@@ -100,6 +114,7 @@ int main()
                              "INSERT INTO tbl_1_n VALUES('ni','n','倪',100);"
                              "CREATE TABLE tbl_2_n(key TEXT,jp TEXT,value TEXT,weight INTEGER);"
                              "INSERT INTO tbl_2_n VALUES('ni''hao','nh','你好',200);"
+                             "CREATE TABLE tbl_3_q(key TEXT,jp TEXT,value TEXT,weight INTEGER);"
                              "COMMIT;");
         }
         {
@@ -119,11 +134,6 @@ int main()
                     query->ai_eligible && !query->identity.empty(),
                 "Quanpin exposed the wrong online query state.");
 
-        metasequoia::InputSession manually_segmented(SchemeType::Quanpin);
-        type(manually_segmented, "qi'e'huan");
-        const auto manually_segmented_query = manually_segmented.online_query();
-        require(manually_segmented_query.has_value() && manually_segmented_query->query_text == "qi'e'huan",
-                "Quanpin cloud queries dropped the user's manual syllable boundaries.");
         require(quanpin::to_google_spelling("nve'dai'lve") == "nue'dai'lue",
                 "Google spelling conversion did not preserve segments while rewriting v spellings.");
 
@@ -266,6 +276,33 @@ int main()
         dedicated.set_dedicated_english_mode(true);
         type(dedicated, "word");
         require(!dedicated.online_query().has_value(), "Dedicated English unexpectedly exposed an online query.");
+
+        // A cloud/AI row without canonical pinyin must use the user's explicit segmentation when learned.
+        {
+            metasequoia::InputSession manually_segmented(SchemeType::Quanpin);
+            type(manually_segmented, "qi'e'huan");
+            const auto manually_segmented_query = manually_segmented.online_query();
+            require(manually_segmented_query.has_value() && manually_segmented_query->query_text == "qi'e'huan",
+                    "Quanpin cloud queries dropped the user's manual syllable boundaries.");
+            require(manually_segmented.apply_online_candidate(*manually_segmented_query, "企鹅幻",
+                                                              CandidateSource::AiSuggestion),
+                    "A manually segmented online candidate was rejected.");
+            const auto online_index =
+                std::find_if(manually_segmented.candidates().begin(), manually_segmented.candidates().end(),
+                             [](const WordItem &item) { return item.word == "企鹅幻"; });
+            require(online_index != manually_segmented.candidates().end(), "The online candidate disappeared.");
+            require(manually_segmented
+                            .select_candidate(static_cast<std::size_t>(
+                                std::distance(manually_segmented.candidates().begin(), online_index)))
+                            .commit == "企鹅幻",
+                    "The manually segmented online candidate was not selected.");
+        }
+        {
+            Database database(root / "msime.db");
+            require(database.query_integer("SELECT COUNT(*) FROM tbl_3_q WHERE key='qi''e''huan' AND value='企鹅幻'") ==
+                        1,
+                    "A selected online candidate did not persist under the user's explicit segmentation.");
+        }
     }
     catch (const std::exception &error)
     {
