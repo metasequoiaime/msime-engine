@@ -1,9 +1,9 @@
 #include "quanpin_scheme.h"
+#include "../common/string_utils.h"
 #include "../common/helpcode_utils.h"
 #include "../quanpin/quanpin_query.h"
 #include "../quanpin/quanpin_utils.h"
 #include "../shuangpin/shuangpin_query.h"
-#include <cctype>
 
 namespace
 {
@@ -81,11 +81,7 @@ QueryRequest QuanpinScheme::build_request() const
     QueryRequest request;
     request.scheme = type();
     request.raw_input_with_cases = raw_input_;
-    request.raw_input.reserve(raw_input_.size());
-    for (const char ch : raw_input_)
-    {
-        request.raw_input.push_back(ch == '\'' ? ch : static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
-    }
+    request.raw_input = CommonUtils::lowercase_ascii(raw_input_);
     request.key_strokes = key_strokes_;
 
     const size_t helpcode_length =

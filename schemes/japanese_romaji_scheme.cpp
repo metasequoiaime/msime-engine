@@ -1,4 +1,5 @@
 #include "japanese_romaji_scheme.h"
+#include "../common/string_utils.h"
 #include "../japanese/romaji_converter.h"
 #include <algorithm>
 #include <cctype>
@@ -101,9 +102,7 @@ QueryRequest JapaneseRomajiScheme::build_request() const
     QueryRequest request;
     request.scheme = type();
     request.raw_input_with_cases = raw_input_;
-    request.raw_input = raw_input_;
-    std::transform(request.raw_input.begin(), request.raw_input.end(), request.raw_input.begin(),
-                   [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+    request.raw_input = CommonUtils::lowercase_ascii(raw_input_);
     request.normalized_input = request.raw_input;
     const auto converted = japanese::ConvertRomaji(request.raw_input);
     request.raw_segmentation = request.raw_input_with_cases;
