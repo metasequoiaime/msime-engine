@@ -743,36 +743,12 @@ int ShuangpinDictionary::create_word_from_quanpin(string pinyin, string word)
 
 int ShuangpinDictionary::update_data(sqlite3 *target_db, const std::string &sql_str)
 {
-    if (target_db == nullptr)
-    {
-        return ERROR_CODE;
-    }
-    char *errmsg = nullptr;
-    int exit = sqlite3_exec(target_db, sql_str.c_str(), nullptr, nullptr, &errmsg);
-    if (exit != SQLITE_OK)
-    {
-        (void)0;
-        sqlite3_free(errmsg);
-        return ERROR_CODE;
-    }
-    return OK;
+    return metasequoia::sqlite_execute_statement(target_db, sql_str) ? OK : ERROR_CODE;
 }
 
 int ShuangpinDictionary::delete_data(sqlite3 *target_db, const std::string &sql_str)
 {
-    if (target_db == nullptr)
-    {
-        return ERROR_CODE;
-    }
-    char *errmsg = nullptr;
-    int exit = sqlite3_exec(target_db, sql_str.c_str(), nullptr, nullptr, &errmsg);
-    if (exit != SQLITE_OK)
-    {
-        (void)0;
-        sqlite3_free(errmsg);
-        return ERROR_CODE;
-    }
-    return OK;
+    return metasequoia::sqlite_execute_statement(target_db, sql_str) ? OK : ERROR_CODE;
 }
 
 int ShuangpinDictionary::update_weight_by_word(string word)
@@ -915,19 +891,7 @@ int ShuangpinDictionary::check_data(sqlite3 *target_db, const std::string &sql_s
 
 int ShuangpinDictionary::insert_data(sqlite3 *target_db, const std::string &sql_str)
 {
-    if (target_db == nullptr)
-    {
-        return ERROR_CODE;
-    }
-    char *errmsg = nullptr;
-    int exit = sqlite3_exec(target_db, sql_str.c_str(), nullptr, nullptr, &errmsg);
-    if (exit != SQLITE_OK)
-    {
-        (void)0;
-        sqlite3_free(errmsg);
-        return ERROR_CODE;
-    }
-    return OK;
+    return metasequoia::sqlite_execute_statement(target_db, sql_str) ? OK : ERROR_CODE;
 }
 
 std::string ShuangpinDictionary::normalize_shuangpin_to_quanpin_segmentation(const std::string &pinyin) const
