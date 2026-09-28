@@ -250,12 +250,3 @@ std::string ShuangpinUtil::GetFullHelpCodes(std::string pinyin)
     }
     return help_codes;
 }
-
-namespace shuangpin
-{
-std::filesystem::path get_data_file_path(const std::filesystem::path &relative_path)
-{
-    return metasequoia::data_file_path(relative_path);
-}
-
-} // namespace shuangpin

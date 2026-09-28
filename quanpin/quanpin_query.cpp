@@ -6,8 +6,8 @@
 #include "../common/string_utils.h"
 #include "../common/sqlite_database.h"
 #include "../common/sqlite_statement.h"
+#include "../core/data_path.h"
 #include "quanpin_utils.h"
-#include "../shuangpin/shuangpin_utils.h"
 #include <algorithm>
 #include <climits>
 #include <map>
@@ -925,7 +925,7 @@ std::string segments_to_jianpin(const Segments &segments)
 
 std::string get_default_db_path()
 {
-    return metasequoia::path_to_utf8(shuangpin::get_data_file_path(metasequoia::assets::main_dictionary));
+    return metasequoia::path_to_utf8(metasequoia::data_file_path(metasequoia::assets::main_dictionary));
 }
 
 void warm_up(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache)
