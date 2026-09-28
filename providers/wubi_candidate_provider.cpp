@@ -41,8 +41,8 @@ std::vector<WordItem> WubiCandidateProvider::query(const QueryRequest &request)
         return {};
     }
 
-    sqlite3_reset(query_statement_);
-    sqlite3_reset(wildcard_statement_);
+    sqlite3_reset(query_statement_.get());
+    sqlite3_reset(wildcard_statement_.get());
     if (request.wubi_z_wildcard)
     {
         std::string pattern;
@@ -50,20 +50,21 @@ std::vector<WordItem> WubiCandidateProvider::query(const QueryRequest &request)
         for (char ch : request.normalized_input)
             pattern.push_back(ch == 'z' ? '?' : ch);
         pattern.push_back('*');
-        if (sqlite3_bind_text(wildcard_statement_, 1, pattern.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK)
+        if (sqlite3_bind_text(wildcard_statement_.get(), 1, pattern.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK)
             return {};
-        return collect_rows(wildcard_statement_);
+        return collect_rows(wildcard_statement_.get());
     }
     const std::string upper_bound = prefix_upper_bound(request.normalized_input);
-    sqlite3_clear_bindings(query_statement_);
-    if (sqlite3_bind_text(query_statement_, 1, request.normalized_input.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
-        sqlite3_bind_text(query_statement_, 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
-        sqlite3_bind_int(query_statement_, 3, kMaxCandidates) != SQLITE_OK)
+    sqlite3_clear_bindings(query_statement_.get());
+    if (sqlite3_bind_text(query_statement_.get(), 1, request.normalized_input.c_str(), -1, SQLITE_TRANSIENT) !=
+            SQLITE_OK ||
+        sqlite3_bind_text(query_statement_.get(), 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
+        sqlite3_bind_int(query_statement_.get(), 3, kMaxCandidates) != SQLITE_OK)
     {
         return {};
     }
 
-    return collect_rows(query_statement_);
+    return collect_rows(query_statement_.get());
 }
 
 std::vector<WordItem> WubiCandidateProvider::collect_rows(sqlite3_stmt *statement)
@@ -145,11 +146,17 @@ bool WubiCandidateProvider::ensure_query_statement()
         return true;
     }
 
-    if (db_ == nullptr && sqlite3_open_v2(db_path_.c_str(), &db_, SQLITE_OPEN_READONLY, nullptr) != SQLITE_OK)
+    if (!db_)
     {
-        (void)0;
-        close_database();
-        return false;
+        sqlite3 *raw = nullptr;
+        const int status = sqlite3_open_v2(db_path_.c_str(), &raw, SQLITE_OPEN_READONLY, nullptr);
+        metasequoia::SqliteDatabase opened(raw);
+        if (status != SQLITE_OK)
+        {
+            close_database();
+            return false;
+        }
+        db_ = std::move(opened);
     }
 
     // An unfinished code is a prefix of the codes it can still become, so it answers with all of
@@ -160,20 +167,28 @@ bool WubiCandidateProvider::ensure_query_statement()
     constexpr const char *query_sql = "SELECT \"key\", \"value\", \"weight\" FROM wubi86 "
                                       "WHERE \"key\" >= ?1 AND \"key\" < ?2 "
                                       "ORDER BY length(\"key\") ASC, \"weight\" DESC, rowid ASC LIMIT ?3";
-    if (sqlite3_prepare_v2(db_, query_sql, -1, &query_statement_, nullptr) != SQLITE_OK)
+    sqlite3_stmt *query_raw = nullptr;
+    const int query_status = sqlite3_prepare_v2(db_.get(), query_sql, -1, &query_raw, nullptr);
+    metasequoia::SqliteStatement query(query_raw);
+    if (query_status != SQLITE_OK)
     {
         (void)0;
         close_database();
         return false;
     }
+    query_statement_ = std::move(query);
     const std::string wildcard_sql = "SELECT \"key\", \"value\", \"weight\" FROM wubi86 WHERE \"key\" GLOB ?1 "
                                      "ORDER BY \"weight\" DESC, \"key\" ASC, rowid ASC LIMIT " +
                                      std::to_string(kMaxCandidates);
-    if (sqlite3_prepare_v2(db_, wildcard_sql.c_str(), -1, &wildcard_statement_, nullptr) != SQLITE_OK)
+    sqlite3_stmt *wildcard_raw = nullptr;
+    const int wildcard_status = sqlite3_prepare_v2(db_.get(), wildcard_sql.c_str(), -1, &wildcard_raw, nullptr);
+    metasequoia::SqliteStatement wildcard(wildcard_raw);
+    if (wildcard_status != SQLITE_OK)
     {
         close_database();
         return false;
     }
+    wildcard_statement_ = std::move(wildcard);
     return true;
 }
 
@@ -184,19 +199,7 @@ std::string WubiCandidateProvider::journal_db_path() const
 
 void WubiCandidateProvider::close_database()
 {
-    if (query_statement_ != nullptr)
-    {
-        sqlite3_finalize(query_statement_);
-        query_statement_ = nullptr;
-    }
-    if (wildcard_statement_ != nullptr)
-    {
-        sqlite3_finalize(wildcard_statement_);
-        wildcard_statement_ = nullptr;
-    }
-    if (db_ != nullptr)
-    {
-        sqlite3_close(db_);
-        db_ = nullptr;
-    }
+    query_statement_.reset();
+    wildcard_statement_.reset();
+    db_.reset();
 }

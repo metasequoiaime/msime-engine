@@ -132,21 +132,21 @@ std::vector<WordItem> JapaneseCandidateProvider::query(const QueryRequest &reque
 
     if (ensure_query_statement())
     {
-        sqlite3_reset(query_statement_);
-        sqlite3_clear_bindings(query_statement_);
-        sqlite3_bind_text(query_statement_, 1, request.raw_input_with_cases.c_str(), -1, SQLITE_TRANSIENT);
-        sqlite3_bind_text(query_statement_, 2, request.raw_input.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_reset(query_statement_.get());
+        sqlite3_clear_bindings(query_statement_.get());
+        sqlite3_bind_text(query_statement_.get(), 1, request.raw_input_with_cases.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(query_statement_.get(), 2, request.raw_input.c_str(), -1, SQLITE_TRANSIENT);
         const std::string like_raw = EscapeLikePrefix(request.raw_input);
         const std::string like_q = EscapeLikePrefix(std::string("q") + request.raw_input);
-        sqlite3_bind_text(query_statement_, 3, like_raw.c_str(), -1, SQLITE_TRANSIENT);
-        sqlite3_bind_text(query_statement_, 4, like_q.c_str(), -1, SQLITE_TRANSIENT);
-        while (sqlite3_step(query_statement_) == SQLITE_ROW)
+        sqlite3_bind_text(query_statement_.get(), 3, like_raw.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(query_statement_.get(), 4, like_q.c_str(), -1, SQLITE_TRANSIENT);
+        while (sqlite3_step(query_statement_.get()) == SQLITE_ROW)
         {
-            const auto *code = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_, 0));
-            const auto *value = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_, 1));
+            const auto *code = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_.get(), 0));
+            const auto *value = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_.get(), 1));
             if (code && value)
             {
-                AppendUnique(candidates, seen, code, value, sqlite3_column_int64(query_statement_, 2));
+                AppendUnique(candidates, seen, code, value, sqlite3_column_int64(query_statement_.get(), 2));
             }
         }
     }
@@ -180,20 +180,20 @@ std::optional<WordItem> JapaneseCandidateProvider::find_candidate(SchemeType sch
 {
     if (scheme != SchemeType::JapaneseRomaji || !ensure_query_statement())
         return std::nullopt;
-    sqlite3_reset(query_statement_);
-    sqlite3_clear_bindings(query_statement_);
-    sqlite3_bind_text(query_statement_, 1, key.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(query_statement_, 2, key.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_reset(query_statement_.get());
+    sqlite3_clear_bindings(query_statement_.get());
+    sqlite3_bind_text(query_statement_.get(), 1, key.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(query_statement_.get(), 2, key.c_str(), -1, SQLITE_TRANSIENT);
     const std::string like_raw = EscapeLikePrefix(key);
     const std::string like_q = EscapeLikePrefix(std::string("q") + key);
-    sqlite3_bind_text(query_statement_, 3, like_raw.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(query_statement_, 4, like_q.c_str(), -1, SQLITE_TRANSIENT);
-    while (sqlite3_step(query_statement_) == SQLITE_ROW)
+    sqlite3_bind_text(query_statement_.get(), 3, like_raw.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(query_statement_.get(), 4, like_q.c_str(), -1, SQLITE_TRANSIENT);
+    while (sqlite3_step(query_statement_.get()) == SQLITE_ROW)
     {
-        const auto *code = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_, 0));
-        const auto *candidate = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_, 1));
+        const auto *code = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_.get(), 0));
+        const auto *candidate = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_.get(), 1));
         if (code && candidate && value == candidate)
-            return WordItem(code, candidate, sqlite3_column_int64(query_statement_, 2), CandidateSource::Database,
+            return WordItem(code, candidate, sqlite3_column_int64(query_statement_.get(), 2), CandidateSource::Database,
                             code);
     }
     return std::nullopt;
@@ -246,33 +246,35 @@ bool JapaneseCandidateProvider::ensure_query_statement()
 {
     if (query_statement_)
         return true;
-    if (!db_ &&
-        sqlite3_open_v2(db_path_.c_str(), &db_, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, nullptr) != SQLITE_OK)
+    if (!db_)
     {
-        close_database();
-        return false;
+        sqlite3 *raw = nullptr;
+        const int status = sqlite3_open_v2(db_path_.c_str(), &raw, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, nullptr);
+        metasequoia::SqliteDatabase opened(raw);
+        if (status != SQLITE_OK)
+        {
+            close_database();
+            return false;
+        }
+        db_ = std::move(opened);
     }
     constexpr const char *sql = "SELECT code, value, weight FROM japanese_lexicon "
                                 "WHERE code=?1 OR code=?2 OR code LIKE ?3 ESCAPE '#' OR code LIKE ?4 ESCAPE '#' "
                                 "ORDER BY weight DESC, rowid ASC LIMIT 64";
-    if (sqlite3_prepare_v2(db_, sql, -1, &query_statement_, nullptr) != SQLITE_OK)
+    sqlite3_stmt *query_raw = nullptr;
+    const int status = sqlite3_prepare_v2(db_.get(), sql, -1, &query_raw, nullptr);
+    metasequoia::SqliteStatement query(query_raw);
+    if (status != SQLITE_OK)
     {
         close_database();
         return false;
     }
+    query_statement_ = std::move(query);
     return true;
 }
 
 void JapaneseCandidateProvider::close_database()
 {
-    if (query_statement_)
-    {
-        sqlite3_finalize(query_statement_);
-        query_statement_ = nullptr;
-    }
-    if (db_)
-    {
-        sqlite3_close(db_);
-        db_ = nullptr;
-    }
+    query_statement_.reset();
+    db_.reset();
 }
