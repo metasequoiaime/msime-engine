@@ -230,8 +230,7 @@ std::string HiraganaToRomaji(std::string_view kana)
         }
         if (!matched)
         {
-            const unsigned char lead = static_cast<unsigned char>(hiragana[index]);
-            index += lead < 0x80 ? 1 : (lead >> 5) == 0x6 ? 2 : (lead >> 4) == 0xE ? 3 : 4;
+            index += CommonUtils::utf8_code_point_length(std::string_view(hiragana).substr(index));
         }
     }
     return romaji;
