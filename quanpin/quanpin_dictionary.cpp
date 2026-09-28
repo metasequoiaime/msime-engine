@@ -747,12 +747,6 @@ int QuanpinDictionary::create_word_from_canonical_pinyin(std::string pinyin, std
     return OK;
 }
 
-int QuanpinDictionary::update_weight_by_word(std::string word)
-{
-    return update_weight_by_pinyin_and_word(CommonUtils::remove_apostrophe_delimiters(pinyin_segmentation_),
-                                            std::move(word));
-}
-
 int QuanpinDictionary::update_weight_by_pinyin_and_word(std::string pinyin, std::string word)
 {
     pinyin = CommonUtils::remove_apostrophe_delimiters(pinyin);
