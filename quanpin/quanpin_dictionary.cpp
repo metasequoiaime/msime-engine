@@ -46,20 +46,14 @@ quanpin::Segments normalize_umlaut_aliases(quanpin::Segments segments)
 {
     for (auto &segment : segments)
     {
-        if (segment.size() >= 2 && segment[1] == 'v' &&
-            (segment[0] == 'j' || segment[0] == 'q' || segment[0] == 'x' || segment[0] == 'y'))
+        if (segment.size() == 3 && segment[1] == 'u' && segment[2] == 'e' && (segment[0] == 'n' || segment[0] == 'l'))
+        {
+            segment[1] = 'v';
+        }
+        else if (segment.size() >= 2 && segment[1] == 'v' &&
+                 (segment[0] == 'j' || segment[0] == 'q' || segment[0] == 'x' || segment[0] == 'y'))
         {
             segment[1] = 'u';
-        }
-        // lue/nue are legal spellings of lve/nve, but the dictionary only stores the v rows. Exact syllable equality,
-        // not a "ends with ue" test: no other syllable may be rewritten.
-        else if (segment == "lue")
-        {
-            segment = "lve";
-        }
-        else if (segment == "nue")
-        {
-            segment = "nve";
         }
     }
     return segments;
@@ -71,10 +65,8 @@ std::string series_cache_key(const std::string &raw_input, const std::string &se
     return prefix + (segmentation.empty() ? raw_input : segmentation);
 }
 
-// Folds letters for autocorrect comparisons: lowercases and strips manual
-// delimiters, and maps the ü-style 'v' spelling onto 'u' on both sides. The
-// jv/nv normalisation is not a correction, so it must never make the primary
-// segmentation look rewritten (jv displays as typed and stays unmarked).
+// Folds letters for autocorrect comparisons: lowercases and strips manual delimiters. v and u
+// remain distinct so an alias rewrite is visible as a corrected candidate.
 std::string fold_autocorrect_letters(const std::string &text)
 {
     std::string folded;
@@ -85,8 +77,7 @@ std::string fold_autocorrect_letters(const std::string &text)
         {
             continue;
         }
-        const char lower = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
-        folded.push_back(lower == 'v' ? 'u' : lower);
+        folded.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
     }
     return folded;
 }
@@ -99,8 +90,8 @@ struct SeriesQueryResolution
     bool corrected_input = false;
 };
 
-SeriesQueryResolution resolve_series_query(const std::string &raw_input, const std::string &segmentation,
-                                           const quanpin::Segments &segments, unsigned autocorrect_types)
+SeriesQueryResolution resolve_series_query(const std::string &raw_input, const quanpin::Segments &segments,
+                                           unsigned autocorrect_types)
 {
     SeriesQueryResolution result;
     // Guard order matters: the jianpin-shape predicate runs before autocorrect_cut
@@ -111,10 +102,8 @@ SeriesQueryResolution resolve_series_query(const std::string &raw_input, const s
         !quanpin::has_only_complete_pinyin_segments(segments) &&
         !quanpin::looks_like_syllable_with_jianpin_tail(raw_input) &&
         !(result.corrected_segments = quanpin::autocorrect_cut(raw_input, autocorrect_types)).empty();
-    result.segmentation =
-        result.corrected_input
-            ? quanpin::join_segments(result.corrected_segments)
-            : (segmentation.empty() ? (segments.empty() ? raw_input : quanpin::join_segments(segments)) : segmentation);
+    result.segmentation = result.corrected_input ? quanpin::join_segments(result.corrected_segments)
+                                                 : (segments.empty() ? raw_input : quanpin::join_segments(segments));
     result.cache_key = (result.corrected_input ? "C:" : "") + series_cache_key(raw_input, result.segmentation);
     return result;
 }
@@ -208,7 +197,7 @@ std::vector<WordItem> QuanpinDictionary::query_exact(const std::string &raw_inpu
     // segmentation becomes the primary key so that selection and weight
     // updates land on the right dictionary entries, and the original
     // (garbage-leaning) candidates stay behind as a fallback tail.
-    const auto resolution = resolve_series_query(raw_input, segmentation, segments, autocorrect_types);
+    const auto resolution = resolve_series_query(raw_input, segments, autocorrect_types);
     pinyin_segmentation_ = resolution.segmentation;
 
     // Autocorrected results get their own cache slot so they never leak the
@@ -519,12 +508,8 @@ std::vector<WordItem> QuanpinDictionary::query_single_path(const std::string &ra
 
 quanpin::Segments QuanpinDictionary::resolve_segments(const std::string &raw_input, const std::string &segmentation)
 {
-    if (!segmentation.empty())
-    {
-        return quanpin::split_segments(segmentation);
-    }
-
-    return get_or_compute_segments(raw_input);
+    auto segments = segmentation.empty() ? get_or_compute_segments(raw_input) : quanpin::split_segments(segmentation);
+    return normalize_umlaut_aliases(std::move(segments));
 }
 
 quanpin::Segments QuanpinDictionary::get_or_compute_segments(const std::string &raw_input)
@@ -603,11 +588,10 @@ std::vector<WordItem> QuanpinDictionary::query_database(const quanpin::Segments 
             return result;
         }
 
-        const auto lookup_segments = normalize_umlaut_aliases(segments);
-        const auto flat_items = quanpin::query_segments_keyed_flat(lookup_segments, db_, statement_cache_, INT_MAX);
+        const auto flat_items = quanpin::query_segments_keyed_flat(segments, db_, statement_cache_, INT_MAX);
         std::vector<WordItem> result;
         result.reserve(flat_items.size());
-        const std::string code = segmentation.empty() ? quanpin::join_segments(segments) : segmentation;
+        const std::string code = quanpin::join_segments(segments);
         for (const auto &item : flat_items)
         {
             result.emplace_back(code, item.value, item.weight, CandidateSource::Database, item.key);
@@ -794,8 +778,9 @@ int QuanpinDictionary::create_word(std::string pinyin, std::string word)
         return ERROR_CODE;
     }
 
-    pinyin = quanpin::join_segments(cuts.front());
-    const std::string jp = quanpin::segments_to_jianpin(cuts.front());
+    const auto segments = normalize_umlaut_aliases(cuts.front());
+    pinyin = quanpin::join_segments(segments);
+    const std::string jp = quanpin::segments_to_jianpin(segments);
     if (!do_validate(pinyin, jp, word))
     {
         return ERROR_CODE;
@@ -860,6 +845,7 @@ int QuanpinDictionary::update_weight_by_pinyin_and_word(std::string pinyin, std:
     if (cuts.empty())
         return ERROR_CODE;
     auto segments = cuts.front();
+    segments = normalize_umlaut_aliases(std::move(segments));
     const size_t han_count = HelpcodeUtils::count_han_chars(word);
     if (segments.size() > han_count)
         segments.resize(han_count);
@@ -913,7 +899,7 @@ int QuanpinDictionary::insert_word_to_series_cache(const std::string &raw_input,
     }
 
     const auto segments = resolve_segments(raw_input, segmentation);
-    const auto resolution = resolve_series_query(raw_input, segmentation, segments, autocorrect_types);
+    const auto resolution = resolve_series_query(raw_input, segments, autocorrect_types);
     return insert_word_to_series_cache_key(resolution.cache_key, raw_input, word, source);
 }
 
@@ -1333,7 +1319,7 @@ int QuanpinDictionary::insert_word_to_series_cache(const std::string &raw_input,
     }
 
     const auto segments = resolve_segments(raw_input, segmentation);
-    const auto resolution = resolve_series_query(raw_input, segmentation, segments, autocorrect_types);
+    const auto resolution = resolve_series_query(raw_input, segments, autocorrect_types);
     return insert_word_to_series_cache_key(resolution.cache_key, raw_input, words, source);
 }
 
