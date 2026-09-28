@@ -24,6 +24,10 @@ constexpr size_t kSyllableGraphPathLimit = 32;
 constexpr size_t kMaxSyllablesForMultipleSegmentations = 4;
 constexpr int kAlternativeSegmentationCandidateLimit = 128;
 constexpr size_t kBestAlternativeSegmentationMaxIndex = 1;
+// The protection slot only pulls an alternative reading into the first page.
+// Candidates already visible there keep their natural weight order, including
+// ranks the user has earned through frequency adjustment.
+constexpr size_t kAlternativeSegmentationFirstPageSize = 6;
 constexpr std::int64_t kAlternativeSegmentationPromotionRatio = 100;
 
 bool is_alpha_vk(ImeKeyCode vk)
@@ -672,9 +676,12 @@ std::vector<WordItem> QuanpinDictionary::merge_alternative_segmentations(
     const auto best_alternative = std::find_if(merged_full.begin(), merged_full.end(), [&](const WordItem &item) {
         return item.word == best_alternative_word;
     });
+    const size_t best_alternative_index =
+        best_alternative == merged_full.end()
+            ? 0
+            : static_cast<size_t>(std::distance(merged_full.begin(), best_alternative));
     if (promote_alternative && best_alternative != merged_full.end() &&
-        static_cast<size_t>(std::distance(merged_full.begin(), best_alternative)) >
-            kBestAlternativeSegmentationMaxIndex)
+        best_alternative_index >= kAlternativeSegmentationFirstPageSize)
     {
         WordItem promoted = std::move(*best_alternative);
         merged_full.erase(best_alternative);
