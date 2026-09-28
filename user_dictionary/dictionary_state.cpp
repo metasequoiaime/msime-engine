@@ -1,12 +1,12 @@
 #include <metasequoia/dictionary_state.h>
 #include "user_dictionary_journal.h"
 #include "../core/data_path.h"
+#include "../common/path_utils.h"
 #include "../common/sqlite_database.h"
 #include "../common/sqlite_statement.h"
 #include "../contracts/assets/assets.h"
 #include <sqlite3.h>
 #include <utf8.h>
-#include <algorithm>
 #include <stdexcept>
 #include <type_traits>
 
@@ -85,11 +85,6 @@ void bounded_text(const std::string &value, std::size_t maximum, bool empty = fa
     require((empty || !value.empty()) && value.size() <= maximum && value.find('\0') == std::string::npos &&
             utf8::is_valid(value.begin(), value.end()));
 }
-bool overlap(const std::filesystem::path &a, const std::filesystem::path &b)
-{
-    const auto p = std::mismatch(a.begin(), a.end(), b.begin(), b.end());
-    return p.first == a.end() || p.second == b.end();
-}
 } // namespace
 
 void stream_dictionary_state(const RuntimePaths &paths, const std::function<bool(const DictionaryStateRecord &)> &emit)
@@ -148,7 +143,8 @@ RuntimePaths stage_dictionary_state(const std::filesystem::path &resources, cons
                                     std::size_t maximum_records)
 {
     require(resources.is_absolute() && generation.is_absolute() && static_cast<bool>(next));
-    require(!overlap(std::filesystem::weakly_canonical(resources), std::filesystem::weakly_canonical(generation)));
+    require(!CommonUtils::paths_overlap(std::filesystem::weakly_canonical(resources),
+                                        std::filesystem::weakly_canonical(generation)));
     require(std::filesystem::create_directory(generation));
     try
     {
