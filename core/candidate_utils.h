@@ -20,6 +20,11 @@ inline const std::string &candidate_canonical_pinyin(const WordItem &item)
     return item.canonical_pinyin.empty() ? item.pinyin : item.canonical_pinyin;
 }
 
+inline bool is_english_candidate_source(CandidateSource source)
+{
+    return source == CandidateSource::EnglishDictionary;
+}
+
 inline bool is_online_candidate_source(CandidateSource source)
 {
     return source == CandidateSource::CloudSuggestion || source == CandidateSource::AiSuggestion;
