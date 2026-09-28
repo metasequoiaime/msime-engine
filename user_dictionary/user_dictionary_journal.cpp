@@ -554,6 +554,42 @@ bool record_pinyin_upsert_from_database(const std::string &main_db_path, const s
     return record_upsert(user_db_path, DictionaryKind::Pinyin, key, value, sqlite3_column_int64(stmt.get(), 0));
 }
 
+bool bump_wubi_weight(const std::string &main_db_path, const std::string &user_db_path, const std::string &key,
+                      const std::string &value)
+{
+    if (key.empty() || value.empty() || !ensure_user_database(user_db_path))
+        return false;
+    auto database = open_database(main_db_path, SQLITE_OPEN_READWRITE);
+    auto attach = database ? prepare(database.get(), "ATTACH DATABASE ?1 AS candidate_journal") : Stmt{};
+    if (!attach || !bind_text(attach.get(), 1, user_db_path) || sqlite3_step(attach.get()) != SQLITE_DONE)
+        return false;
+    if (!execute_sql(database.get(), "BEGIN IMMEDIATE"))
+        return false;
+    const auto rollback = [&]() {
+        (void)execute_sql(database.get(), "ROLLBACK");
+        return false;
+    };
+    auto current = prepare(database.get(), "SELECT MAX(weight) FROM main.\"wubi86\" WHERE key=?1");
+    if (!current || !bind_text(current.get(), 1, key) || sqlite3_step(current.get()) != SQLITE_ROW)
+        return rollback();
+    const std::int64_t new_weight = clamp_managed_weight(sqlite3_column_int64(current.get(), 0) + 1);
+    auto bump = prepare(database.get(), "UPDATE main.\"wubi86\" SET weight=?1 WHERE key=?2 AND value=?3");
+    if (!bump || sqlite3_bind_int64(bump.get(), 1, new_weight) != SQLITE_OK || !bind_text(bump.get(), 2, key) ||
+        !bind_text(bump.get(), 3, value) || sqlite3_step(bump.get()) != SQLITE_DONE ||
+        sqlite3_changes(database.get()) == 0)
+        return rollback();
+    auto journal = prepare(
+        database.get(),
+        "INSERT INTO candidate_journal.user_dictionary_operations(dictionary,key,value,operation,weight,display)"
+        " VALUES('wubi',?1,?2,'upsert',?3,'')"
+        " ON CONFLICT(dictionary,key,value) DO UPDATE SET operation='upsert',weight=excluded.weight,"
+        "display='',updated_at=unixepoch()");
+    if (!journal || !bind_text(journal.get(), 1, key) || !bind_text(journal.get(), 2, value) ||
+        sqlite3_bind_int64(journal.get(), 3, new_weight) != SQLITE_OK || sqlite3_step(journal.get()) != SQLITE_DONE)
+        return rollback();
+    return execute_sql(database.get(), "COMMIT") ? true : rollback();
+}
+
 bool set_fixed_position(const std::string &user_db_path, const std::string &context_key, const std::string &entry_key,
                         const std::string &value, int position)
 {

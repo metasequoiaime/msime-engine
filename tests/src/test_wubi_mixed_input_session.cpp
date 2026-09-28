@@ -39,6 +39,23 @@ void execute(const std::filesystem::path &path, const std::string &sql)
     require(result == SQLITE_OK, "Fixture SQL failed");
 }
 
+std::int64_t query_weight(const std::filesystem::path &path, const std::string &key, const std::string &value)
+{
+    sqlite3 *database = nullptr;
+    require(sqlite3_open(path_to_utf8(path).c_str(), &database) == SQLITE_OK, "Weight query open failed");
+    sqlite3_stmt *statement = nullptr;
+    const bool prepared = sqlite3_prepare_v2(database, "SELECT weight FROM wubi86 WHERE key=?1 AND value=?2", -1,
+                                             &statement, nullptr) == SQLITE_OK;
+    const bool bound = prepared && sqlite3_bind_text(statement, 1, key.c_str(), -1, SQLITE_TRANSIENT) == SQLITE_OK &&
+                       sqlite3_bind_text(statement, 2, value.c_str(), -1, SQLITE_TRANSIENT) == SQLITE_OK;
+    const bool stepped = bound && sqlite3_step(statement) == SQLITE_ROW;
+    const auto weight = stepped ? sqlite3_column_int64(statement, 0) : -1;
+    sqlite3_finalize(statement);
+    sqlite3_close(database);
+    require(stepped, "Weight query returned no row");
+    return weight;
+}
+
 std::vector<std::string> words(const InputSession &session)
 {
     std::vector<std::string> result;
@@ -157,6 +174,21 @@ int main()
                     "A word with a short and a full code was listed twice.");
             require(session.candidates().front().word == "工" && session.candidates().front().pinyin == "a",
                     "The deduplicated word did not keep the exact-code row.");
+        }
+
+        // Wubi selection learning updates the existing code row and journals it for replay.
+        {
+            const auto user_paths = paths_for(resources, root, next());
+            InputSession session(SchemeType::Wubi, GetXiaoheShuangpinProfile(), user_paths);
+            session.set_wubi_input_options(WubiInputOptions{false});
+            type(session, "a");
+            const auto found = std::find_if(session.candidates().begin(), session.candidates().end(),
+                                            [](const auto &item) { return item.word == "苛"; });
+            require(found != session.candidates().end(), "The Wubi ranking fixture lost 苛.");
+            require(session.select_candidate(static_cast<std::size_t>(found - session.candidates().begin())).handled,
+                    "Selecting a Wubi candidate was not handled.");
+            require(query_weight(user_paths.dictionary(assets::main_dictionary), "aaab", "苛") == 4001,
+                    "Wubi selection did not persist the promoted weight.");
         }
 
         // z is not a wubi letter. Dropping it does not refuse a spelling, it silently becomes a

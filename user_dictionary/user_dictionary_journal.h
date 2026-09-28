@@ -32,6 +32,10 @@ bool ensure_user_database(const std::string &user_db_path);
 bool record_pinyin_upsert_from_database(const std::string &main_db_path, const std::string &key,
                                         const std::string &value,
                                         const std::string &user_db_path = default_user_db_path());
+// Promote an existing Wubi row above its code group and persist the new weight in the journal.
+// The operation is transactional and never creates a missing row.
+bool bump_wubi_weight(const std::string &main_db_path, const std::string &user_db_path, const std::string &key,
+                      const std::string &value);
 
 struct ReplayResult
 {
