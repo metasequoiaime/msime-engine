@@ -852,12 +852,13 @@ int QuanpinDictionary::insert_word_to_series_cache_key(const std::string &cache_
 {
     if (is_online_candidate_source(source))
         return insert_word_to_series_cache_key(cache_key, pinyin, std::vector<std::string>{word}, source);
-    auto list = series_cache_.get(cache_key).value_or(std::vector<WordItem>{});
-
-    insert_cached_candidate(list, pinyin, word, source);
-
-    series_cache_.insert(cache_key, list);
-    return OK;
+    return series_cache_.update_or_insert(cache_key,
+                                          [&](auto &list) {
+                                              insert_cached_candidate(list, pinyin, word, source);
+                                              return true;
+                                          })
+               ? OK
+               : ERROR_CODE;
 }
 
 std::string QuanpinDictionary::search_sentence_from_ime_engine(const std::string &user_pinyin)
@@ -1066,9 +1067,8 @@ int QuanpinDictionary::insert_word_to_series_cache(const std::string &raw_input,
 int QuanpinDictionary::insert_word_to_series_cache_key(const std::string &cache_key, const std::string &pinyin,
                                                        const std::vector<std::string> &words, CandidateSource source)
 {
-    auto list = series_cache_.get(cache_key).value_or(std::vector<WordItem>{});
-    if (!replace_online_candidate_batch(list, pinyin, words, source))
-        return -1;
-    series_cache_.insert(cache_key, list);
-    return 0;
+    return series_cache_.update_or_insert(
+               cache_key, [&](auto &list) { return replace_online_candidate_batch(list, pinyin, words, source); })
+               ? OK
+               : ERROR_CODE;
 }

@@ -57,6 +57,16 @@ template <typename Key, typename Value> class CircularBuffer
         return true;
     }
 
+    template <typename Function> bool update_or_insert(const Key &key, Function function)
+    {
+        auto value = get(key).value_or(Value{});
+        if (!function(value))
+            return false;
+
+        insert(key, value);
+        return true;
+    }
+
     // Presence test for callers that only need to know whether a key is cached: get() returns the value by value, so
     // using it as a probe deep-copies the whole entry and throws it away.
     bool contains(const Key &key) const
