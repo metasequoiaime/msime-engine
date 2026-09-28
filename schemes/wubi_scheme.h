@@ -23,6 +23,7 @@ class WubiScheme : public IInputScheme
     // into a different one -- zhongguo would arrive as hongguo and zi as i. Unlike the length, this
     // follows the setting rather than the last query, since the letter can open a composition.
     void set_mixed_pinyin_allowed(bool allowed);
+    void set_z_wildcard(bool enabled);
 
   private:
     static constexpr size_t kMaxCodeLength = 4;
@@ -35,4 +36,5 @@ class WubiScheme : public IInputScheme
     std::vector<KeyStroke> key_strokes_;
     bool extended_length_allowed_ = false;
     bool mixed_pinyin_allowed_ = false;
+    bool z_wildcard_ = false;
 };

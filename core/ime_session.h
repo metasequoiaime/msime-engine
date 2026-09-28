@@ -36,6 +36,10 @@ class ImeSession
         rescoring_context_ = std::move(context);
     }
     void set_wubi_input_options(metasequoia::WubiInputOptions options);
+    const metasequoia::WubiInputOptions &wubi_input_options() const
+    {
+        return wubi_options_;
+    }
     void replace_shuangpin_raw_input(const std::string &raw_input, const std::string &raw_input_with_cases);
     void replace_quanpin_raw_input(const std::string &raw_input, const std::string &raw_input_with_cases);
     void replace_wubi_raw_input(const std::string &raw_input, const std::string &raw_input_with_cases);
@@ -52,21 +56,17 @@ class ImeSession
     void reset();
     void reset_cache();
     int create_word(std::string pinyin, std::string word);
-    int update_weight_by_pinyin_and_word(std::string pinyin, std::string word);
-    int delete_by_pinyin_and_word(std::string pinyin, std::string word);
+    int update_weight_by_pinyin_and_word(SchemeType scheme, std::string pinyin, std::string word);
+    int delete_by_pinyin_and_word(SchemeType scheme, std::string pinyin, std::string word);
     int cache_dynamic_candidate(const std::string &pinyin, const std::string &word, CandidateSource source);
     int cache_dynamic_candidate_for_current_request(const std::string &word, CandidateSource source);
     int apply_dynamic_candidates(const std::vector<std::string> &words, CandidateSource source);
     int apply_dynamic_candidate(const std::string &word, CandidateSource source);
-    std::optional<WordItem> find_candidate(const std::string &key, const std::string &value);
+    std::optional<WordItem> find_candidate(SchemeType scheme, const std::string &key, const std::string &value);
 
     SchemeType current_scheme_type() const;
     const std::string &get_preedit() const;
     const QueryRequest &get_request() const;
-    bool answered_by_pinyin_fallback() const
-    {
-        return state_.answered_by_pinyin_fallback;
-    }
     const std::vector<WordItem> &get_candidates() const;
     bool expand_initial_candidates();
 
@@ -80,7 +80,6 @@ class ImeSession
     void apply_request_options(QueryRequest &request) const;
     void refresh_candidates();
     void bind_wubi_scheme();
-    SchemeType candidate_scheme() const;
     std::unique_ptr<IInputScheme> create_scheme(SchemeType scheme_type) const;
 
   private:
@@ -98,8 +97,4 @@ class ImeSession
     metasequoia::WubiInputOptions wubi_options_;
     // Resolved when the scheme changes rather than on every keystroke.
     WubiScheme *wubi_scheme_ = nullptr;
-    // Once a composition has been answered by pinyin it stays with pinyin until it ends.
-    // Committing a spelling out of a longer one leaves a tail the wubi table may happen to
-    // know, and switching back mid-composition would answer a pinyin spelling with wubi.
-    bool composition_uses_pinyin_fallback_ = false;
 };

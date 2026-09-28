@@ -31,6 +31,7 @@ class WubiCandidateProvider : public ICandidateProvider
 
   private:
     bool ensure_query_statement();
+    std::vector<WordItem> collect_rows(sqlite3_stmt *statement);
     void close_database();
     std::string journal_db_path() const;
 
@@ -38,4 +39,5 @@ class WubiCandidateProvider : public ICandidateProvider
     metasequoia::RuntimePaths paths_;
     sqlite3 *db_ = nullptr;
     sqlite3_stmt *query_statement_ = nullptr;
+    sqlite3_stmt *wildcard_statement_ = nullptr;
 };

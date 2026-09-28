@@ -488,6 +488,9 @@ void InputSession::set_mixed_expressive_options(MixedExpressiveOptions options)
 
 void InputSession::set_wubi_input_options(metasequoia::WubiInputOptions options)
 {
+    const auto &current = engine_.wubi_input_options();
+    if (current.mixed_pinyin == options.mixed_pinyin && current.z_wildcard == options.z_wildcard)
+        return;
     engine_.set_wubi_input_options(options);
     // The setting decides which dictionary answers the code in hand, so a live composition has to be
     // asked again. Leaving it alone shows the previous answer: the fallback candidates stay on screen
@@ -497,6 +500,11 @@ void InputSession::set_wubi_input_options(metasequoia::WubiInputOptions options)
     {
         recompute_candidates();
     }
+}
+
+const metasequoia::WubiInputOptions &InputSession::wubi_input_options() const
+{
+    return engine_.wubi_input_options();
 }
 
 const MixedExpressiveOptions &InputSession::mixed_expressive_options() const
@@ -755,10 +763,10 @@ KeyResult InputSession::commit(std::size_t index)
         selected && (selected->source == CandidateSource::Generated || selected->source == CandidateSource::Fallback) &&
         !selected->canonical_pinyin.empty();
     if ((has_dictionary_reading || has_generated_reading) && local_input_mode_ == LocalInputMode::None &&
-        !dedicated_english_mode_ && candidates_follow_pinyin())
+        !dedicated_english_mode_ && (candidates_follow_pinyin() || selected->scheme == SchemeType::Quanpin))
     {
-        const auto transition =
-            advance_composition_after_selection(selected->pinyin, selected->word, selected->canonical_pinyin);
+        const auto transition = advance_composition_after_selection(selected->pinyin, selected->word,
+                                                                    selected->canonical_pinyin, selected->scheme);
         auto progress = update_creating_word_progress(immediate_phrase_progress_.pinyin,
                                                       immediate_phrase_progress_.word, selected->word, transition);
         if (transition.continues_composition)
@@ -1023,7 +1031,7 @@ std::optional<std::string> InputSession::learn_candidate(std::size_t index)
         if (selected.source == CandidateSource::Database || selected.source == CandidateSource::UserDatabase)
         {
             const std::string &pinyin = selected.canonical_pinyin.empty() ? selected.pinyin : selected.canonical_pinyin;
-            (void)engine_.update_weight_by_pinyin_and_word(pinyin, selected.word);
+            (void)engine_.update_weight_by_pinyin_and_word(selected.scheme, pinyin, selected.word);
         }
         return std::nullopt;
     }
@@ -1091,7 +1099,7 @@ std::optional<std::string> InputSession::adjust_candidate_frequency(std::size_t 
     // stored as pinyin; only a code the wubi table answered is ranked under the code itself. The
     // fallback reuses the context the fixed positions are written under, otherwise a pinned
     // candidate would not be recognised here.
-    const bool wubi = wubi_candidates_are_native();
+    const bool wubi = is_wubi_native_candidate(selected);
     const bool pinyin_fallback = is_wubi() && !wubi;
     std::string context_key =
         super_jianpin     ? local_modes::jianpin_ranking_context(local_preedit_.substr(1), scheme(), shuangpin_profile_)
@@ -1105,11 +1113,19 @@ std::optional<std::string> InputSession::adjust_candidate_frequency(std::size_t 
     const std::string entry_key = (wubi && !super_jianpin)
                                       ? selected.pinyin
                                       : (selected.canonical_pinyin.empty() ? context_key : selected.canonical_pinyin);
+    std::vector<WordItem> ranked_candidates;
+    ranked_candidates.reserve(candidates().size());
+    for (const auto &candidate : candidates())
+    {
+        if (is_wubi() && candidate.scheme != selected.scheme)
+            continue;
+        ranked_candidates.push_back(candidate);
+    }
     bool ranking_changed = false;
     const bool adjusted = user_dictionary::adjust_candidate_ranking(
         path_to_utf8(paths_.dictionary(assets::main_dictionary)), path_to_utf8(paths_.user(assets::user_journal)),
-        context_key, candidates(), entry_key, selected.word, frequency_mode_name(options.mode), options.linear_step,
-        options.trigger_count, force_top, &ranking_changed,
+        context_key, ranked_candidates, entry_key, selected.word, frequency_mode_name(options.mode),
+        options.linear_step, options.trigger_count, force_top, &ranking_changed,
         (wubi && !super_jianpin) ? user_dictionary::DictionaryKind::Wubi : user_dictionary::DictionaryKind::Pinyin);
     if (!adjusted)
     {
