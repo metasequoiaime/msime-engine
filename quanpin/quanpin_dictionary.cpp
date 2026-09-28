@@ -36,11 +36,6 @@ constexpr size_t kBestAlternativeSegmentationMaxIndex = 1;
 constexpr size_t kAlternativeSegmentationFirstPageSize = 6;
 constexpr std::int64_t kAlternativeSegmentationPromotionRatio = 100;
 
-bool is_alpha_vk(ImeKeyCode vk)
-{
-    return vk >= 'A' && vk <= 'Z';
-}
-
 quanpin::Segments normalize_umlaut_aliases(quanpin::Segments segments)
 {
     for (auto &segment : segments)
@@ -565,7 +560,7 @@ int QuanpinDictionary::handleVkCode(ImeKeyCode vk, ImeModifierMask modifiers_dow
     {
         pinyin_sequence_.push_back('\'');
     }
-    else if (is_alpha_vk(vk))
+    else if (ImeKey::is_ascii_letter(vk))
     {
         if (wch >= u'A' && wch <= u'Z')
         {
