@@ -131,7 +131,6 @@ class ShuangpinDictionary
     // not user input.
     std::string build_quanpin_sql_for_deleting_canonical_word(const std::string &canonical_pinyin,
                                                               const std::string &word) const;
-    bool do_validate(std::string key, std::string jp, std::string value) const;
 
   private:
     // Lock

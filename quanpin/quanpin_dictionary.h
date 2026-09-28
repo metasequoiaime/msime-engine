@@ -116,7 +116,6 @@ class QuanpinDictionary
     std::string build_sql_for_updating_word(const std::string &word);
     std::string build_sql_for_updating_word(std::string pinyin, const std::string &word);
     std::string build_sql_for_deleting_word(std::string pinyin, const std::string &word);
-    bool do_validate(const std::string &key, const std::string &jp, const std::string &value);
     void reset_cache_if_database_changed();
     int insert_word_to_series_cache_key(const std::string &cache_key, const std::string &pinyin,
                                         const std::vector<std::string> &words, CandidateSource source);

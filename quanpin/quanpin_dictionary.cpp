@@ -753,7 +753,7 @@ int QuanpinDictionary::create_word(std::string pinyin, std::string word)
     const auto segments = normalize_umlaut_aliases(cuts.front());
     pinyin = quanpin::join_segments(segments);
     const std::string jp = quanpin::segments_to_jianpin(segments);
-    if (!do_validate(pinyin, jp, word))
+    if (!quanpin::has_valid_word_pinyin(pinyin, jp, word))
     {
         return ERROR_CODE;
     }
@@ -985,7 +985,7 @@ std::string QuanpinDictionary::build_sql_for_updating_word(std::string pinyin, c
 
     pinyin = quanpin::join_segments(segments);
     const std::string jp = quanpin::segments_to_jianpin(segments);
-    if (!do_validate(pinyin, jp, word))
+    if (!quanpin::has_valid_word_pinyin(pinyin, jp, word))
     {
         return "";
     }
@@ -1004,35 +1004,12 @@ std::string QuanpinDictionary::build_sql_for_deleting_word(std::string pinyin, c
 
     const std::string normalized = quanpin::join_segments(cuts.front());
     const std::string jp = quanpin::segments_to_jianpin(cuts.front());
-    if (!do_validate(normalized, jp, word))
+    if (!quanpin::has_valid_word_pinyin(normalized, jp, word))
     {
         return "";
     }
 
     return quanpin::build_sql_for_deleting_word(cuts.front(), normalized, word);
-}
-
-bool QuanpinDictionary::do_validate(const std::string &key, const std::string &jp, const std::string &value)
-{
-    const std::string pure_key = CommonUtils::remove_apostrophe_delimiters(key);
-    if (pure_key.empty())
-    {
-        return false;
-    }
-
-    const size_t han_count = HelpcodeUtils::count_han_chars(value);
-    if (jp.size() != han_count)
-    {
-        return false;
-    }
-
-    const auto cuts = quanpin::cut_pinyin_by_mode(pure_key, "correction");
-    if (cuts.empty())
-    {
-        return false;
-    }
-
-    return cuts.front().size() == han_count;
 }
 
 std::vector<WordItem> QuanpinDictionary::fuzzy_candidates(const std::string &segmentation,

@@ -2,6 +2,7 @@
 #include "../contracts/dictionary/format.h"
 #include "quanpin_query.h"
 
+#include "../common/helpcode_utils.h"
 #include "../common/string_utils.h"
 #include "../common/sqlite_database.h"
 #include "../common/sqlite_statement.h"
@@ -881,6 +882,30 @@ std::string join_segments(const Segments &segments, const std::string &delimiter
 std::string build_table_name(const Segments &segments)
 {
     return build_table_name_impl(segments);
+}
+
+bool has_valid_word_pinyin(const std::string &key, const std::string &jp, const std::string &word,
+                           bool allow_shuangpin_fallback)
+{
+    const std::string pure_key = CommonUtils::remove_apostrophe_delimiters(key);
+    if (pure_key.empty())
+    {
+        return false;
+    }
+
+    const size_t han_count = HelpcodeUtils::count_han_chars(word);
+    if (jp.size() != han_count)
+    {
+        return false;
+    }
+
+    const auto cuts = cut_pinyin_by_mode(pure_key, "correction");
+    if (!cuts.empty())
+    {
+        return cuts.front().size() == han_count;
+    }
+
+    return allow_shuangpin_fallback && pure_key.size() % 2 == 0 && pure_key.size() == han_count * 2;
 }
 
 std::string build_sql_for_creating_word(const std::string &pinyin)
