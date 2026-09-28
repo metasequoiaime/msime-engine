@@ -1,4 +1,5 @@
 #include "../contracts/assets/assets.h"
+#include "../common/sqlite_statement.h"
 #include "emoji_query.h"
 #include "local_database.h"
 
@@ -18,18 +19,7 @@ namespace metasequoia::local_modes
 {
 namespace
 {
-struct StatementCloser
-{
-    void operator()(sqlite3_stmt *statement) const
-    {
-        if (statement != nullptr)
-        {
-            sqlite3_finalize(statement);
-        }
-    }
-};
-
-using Statement = std::unique_ptr<sqlite3_stmt, StatementCloser>;
+using Statement = metasequoia::SqliteStatement;
 
 bool valid_code(const std::string &code)
 {
