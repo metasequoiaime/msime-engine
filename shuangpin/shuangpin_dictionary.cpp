@@ -274,19 +274,12 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generateSeries( //
         }
         if (!google_sentence.empty())
         {
-            const auto google = std::find_if(candidate_list.begin(), candidate_list.end(), [&](const WordItem &item) {
-                return item.word == google_sentence && item.source == CandidateSource::Fallback;
-            });
             // The lattice merge above may have inserted ahead of the fallback. Put the fallback
             // back in front of the lattice row, but still behind the exact dictionary hits.
             const auto boundary = static_cast<std::ptrdiff_t>(
                 quanpin::whole_sentence_insert_position(candidate_list, quanpin_segments.size()));
-            if (google != candidate_list.end() && google - candidate_list.begin() > boundary)
-            {
-                WordItem preferred = std::move(*google);
-                candidate_list.erase(google);
-                candidate_list.insert(candidate_list.begin() + boundary, std::move(preferred));
-            }
+            move_candidate_to_position(candidate_list, google_sentence, CandidateSource::Fallback,
+                                       static_cast<std::size_t>(boundary));
         }
 
         /* 缓存起来 */

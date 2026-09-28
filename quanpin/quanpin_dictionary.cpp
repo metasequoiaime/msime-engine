@@ -453,19 +453,12 @@ std::vector<WordItem> QuanpinDictionary::query_series(const std::string &raw_inp
             !sentences.lattice_outranks_fallback(lattice_options.fallback_margin) &&
             !sentences.hybrid_leads(lattice_options.repair_margin))
         {
-            const auto google = std::find_if(result.begin(), result.end(), [&](const WordItem &item) {
-                return item.word == google_sentence && item.source == CandidateSource::Fallback;
-            });
             // The lattice merge above may have inserted ahead of the fallback. Put the fallback
             // back in front of the lattice row, but still behind the exact dictionary hits.
             const auto boundary =
                 static_cast<std::ptrdiff_t>(quanpin::whole_sentence_insert_position(result, segments.size()));
-            if (google != result.end() && google - result.begin() > boundary)
-            {
-                WordItem preferred = std::move(*google);
-                result.erase(google);
-                result.insert(result.begin() + boundary, std::move(preferred));
-            }
+            move_candidate_to_position(result, google_sentence, CandidateSource::Fallback,
+                                       static_cast<std::size_t>(boundary));
         }
     }
 
