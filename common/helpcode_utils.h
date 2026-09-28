@@ -17,6 +17,22 @@ const Keymap &helpcode_keymap();
 bool is_supported_helpcode_schema(const std::string &schema);
 bool select_helpcode_schema(const std::string &schema);
 
+// User tables dropped into <resources>/helpcodes/custom/*.txt are schemas named
+// "custom/<file stem>". Leading "# name: ..." and "# name_en: ..." comments
+// provide optional display names for settings UIs.
+inline constexpr char kCustomHelpcodeSchemaPrefix[] = "custom/";
+struct CustomHelpcodeSchema
+{
+    std::string schema;
+    std::string name;
+    std::string name_en;
+    std::string file_stem;
+};
+std::filesystem::path custom_helpcode_directory(const std::filesystem::path &resources);
+std::vector<CustomHelpcodeSchema> list_custom_helpcode_schemas(const std::filesystem::path &resources);
+// Built-in schemas are always available; a custom schema only while its file exists.
+bool is_helpcode_schema_available(const std::filesystem::path &resources, const std::string &schema);
+
 std::string get_first_han_char(const std::string &words);
 std::string get_last_han_char(const std::string &words);
 std::string::size_type count_han_chars(const std::string &words);

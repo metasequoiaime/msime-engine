@@ -1,4 +1,5 @@
 #include "../../core/input_session.h"
+#include "../../common/helpcode_utils.h"
 #include "../../core/data_path.h"
 #include "../../user_dictionary/user_dictionary_journal.h"
 #include "test_directory_cleanup.h"
@@ -945,6 +946,41 @@ int run_test()
         require(!metasequoia::InputSession::is_supported_helpcode_schema("unknown") &&
                     !metasequoia::InputSession::select_helpcode_schema("unknown"),
                 "An unknown helpcode schema was accepted.");
+
+        // Custom helpcode tables live under helpcodes/custom and can carry display names in a
+        // leading comment block. The parser must handle the common files users get from Windows
+        // tools: UTF-8 BOM, CRLF and a full-width colon.
+        const std::filesystem::path custom_directory = data_directory / "helpcodes" / "custom";
+        write_file(custom_directory / std::filesystem::u8path("我的码.txt"),
+                   "\xEF\xBB\xBF# name\xEF\xBC\x9A 我的辅助码\r\n# name_en: Mine\r\n你=cb\r\n拟=ab\r\n好=ef\r\n");
+        write_file(custom_directory / "plain.txt", "你=ab\n");
+        write_file(custom_directory / "README.md", "# name: not a schema\n");
+        const auto custom_schemas = HelpcodeUtils::list_custom_helpcode_schemas(data_directory);
+        require(custom_schemas.size() == 2 && custom_schemas[0].schema == "custom/plain" &&
+                    custom_schemas[0].name.empty() && custom_schemas[0].name_en.empty() &&
+                    custom_schemas[1].schema == "custom/我的码" && custom_schemas[1].name == "我的辅助码" &&
+                    custom_schemas[1].name_en == "Mine",
+                "Custom helpcode schemas were not discovered with their header names.");
+        require(HelpcodeUtils::is_helpcode_schema_available(data_directory, "custom/我的码") &&
+                    HelpcodeUtils::is_helpcode_schema_available(data_directory, "lantian") &&
+                    !HelpcodeUtils::is_helpcode_schema_available(data_directory, "custom/missing"),
+                "Custom helpcode availability did not follow the files on disk.");
+        for (const std::string schema : {"custom/", "custom/../helpcode", "custom/a\\b", "custom/.hidden"})
+        {
+            require(!metasequoia::InputSession::is_supported_helpcode_schema(schema),
+                    "A custom helpcode schema escaping its directory was accepted.");
+        }
+        const auto custom_keymap = HelpcodeUtils::load_helpcode_keymap(data_directory, "custom/我的码");
+        require(custom_keymap->size() == 3 && custom_keymap->at("你") == "cb",
+                "A custom helpcode table was not loaded past its header and BOM.");
+        {
+            metasequoia::InputSession custom_helpcode(SchemeType::Quanpin);
+            custom_helpcode.set_quanpin_helpcode_enabled(true);
+            require(custom_helpcode.set_helpcode_schema("custom/我的码"), "A custom helpcode schema was not selected.");
+            type(custom_helpcode, "nihaoA");
+            require(!custom_helpcode.candidates().empty() && custom_helpcode.candidates().front().word == "拟好",
+                    "A custom helpcode table did not drive candidate reordering.");
+        }
 
         // Spellings whose greedy longest-match prefix is a dead end (li+nian, ji+nian+ri) are still complete
         // pinyin. A greedy completeness test rejects them, the trailing helpcode letter is then never
