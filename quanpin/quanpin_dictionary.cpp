@@ -271,48 +271,19 @@ std::optional<WordItem> QuanpinDictionary::find_candidate(const std::string &key
 
 bool QuanpinDictionary::expand_initial_candidates(const std::string &code, std::vector<WordItem> &candidates)
 {
-    if (code.size() != 1)
-    {
-        return false;
-    }
-
-    const size_t limited_count = count_limited_initial_candidates(candidates, code);
-    constexpr size_t kInitialCandidateLimit = 24;
-    if (limited_count != kInitialCandidateLimit)
-    {
-        return false;
-    }
-
-    auto expanded = query_initial(code, INT_MAX);
-    if (expanded.size() <= limited_count)
-    {
-        return false;
-    }
-    for (auto &item : expanded)
-    {
-        item.canonical_pinyin = item.pinyin;
-        item.pinyin = code;
-    }
-
-    std::vector<WordItem> merged;
-    merged.reserve(candidates.size() - limited_count + expanded.size());
-    bool inserted = false;
-    for (auto &item : candidates)
-    {
-        if (is_limited_initial_candidate(item, code))
+    const auto expanded = expand_limited_initial_candidates(code, candidates, [&] {
+        auto result = query_initial(code, INT_MAX);
+        for (auto &item : result)
         {
-            if (!inserted)
-            {
-                merged.insert(merged.end(), expanded.begin(), expanded.end());
-                inserted = true;
-            }
-            continue;
+            item.canonical_pinyin = item.pinyin;
+            item.pinyin = code;
         }
-        merged.push_back(std::move(item));
-    }
+        return result;
+    });
+    if (!expanded)
+        return false;
 
-    candidates = std::move(merged);
-    cache_.insert(code, expanded);
+    cache_.insert(code, *expanded);
     series_cache_.insert(series_cache_key(pinyin_sequence_, pinyin_segmentation_), candidates);
     current_candidate_list_ = candidates;
     return true;
