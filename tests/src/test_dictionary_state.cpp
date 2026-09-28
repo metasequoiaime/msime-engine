@@ -2,6 +2,7 @@
 #include <metasequoia/session.h>
 #include "../../core/data_path.h"
 #include "../../common/sqlite_data_version.h"
+#include "../../common/sqlite_query.h"
 #include "../../contracts/assets/assets.h"
 #include "../../english/english_dictionary.h"
 #include "../../user_dictionary/user_dictionary_journal.h"
@@ -64,6 +65,10 @@ void run(bool capacity)
         sql(version_db, "INSERT INTO marker VALUES(1);");
         check(sqlite_data_version_changed(reader, version), "external dictionary write was not detected");
         check(!sqlite_data_version_changed(reader, version), "external write was detected more than once");
+        check(sqlite_query_has_row(reader, "SELECT value FROM marker WHERE value = 1"),
+              "shared SQLite row query missed an existing row");
+        check(!sqlite_query_has_row(reader, "SELECT value FROM marker WHERE value = 2"),
+              "shared SQLite row query reported a missing row");
         sqlite3_close(reader);
     }
     check(EnglishDictionary::ensure_schema(path_to_utf8(resources / assets::english_dictionary)), "English schema");

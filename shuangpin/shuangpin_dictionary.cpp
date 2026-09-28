@@ -4,6 +4,7 @@
 #include "../user_dictionary/user_dictionary_journal.h"
 #include "../common/sqlite_statement.h"
 #include "../common/sqlite_data_version.h"
+#include "../common/sqlite_query.h"
 #include "../common/helpcode_utils.h"
 #include "../common/string_utils.h"
 #include "../quanpin/quanpin_query.h"
@@ -949,24 +950,7 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::select_complete_data(
 
 int ShuangpinDictionary::check_data(sqlite3 *target_db, const std::string &sql_str)
 {
-    if (target_db == nullptr)
-    {
-        return false;
-    }
-    sqlite3_stmt *stmt = nullptr;
-    int exit = sqlite3_prepare_v2(target_db, sql_str.c_str(), -1, &stmt, 0);
-    if (exit != SQLITE_OK)
-    {
-        return false;
-    }
-    Statement guard(stmt);
-    bool exists = false;
-    exit = sqlite3_step(stmt);
-    if (exit == SQLITE_ROW)
-    {
-        exists = true;
-    }
-    return exists;
+    return metasequoia::sqlite_query_has_row(target_db, sql_str);
 }
 
 int ShuangpinDictionary::insert_data(sqlite3 *target_db, const std::string &sql_str)

@@ -6,6 +6,7 @@
 
 #include "../common/helpcode_utils.h"
 #include "../common/sqlite_data_version.h"
+#include "../common/sqlite_query.h"
 #include "../common/string_utils.h"
 #include "quanpin_query.h"
 #include "quanpin_utils.h"
@@ -981,21 +982,7 @@ std::vector<WordItem> QuanpinDictionary::select_complete_data(const std::string 
 
 int QuanpinDictionary::check_data(const std::string &sql_str)
 {
-    if (db_ == nullptr)
-    {
-        return false;
-    }
-
-    sqlite3_stmt *stmt = nullptr;
-    if (sqlite3_prepare_v2(db_.get(), sql_str.c_str(), -1, &stmt, 0) != SQLITE_OK)
-    {
-        (void)0;
-        return false;
-    }
-    Statement guard(stmt);
-
-    const bool exists = sqlite3_step(stmt) == SQLITE_ROW;
-    return exists;
+    return metasequoia::sqlite_query_has_row(db_.get(), sql_str);
 }
 
 int QuanpinDictionary::insert_data(const std::string &sql_str)
