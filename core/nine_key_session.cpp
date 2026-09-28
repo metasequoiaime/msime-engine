@@ -262,7 +262,7 @@ void NineKeySession::refresh()
             continue;
         for (auto candidate : dictionary_->query(key, key, false, fuzzy_))
         {
-            const auto canonical = candidate.canonical_pinyin.empty() ? candidate.pinyin : candidate.canonical_pinyin;
+            const auto &canonical = candidate_canonical_pinyin(candidate);
             if (std::count(canonical.begin(), canonical.end(), '\'') >= static_cast<long>(path.size()))
                 continue;
             const auto matched = candidate.fuzzy ? candidate.pinyin : canonical;
