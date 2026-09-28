@@ -248,6 +248,22 @@ int run_test()
         database.execute("INSERT INTO tbl_1_n VALUES('nve','n','虐',100)");
         database.execute("CREATE TABLE tbl_4_x(key TEXT,jp TEXT,value TEXT,weight INTEGER)");
         {
+            // A generated whole-sentence candidate selected as the first item must become a user phrase too.
+            metasequoia::InputSession direct_sentence(SchemeType::Quanpin, true, false);
+            type(direct_sentence, "xi'te'le");
+            const auto sentence_index = candidate_index(direct_sentence, "西特乐");
+            const auto &sentence = direct_sentence.candidates()[sentence_index];
+            require((sentence.source == CandidateSource::Generated || sentence.source == CandidateSource::Fallback) &&
+                        !sentence.canonical_pinyin.empty() && sentence.sentence_association,
+                    "The direct whole-sentence candidate did not carry a canonical reading.");
+            require(direct_sentence.select_candidate(sentence_index).commit == "西特乐" &&
+                        !direct_sentence.has_composition(),
+                    "Selecting a direct whole-sentence candidate did not finish the composition.");
+            require(database.query_integer("SELECT COUNT(*) FROM tbl_3_x WHERE key='xi''te''le' AND value='西特乐'") ==
+                        1,
+                    "A directly selected whole-sentence candidate was not learned.");
+        }
+        {
             metasequoia::InputSession portable(SchemeType::Quanpin, true, false);
             type(portable, "xi'te'le");
             const auto first = portable.select_candidate(candidate_index(portable, "西"));

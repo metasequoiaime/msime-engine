@@ -11,6 +11,8 @@ namespace metasequoia
 {
 namespace
 {
+constexpr size_t kMaxLearnedSentenceSyllables = 7;
+
 std::string remove_delimiters(const std::string &segmented)
 {
     std::string normalized;
@@ -443,6 +445,27 @@ int InputSession::store_user_phrase_from_canonical_pinyin(std::string pinyin, st
     if (!canonical_phrase_engine_)
         canonical_phrase_engine_ = std::make_unique<QuanpinEngine>(paths_);
     return canonical_phrase_engine_->create_word_from_canonical_pinyin(std::move(pinyin), std::move(word));
+}
+
+std::optional<std::string> InputSession::learn_sentence_candidate(const WordItem &selected)
+{
+    if (local_input_mode_ != LocalInputMode::None || dedicated_english_mode_ || is_japanese() ||
+        !candidates_follow_pinyin())
+    {
+        return std::nullopt;
+    }
+
+    const std::string canonical = normalize_canonical_pinyin_for_word(selected.canonical_pinyin, selected.word);
+    if (canonical.empty() || quanpin::split_segments(canonical).size() > kMaxLearnedSentenceSyllables)
+    {
+        return std::nullopt;
+    }
+
+    if (store_user_phrase_from_canonical_pinyin(canonical, selected.word) != 0)
+    {
+        return "Unable to persist the selected sentence.";
+    }
+    return std::nullopt;
 }
 
 int InputSession::pin_candidate(std::string pinyin, std::string word)
