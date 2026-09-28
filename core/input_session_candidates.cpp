@@ -1,6 +1,7 @@
 #include "input_session.h"
 #include "data_path.h"
 #include "../common/helpcode_utils.h"
+#include "../common/string_utils.h"
 #include "../contracts/assets/assets.h"
 #include "../user_dictionary/user_dictionary_journal.h"
 #include "../local_modes/jianpin_query.h"
@@ -37,8 +38,7 @@ std::string InputSession::position_context(bool english, bool wubi) const
         context = get_pinyin_segmentation();
     if (engine_.get_request().raw_input.size() == 1)
         return context;
-    auto plain = context;
-    plain.erase(std::remove(plain.begin(), plain.end(), '\''), plain.end());
+    const auto plain = CommonUtils::remove_apostrophe_delimiters(context);
     const auto cuts = quanpin::cut_pinyin_by_mode(plain, "correction");
     return cuts.empty() ? context : quanpin::join_segments(cuts.front());
 }
