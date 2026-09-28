@@ -3,6 +3,25 @@
 #include "../shuangpin/shuangpin_query.h"
 #include "../shuangpin/shuangpin_utils.h"
 
+namespace
+{
+template <typename HelpcodeQuery, typename QuanpinHandler, typename ShuangpinSeriesHandler,
+          typename ShuangpinActiveHandler>
+int route_cached_candidate_request(SchemeType scheme, HelpcodeQuery helpcode_query, QuanpinHandler quanpin_handler,
+                                   ShuangpinSeriesHandler shuangpin_series_handler,
+                                   ShuangpinActiveHandler shuangpin_active_handler)
+{
+    if (scheme == SchemeType::Quanpin)
+        return quanpin_handler();
+    if (scheme != SchemeType::Shuangpin)
+        return -1;
+
+    if (const auto helpcodes = helpcode_query())
+        return shuangpin_active_handler(*helpcodes);
+    return shuangpin_series_handler();
+}
+} // namespace
+
 PinyinCandidateProvider::PinyinCandidateProvider(const ShuangpinProfile &shuangpin_profile,
                                                  metasequoia::RuntimePaths paths)
     : shuangpin_profile_(shuangpin_profile), quanpin_engine_(paths), shuangpin_engine_(shuangpin_profile, paths)
@@ -122,44 +141,24 @@ std::optional<std::string> PinyinCandidateProvider::active_helpcode_for_request(
 int PinyinCandidateProvider::cache_dynamic_candidate_for_request(const QueryRequest &request, const std::string &word,
                                                                  CandidateSource source)
 {
-    if (request.scheme == SchemeType::Quanpin)
-    {
-        return quanpin_engine_.insert_word_to_series_cache(request, word, source);
-    }
-
-    if (request.scheme != SchemeType::Shuangpin)
-    {
-        return -1;
-    }
-
-    if (const auto helpcodes = active_helpcode_for_request(request))
-    {
-        if (helpcodes->empty())
-            return shuangpin_engine_.insert_word_to_active_helpcode_cache(request.raw_input, word, source);
-        return shuangpin_engine_.insert_word_to_active_helpcode_cache(request.raw_input, word, source, *helpcodes);
-    }
-    return shuangpin_engine_.insert_word_to_series_cache(request.raw_input, word, source);
+    return route_cached_candidate_request(
+        request.scheme, [&] { return active_helpcode_for_request(request); },
+        [&] { return quanpin_engine_.insert_word_to_series_cache(request, word, source); },
+        [&] { return shuangpin_engine_.insert_word_to_series_cache(request.raw_input, word, source); },
+        [&](const std::string &helpcodes) {
+            return shuangpin_engine_.insert_word_to_active_helpcode_cache(request.raw_input, word, source, helpcodes);
+        });
 }
 
 int PinyinCandidateProvider::cache_dynamic_candidate_for_request(const QueryRequest &request,
                                                                  const std::vector<std::string> &words,
                                                                  CandidateSource source)
 {
-    if (request.scheme == SchemeType::Quanpin)
-    {
-        return quanpin_engine_.insert_word_to_series_cache(request, words, source);
-    }
-
-    if (request.scheme != SchemeType::Shuangpin)
-    {
-        return -1;
-    }
-
-    if (const auto helpcodes = active_helpcode_for_request(request))
-    {
-        if (helpcodes->empty())
-            return shuangpin_engine_.insert_word_to_active_helpcode_cache(request.raw_input, words, source);
-        return shuangpin_engine_.insert_word_to_active_helpcode_cache(request.raw_input, words, source, *helpcodes);
-    }
-    return shuangpin_engine_.insert_word_to_series_cache(request.raw_input, words, source);
+    return route_cached_candidate_request(
+        request.scheme, [&] { return active_helpcode_for_request(request); },
+        [&] { return quanpin_engine_.insert_word_to_series_cache(request, words, source); },
+        [&] { return shuangpin_engine_.insert_word_to_series_cache(request.raw_input, words, source); },
+        [&](const std::string &helpcodes) {
+            return shuangpin_engine_.insert_word_to_active_helpcode_cache(request.raw_input, words, source, helpcodes);
+        });
 }
