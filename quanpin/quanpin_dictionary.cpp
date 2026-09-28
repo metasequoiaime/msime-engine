@@ -368,10 +368,7 @@ std::vector<WordItem> QuanpinDictionary::query_series(const std::string &raw_inp
             // prefix's group, above every real word there. 你好是 outranked 你好, 开会是 outranked
             // 开会, 版不是 outranked 颁布. Whatever such a row spells is already reachable by picking
             // the shorter word, so drop it and leave the whole-key sentence below as the only one.
-            partial_result.erase(
-                std::remove_if(partial_result.begin(), partial_result.end(),
-                               [](const WordItem &item) { return item.source == CandidateSource::Fallback; }),
-                partial_result.end());
+            erase_candidates_by_source(partial_result, CandidateSource::Fallback);
         }
         result.insert(result.end(), partial_result.begin(), partial_result.end());
     }
