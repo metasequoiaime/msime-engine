@@ -554,17 +554,6 @@ std::vector<KeyedQueryItem> filter_mixed_jianpin_rows(const std::vector<KeyedQue
     return matched;
 }
 
-std::vector<QueryItem> without_keys(const std::vector<KeyedQueryItem> &rows)
-{
-    std::vector<QueryItem> result;
-    result.reserve(rows.size());
-    for (const auto &row : rows)
-    {
-        result.emplace_back(row.value, row.weight);
-    }
-    return result;
-}
-
 void deduplicate_keyed_items_by_value(std::vector<KeyedQueryItem> &items)
 {
     std::unordered_set<std::string> seen;
@@ -690,25 +679,6 @@ std::vector<KeyedQueryItem> query_single_cut_keyed(sqlite3 *db, metasequoia::Sql
     return run_keyed_query(db, statement_cache, jp_sql, jp, limit);
 }
 
-void append_unique_query_items(std::vector<QueryItem> &target, const std::vector<QueryItem> &items,
-                               std::unordered_set<std::string> &seen)
-{
-    for (const auto &item : items)
-    {
-        if (seen.insert(item.first).second)
-            target.push_back(item);
-    }
-}
-
-std::vector<QueryItem> sort_and_limit_query_items(std::vector<QueryItem> items, int limit)
-{
-    std::sort(items.begin(), items.end(),
-              [](const QueryItem &lhs, const QueryItem &rhs) { return lhs.second > rhs.second; });
-    if (static_cast<int>(items.size()) > limit)
-        items.resize(static_cast<size_t>(limit));
-    return items;
-}
-
 void stable_sort_keyed_query_items_by_weight(std::vector<KeyedQueryItem> &items)
 {
     std::stable_sort(items.begin(), items.end(),
@@ -722,17 +692,6 @@ std::vector<KeyedQueryItem> sort_and_limit_keyed_query_items(std::vector<KeyedQu
     if (static_cast<int>(items.size()) > limit)
         items.resize(static_cast<size_t>(limit));
     return items;
-}
-
-std::vector<QueryItem> query_single_cut(sqlite3 *db, const Segments &segments, int limit, QuerySource source)
-{
-    return without_keys(query_single_cut_keyed(db, segments, limit, source));
-}
-
-std::vector<QueryItem> query_single_cut(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache,
-                                        const Segments &segments, int limit, QuerySource source)
-{
-    return without_keys(query_single_cut_keyed(db, statement_cache, segments, limit, source));
 }
 
 } // namespace
@@ -918,8 +877,8 @@ void warm_up(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache)
     }
 
     // Warm the most common single-syllable prefixes to hide first-query setup costs.
-    (void)query_single_cut(db, statement_cache, Segments{"n"}, 1, QuerySource::Quanpin);
-    (void)query_single_cut(db, statement_cache, Segments{"ni"}, 1, QuerySource::Quanpin);
+    (void)query_single_cut_keyed(db, statement_cache, Segments{"n"}, 1, QuerySource::Quanpin);
+    (void)query_single_cut_keyed(db, statement_cache, Segments{"ni"}, 1, QuerySource::Quanpin);
 }
 
 std::vector<KeyedQueryItem> query_initial(sqlite3 *db, const std::string &prefix, int limit)
@@ -947,86 +906,6 @@ std::vector<KeyedQueryItem> query_initial(sqlite3 *db, const std::string &prefix
     std::vector<KeyedQueryItem> rows;
     append_keyed_query_rows(rows, stmt);
     return rows;
-}
-
-QueryResult query_words(const std::string &pinyin, const std::string &db_path, const std::string &mode, int limit)
-{
-    const auto cuts = cut_pinyin_by_mode(pinyin, mode);
-    QueryResult result{pinyin, mode, {}};
-    if (cuts.empty())
-    {
-        return result;
-    }
-
-    SqliteDb db(db_path);
-    for (const auto &segments : cuts)
-    {
-        result.results.push_back(QueryResultEntry{
-            segments,
-            join_segments(segments),
-            build_table_name(segments),
-            query_single_cut(db.get(), segments, limit, QuerySource::Quanpin),
-        });
-    }
-    return result;
-}
-
-QueryResult query_segments(const Segments &segments, const std::string &db_path, int limit, QuerySource source)
-{
-    QueryResult result{join_segments(segments), "precut", {}};
-    if (segments.empty())
-    {
-        return result;
-    }
-
-    SqliteDb db(db_path);
-    result.results.push_back(QueryResultEntry{
-        segments,
-        join_segments(segments),
-        build_table_name(segments),
-        query_single_cut(db.get(), segments, limit, source),
-    });
-    return result;
-}
-
-std::vector<QueryItem> query_words_flat(const std::string &pinyin, const std::string &db_path, const std::string &mode,
-                                        int limit)
-{
-    const auto result = query_words(pinyin, db_path, mode, limit);
-    std::vector<QueryItem> items;
-    std::unordered_set<std::string> seen;
-    for (const auto &entry : result.results)
-        append_unique_query_items(items, entry.items, seen);
-
-    return sort_and_limit_query_items(std::move(items), limit);
-}
-
-std::vector<QueryItem> query_segments_flat(const Segments &segments, const std::string &db_path, int limit,
-                                           QuerySource source)
-{
-    const auto result = query_segments(segments, db_path, limit, source);
-    std::vector<QueryItem> items;
-    std::unordered_set<std::string> seen;
-    for (const auto &entry : result.results)
-        append_unique_query_items(items, entry.items, seen);
-
-    return sort_and_limit_query_items(std::move(items), limit);
-}
-
-std::vector<QueryItem> query_segments_flat(const Segments &segments, sqlite3 *db,
-                                           metasequoia::SqliteStatementCache &statement_cache, int limit,
-                                           QuerySource source)
-{
-    if (db == nullptr || segments.empty())
-    {
-        return {};
-    }
-
-    std::vector<QueryItem> items;
-    std::unordered_set<std::string> seen;
-    append_unique_query_items(items, query_single_cut(db, statement_cache, segments, limit, source), seen);
-
-    return sort_and_limit_query_items(std::move(items), limit);
 }
 
 std::vector<KeyedQueryItem> query_segments_keyed_flat(const Segments &segments, const std::string &db_path, int limit,
