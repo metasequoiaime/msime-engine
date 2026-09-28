@@ -213,11 +213,6 @@ int ShuangpinEngine::insert_word_to_active_helpcode_cache(const std::string &pin
     return dictionary_.insert_word_to_active_helpcode_cache(pinyin, word, source, double_helpcodes);
 }
 
-std::string ShuangpinEngine::search_sentence_from_ime_engine(const std::string &user_pinyin)
-{
-    return dictionary_.search_sentence_from_ime_engine(user_pinyin);
-}
-
 void ShuangpinEngine::reset_cache()
 {
     dictionary_.reset_cache();
