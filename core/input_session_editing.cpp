@@ -155,6 +155,7 @@ KeyResult InputSession::edit_at_caret(Command command)
         return {};
     }
     caret_ = caret;
+    update_mixed_candidates();
     return {true, std::nullopt, std::nullopt};
 }
 
@@ -238,6 +239,7 @@ KeyResult InputSession::replace_editing_text(std::string text, std::size_t caret
         }
     }
     caret_ = caret;
+    update_mixed_candidates();
     online_requests_.invalidate();
     discard_abandoned_phrase_progress();
     return {true, std::nullopt, std::move(diagnostic)};

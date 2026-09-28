@@ -14,4 +14,5 @@ class IInputScheme
     virtual QueryRequest build_request() const = 0;
     virtual std::string get_preedit() const = 0;
     virtual SchemeType type() const = 0;
+    virtual void set_raw_input(const std::string &raw_input, const std::string &raw_input_with_cases) = 0;
 };

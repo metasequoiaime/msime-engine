@@ -134,6 +134,14 @@ class InputSession
 
     void handle_engine_key(ImeKeyCode vk, ImeModifierMask modifiers_down, ImeCharacter wch);
     void recompute_candidates();
+    // Moves the caret without editing the raw composition. A missing value means the end of the
+    // string; the position is clamped to editing_text().size(). Candidate decoding is refreshed
+    // by the next recompute or key handling operation.
+    void set_caret(std::optional<std::size_t> caret);
+    // Raw offset consumed by the current candidate decode, floored to a complete pinyin unit.
+    std::size_t prefix_end() const;
+    // Original-cased raw input after prefix_end().
+    std::string pending_suffix() const;
     SchemeType current_scheme_type() const;
 
     void reset_state();
@@ -249,8 +257,15 @@ class InputSession
     KeyResult edit_at_caret(Command command);
     KeyResult replace_editing_text(std::string text, std::size_t caret);
     std::optional<std::size_t> caret_;
+    // Candidates decoded for a caret prefix shorter than the live composition.
+    std::vector<WordItem> prefix_candidates_;
+    // Lowercased raw prefix used as the query/cache key.
+    std::string prefix_query_input_;
+    bool prefix_candidates_active_ = false;
     std::optional<std::string> update_local_candidates();
     void update_mixed_candidates();
+    std::size_t quantized_prefix_end() const;
+    void refresh_prefix_candidates();
     void apply_candidate_positions(std::vector<WordItem> &items);
     std::string position_context(bool english) const;
     bool fixed_positions_enabled_ = false;

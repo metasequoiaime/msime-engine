@@ -6,6 +6,7 @@
 #include "../../quanpin/quanpin_query.h"
 #include "../../quanpin/quanpin_utils.h"
 #include "../../quanpin/engine.h"
+#include "../../shuangpin/shuangpin_profile.h"
 
 #include <sqlite3.h>
 
@@ -186,6 +187,122 @@ bool same_candidate_words(const metasequoia::InputSession &left, const metasequo
     }
     return std::equal(left.candidates().begin(), left.candidates().end(), right.candidates().begin(),
                       [](const auto &left_item, const auto &right_item) { return left_item.word == right_item.word; });
+}
+
+void run_caret_prefix_session_tests(const std::filesystem::path &data_directory)
+{
+    const std::filesystem::path directory = data_directory / "caret-prefix";
+    std::filesystem::create_directories(directory);
+    {
+        Database database(directory / "msime.db");
+        database.execute("CREATE TABLE tbl_1_n(key TEXT,jp TEXT,value TEXT,weight INTEGER);"
+                         "INSERT INTO tbl_1_n VALUES('ni','n','你',100);"
+                         "INSERT INTO tbl_1_n VALUES('ni','n','拟',90);"
+                         "CREATE TABLE tbl_2_n(key TEXT,jp TEXT,value TEXT,weight INTEGER);"
+                         "INSERT INTO tbl_2_n VALUES('ni''hao','nh','你好',200);"
+                         "INSERT INTO tbl_2_n VALUES('ni''hao','nh','拟好',100);"
+                         "CREATE TABLE tbl_1_s(key TEXT,jp TEXT,value TEXT,weight INTEGER);"
+                         "INSERT INTO tbl_1_s VALUES('shi','sh','是',100);"
+                         "CREATE TABLE tbl_1_j(key TEXT,jp TEXT,value TEXT,weight INTEGER);"
+                         "INSERT INTO tbl_1_j VALUES('jie','j','接',100);"
+                         "CREATE TABLE wubi86(key TEXT,value TEXT,weight INTEGER);"
+                         "INSERT INTO wubi86 VALUES('aaaa','工',100);"
+                         "INSERT INTO wubi86 VALUES('aaaa','或',50);");
+    }
+
+    metasequoia::RuntimePaths paths;
+    paths.resources = directory;
+    paths.user_data = directory;
+    paths.cache = directory;
+    paths.dictionaries = directory;
+
+    const auto words_of = [](const metasequoia::InputSession &session) {
+        std::vector<std::string> words;
+        words.reserve(session.candidates().size());
+        for (const WordItem &item : session.candidates())
+            words.push_back(item.word);
+        return words;
+    };
+    const auto same_word_list = [](const metasequoia::InputSession &session, const std::vector<std::string> &expected) {
+        return session.candidates().size() == expected.size() &&
+               std::equal(session.candidates().begin(), session.candidates().end(), expected.begin(),
+                          [](const WordItem &left, const std::string &right) { return left.word == right; });
+    };
+    const auto typed_words = [&](const std::string &typed) {
+        metasequoia::InputSession other(SchemeType::Quanpin, 0, true, true, false, paths);
+        type(other, typed);
+        return words_of(other);
+    };
+
+    {
+        metasequoia::InputSession session(SchemeType::Quanpin, 0, true, true, false, paths);
+        const std::string sentence = "ni'hao'shi'jie";
+        type(session, sentence);
+        const auto full_words = words_of(session);
+        require(session.prefix_end() == sentence.size() && session.pending_suffix().empty(),
+                "An unset caret must decode the whole string");
+
+        for (const std::size_t caret : {std::size_t(5), std::size_t(6)})
+        {
+            session.set_caret(caret);
+            session.recompute_candidates();
+            require(session.prefix_end() == 3 && session.pending_suffix() == "hao'shi'jie",
+                    "An intra-syllable caret must floor to the last complete unit boundary");
+            require(candidate_index(session, "你") < session.candidates().size(),
+                    "The ni prefix lost its dictionary candidates");
+            require(same_word_list(session, typed_words("ni")), "The floored prefix must decode like the typed prefix");
+        }
+
+        session.set_caret(7);
+        session.recompute_candidates();
+        require(session.prefix_end() == 7 && session.pending_suffix() == "shi'jie" &&
+                    same_word_list(session, typed_words("ni'hao")),
+                "A caret on a syllable boundary must decode the complete prefix");
+        const auto at_hao = words_of(session);
+        session.set_caret(9);
+        session.recompute_candidates();
+        require(session.prefix_end() == 7 && same_word_list(session, at_hao),
+                "A caret inside a syllable must retain the prior prefix");
+
+        session.set_caret(0);
+        session.recompute_candidates();
+        require(session.candidates().empty() && session.prefix_end() == 0 && session.pending_suffix() == sentence,
+                "An empty prefix must offer no candidate and leave the full suffix pending");
+        require(session.editing_text() == sentence && session.caret_position() == 0 && session.preedit() == sentence,
+                "Prefix decoding must not disturb raw composition or preedit");
+
+        session.set_caret(sentence.size() + 10);
+        session.recompute_candidates();
+        require(session.caret_position() == sentence.size() && session.prefix_end() == sentence.size() &&
+                    same_word_list(session, full_words),
+                "An out-of-range caret must clamp to the full-string decode");
+    }
+
+    {
+        metasequoia::InputSession session(SchemeType::Wubi, 0, true, true, false, paths);
+        type(session, "aaaa");
+        const auto native = words_of(session);
+        require(candidate_index(session, "工") < session.candidates().size(), "The wubi fixture lost its candidates");
+        session.set_caret(0);
+        session.recompute_candidates();
+        require(session.prefix_end() == 4 && session.pending_suffix().empty() && same_word_list(session, native),
+                "A scheme without pinyin units must not re-decode by caret");
+    }
+
+    {
+        metasequoia::InputSession session(SchemeType::Shuangpin, GetMicrosoftShuangpinProfile(), paths);
+        type(session, "nihkb;");
+        require(session.prefix_end() == 6, "The unset shuangpin caret must decode the whole string");
+        session.set_caret(3);
+        session.recompute_candidates();
+        require(session.prefix_end() == 2 && session.pending_suffix() == "hkb;",
+                "A shuangpin caret inside a unit must floor to the prior unit");
+        metasequoia::InputSession prefix(SchemeType::Shuangpin, GetMicrosoftShuangpinProfile(), paths);
+        type(prefix, "ni");
+        require(same_word_list(session, words_of(prefix)), "The shuangpin prefix must decode independently");
+    }
+
+    std::filesystem::remove_all(directory);
 }
 } // namespace
 
@@ -1181,6 +1298,8 @@ int run_test()
 #endif
 
 #ifndef METASEQUOIA_FREQUENCY_TESTS_ONLY
+    run_caret_prefix_session_tests(data_directory);
+
     metasequoia::InputSession unicode_session(SchemeType::Quanpin);
     require(unicode_session.handle_character('U', true).handled &&
                 unicode_session.local_input_mode() == metasequoia::LocalInputMode::Unicode &&

@@ -272,10 +272,14 @@ void test_runtime_isolation()
         require(session.snapshot().editing_text == "i", "Forward delete removed the wrong character");
         session.character('n');
         require(session.snapshot().editing_text == "ni" && session.snapshot().caret_position == 1 &&
-                    session.snapshot().candidates.front().word == "你",
+                    session.snapshot().candidates.empty(),
                 "Middle insertion did not refresh candidates");
+        session.command(Command::MoveEnd);
+        require(session.snapshot().candidates.front().word == "你",
+                "Moving back to the end did not restore the full-string decode");
         require(!session.apply_online_candidate(*query, "旧响应", CandidateSource::CloudSuggestion),
                 "Editing back to the same text accepted an old online response");
+        session.command(Command::MoveLeft);
         session.character('\'');
         session.character('\'');
         require(session.snapshot().editing_text == "n'i", "Duplicate separator was inserted at caret");
@@ -285,6 +289,9 @@ void test_runtime_isolation()
         require(session.snapshot().editing_text == "ni" && session.snapshot().caret_position == 2,
                 "End forward delete changed input");
         session.command(Command::MoveHome);
+        require(session.snapshot().candidates.empty() && !session.select(0).handled,
+                "A caret at the start still offered or accepted candidates");
+        session.command(Command::MoveEnd);
         require(session.select(0).commit == "你" && session.snapshot().caret_position == 0,
                 "Selection did not clear caret with composition");
         type(session, "ni");
@@ -352,14 +359,19 @@ void test_runtime_isolation()
         const auto prefix = std::find_if(view.candidates.begin(), view.candidates.end(),
                                          [](const auto &word) { return word.word == "你"; });
         require(prefix != view.candidates.end(), "Missing partial-selection fixture");
+        const auto prefix_index = static_cast<std::size_t>(prefix - view.candidates.begin());
         session.command(Command::MoveHome);
-        const auto selected = session.select(static_cast<std::size_t>(prefix - view.candidates.begin()));
+        require(session.snapshot().candidates.empty() && !session.select(prefix_index).handled,
+                "A caret at the start still offered or accepted candidates");
+        session.command(Command::MoveEnd);
+        const auto selected = session.select(prefix_index);
         require(selected.commit == "你" && session.snapshot().editing_text == "hao" &&
                     session.snapshot().caret_position == 3,
                 "Partial selection retained the old caret");
         session.command(Command::MoveHome);
         session.command(Command::DeleteForward);
         session.character('h');
+        session.command(Command::MoveEnd);
         require(session.finish().commit == "好", "Editing the remainder lost the selected prefix boundary");
     }
     require(paths_a.resources != paths_a.dictionaries && paths_a.cache != paths_a.dictionaries,

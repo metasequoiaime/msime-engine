@@ -12,7 +12,7 @@ class QuanpinScheme : public IInputScheme
     QueryRequest build_request() const override;
     std::string get_preedit() const override;
     SchemeType type() const override;
-    void set_raw_input(const std::string &raw_input, const std::string &raw_input_with_cases);
+    void set_raw_input(const std::string &raw_input, const std::string &raw_input_with_cases) override;
 
   private:
     std::string raw_input_;
