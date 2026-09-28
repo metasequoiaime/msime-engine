@@ -38,12 +38,11 @@ const std::unordered_set<std::string> &shuangpin_pinyin_set()
     static const std::unordered_set<std::string> pinyin_set = [] {
         auto result = quanpin::intact_pinyin_set();
 
-        // Keep this compiled fallback identical to the historical pinyin.txt used
-        // for shuangpin validation.  The full quanpin table accepts a few extra
-        // spellings whose presence changes ambiguous shuangpin segmentation.
+        // Preserve the historical exclusions that affect ambiguous shuangpin
+        // segmentation, but accept "yo" as the complete syllable for "哟".
         result.insert("eng");
         for (const char *pinyin :
-             {"chua", "den", "fiao", "jve", "lo", "lue", "nou", "nue", "nun", "qve", "xve", "yo", "yve", "zhei"})
+             {"chua", "den", "fiao", "jve", "lo", "lue", "nou", "nue", "nun", "qve", "xve", "yve", "zhei"})
         {
             result.erase(pinyin);
         }
