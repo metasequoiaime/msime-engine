@@ -3,6 +3,7 @@
 #include "../user_dictionary/user_dictionary_journal.h"
 #include "../common/sqlite_statement.h"
 #include "../common/helpcode_utils.h"
+#include "../common/string_utils.h"
 #include "../quanpin/quanpin_query.h"
 #include "../quanpin/quanpin_utils.h"
 #include "shuangpin_query.h"
@@ -31,13 +32,6 @@ using Statement = metasequoia::SqliteStatement;
 std::string double_helpcode_cache_key(const std::string &pinyin, const std::string &help_codes)
 {
     return pinyin + ":" + help_codes;
-}
-
-std::string remove_delimiters(const std::string &segmented)
-{
-    std::string normalized = segmented;
-    normalized.erase(std::remove(normalized.begin(), normalized.end(), '\''), normalized.end());
-    return normalized;
 }
 
 std::string escape_sql_text(std::string text)
@@ -817,17 +811,19 @@ int ShuangpinDictionary::update_weight_by_word(string word)
 
 int ShuangpinDictionary::update_weight_by_pinyin_and_word(string pinyin, string word)
 {
-    const auto direct_cuts = quanpin::cut_pinyin_by_mode(remove_delimiters(pinyin), "correction");
+    const auto direct_cuts =
+        quanpin::cut_pinyin_by_mode(CommonUtils::remove_apostrophe_delimiters(pinyin), "correction");
     // A correction cut that merely reproduces the input may still consist of
     // incomplete initials (for example qbtmuo -> q'b't'mu'o). Only a complete
     // pinyin reading is safe to treat as an already-canonical key; otherwise
     // normalize the caller's Shuangpin input first.
     if (direct_cuts.empty() || !quanpin::has_only_complete_pinyin_segments(direct_cuts.front()) ||
-        remove_delimiters(quanpin::join_segments(direct_cuts.front())) != remove_delimiters(pinyin))
+        CommonUtils::remove_apostrophe_delimiters(quanpin::join_segments(direct_cuts.front())) !=
+            CommonUtils::remove_apostrophe_delimiters(pinyin))
     {
         pinyin = normalize_shuangpin_to_quanpin_input(pinyin);
     }
-    const auto cuts = quanpin::cut_pinyin_by_mode(remove_delimiters(pinyin), "correction");
+    const auto cuts = quanpin::cut_pinyin_by_mode(CommonUtils::remove_apostrophe_delimiters(pinyin), "correction");
     if (cuts.empty())
         return ERROR_CODE;
     auto segments = cuts.front();
@@ -847,19 +843,20 @@ int ShuangpinDictionary::update_weight_by_pinyin_and_word(string pinyin, string 
 
 int ShuangpinDictionary::delete_by_pinyin_and_word(string pinyin, string word)
 {
-    const auto direct_cuts = quanpin::cut_pinyin_by_mode(remove_delimiters(pinyin), "correction");
+    const auto direct_cuts =
+        quanpin::cut_pinyin_by_mode(CommonUtils::remove_apostrophe_delimiters(pinyin), "correction");
     const auto normalized_shuangpin = normalize_shuangpin_to_quanpin_input(pinyin);
     const auto shuangpin_cuts = quanpin::cut_pinyin_by_mode(normalized_shuangpin, "correction");
     const size_t han_count = HelpcodeUtils::count_han_chars(word);
     const bool direct_key_matches_word = !direct_cuts.empty() && direct_cuts.front().size() == han_count;
     const bool shuangpin_key_matches_word = !shuangpin_cuts.empty() && shuangpin_cuts.front().size() == han_count;
     if ((!direct_key_matches_word && shuangpin_key_matches_word) ||
-        (direct_cuts.empty() ||
-         remove_delimiters(quanpin::join_segments(direct_cuts.front())) != remove_delimiters(pinyin)))
+        (direct_cuts.empty() || CommonUtils::remove_apostrophe_delimiters(quanpin::join_segments(
+                                    direct_cuts.front())) != CommonUtils::remove_apostrophe_delimiters(pinyin)))
     {
         pinyin = normalized_shuangpin;
     }
-    const auto cuts = quanpin::cut_pinyin_by_mode(remove_delimiters(pinyin), "correction");
+    const auto cuts = quanpin::cut_pinyin_by_mode(CommonUtils::remove_apostrophe_delimiters(pinyin), "correction");
     if (cuts.empty())
         return ERROR_CODE;
     const std::string normalized = quanpin::join_segments(cuts.front());
@@ -1034,7 +1031,7 @@ std::string ShuangpinDictionary::normalize_shuangpin_to_quanpin_segmentation(con
 
 std::string ShuangpinDictionary::normalize_shuangpin_to_quanpin_input(const std::string &pinyin) const
 {
-    return remove_delimiters(normalize_shuangpin_to_quanpin_segmentation(pinyin));
+    return CommonUtils::remove_apostrophe_delimiters(normalize_shuangpin_to_quanpin_segmentation(pinyin));
 }
 
 std::string ShuangpinDictionary::build_quanpin_sql_for_creating_word(const std::string &pinyin) const
@@ -1095,7 +1092,7 @@ std::string ShuangpinDictionary::build_quanpin_sql_for_updating_word(std::string
     // The caller has already normalized the key to canonical Quanpin. Running
     // it through the active Shuangpin profile again can split a valid key into
     // unrelated syllables before building the UPDATE statement.
-    const auto cuts = quanpin::cut_pinyin_by_mode(remove_delimiters(pinyin), "correction");
+    const auto cuts = quanpin::cut_pinyin_by_mode(CommonUtils::remove_apostrophe_delimiters(pinyin), "correction");
     if (cuts.empty())
     {
         return "";
@@ -1143,7 +1140,7 @@ std::string ShuangpinDictionary::build_quanpin_sql_for_deleting_canonical_word(c
 
 bool ShuangpinDictionary::do_validate(string key, string jp, string value) const
 {
-    const std::string pure_key = remove_delimiters(key);
+    const std::string pure_key = CommonUtils::remove_apostrophe_delimiters(key);
     if (pure_key.empty())
     {
         return false;

@@ -4,6 +4,7 @@
 #include "../user_dictionary/user_dictionary_journal.h"
 
 #include "../common/helpcode_utils.h"
+#include "../common/string_utils.h"
 #include "quanpin_query.h"
 #include "quanpin_utils.h"
 #include "../common/sqlite_statement.h"
@@ -38,13 +39,6 @@ constexpr std::int64_t kAlternativeSegmentationPromotionRatio = 100;
 bool is_alpha_vk(ImeKeyCode vk)
 {
     return vk >= 'A' && vk <= 'Z';
-}
-
-std::string remove_delimiters(const std::string &segmented)
-{
-    std::string normalized = segmented;
-    normalized.erase(std::remove(normalized.begin(), normalized.end(), '\''), normalized.end());
-    return normalized;
 }
 
 quanpin::Segments normalize_umlaut_aliases(quanpin::Segments segments)
@@ -382,7 +376,7 @@ std::vector<WordItem> QuanpinDictionary::query_series(const std::string &raw_inp
     {
         quanpin::Segments partial_segments(segments.begin(), segments.begin() + static_cast<std::ptrdiff_t>(count));
         const std::string partial_segmentation = quanpin::join_segments(partial_segments);
-        const std::string partial_input = remove_delimiters(partial_segmentation);
+        const std::string partial_input = CommonUtils::remove_apostrophe_delimiters(partial_segmentation);
         auto partial_result = query_single_path(partial_input, partial_segmentation, partial_segments);
         if (count == segments.size())
         {
@@ -432,7 +426,8 @@ std::vector<WordItem> QuanpinDictionary::query_series(const std::string &raw_inp
         std::string google_sentence;
         if (sentence_association_.google)
         {
-            const std::string normalized = remove_delimiters(segmentation.empty() ? raw_input : segmentation);
+            const std::string normalized =
+                CommonUtils::remove_apostrophe_delimiters(segmentation.empty() ? raw_input : segmentation);
             google_sentence = search_sentence_from_ime_engine(normalized);
         }
         if (!google_sentence.empty())
@@ -744,7 +739,8 @@ std::vector<WordItem> QuanpinDictionary::append_ime_fallback(const std::string &
 
     if (!sentence_association_.google)
         return result;
-    const std::string normalized = remove_delimiters(segmentation.empty() ? raw_input : segmentation);
+    const std::string normalized =
+        CommonUtils::remove_apostrophe_delimiters(segmentation.empty() ? raw_input : segmentation);
     const std::string sentence = search_sentence_from_ime_engine(normalized);
     if (sentence.empty())
     {
@@ -774,7 +770,7 @@ std::vector<WordItem> QuanpinDictionary::append_sparse_pinyin_fallbacks(const qu
         }
 
         const std::string fallback_segmentation = quanpin::join_segments(fallback_segments);
-        const std::string fallback_input = remove_delimiters(fallback_segmentation);
+        const std::string fallback_input = CommonUtils::remove_apostrophe_delimiters(fallback_segmentation);
         const auto fallback_result = query_single_path(fallback_input, fallback_segmentation, fallback_segments);
         append_unique_words(result, fallback_result);
     }
@@ -825,7 +821,7 @@ void QuanpinDictionary::mark_autocorrect_candidates(std::vector<WordItem> &candi
 
 int QuanpinDictionary::create_word(std::string pinyin, std::string word)
 {
-    pinyin = remove_delimiters(pinyin);
+    pinyin = CommonUtils::remove_apostrophe_delimiters(pinyin);
     const auto cuts = quanpin::cut_pinyin_by_mode(pinyin, "correction");
     if (cuts.empty())
     {
@@ -887,12 +883,13 @@ int QuanpinDictionary::create_word_from_canonical_pinyin(std::string pinyin, std
 
 int QuanpinDictionary::update_weight_by_word(std::string word)
 {
-    return update_weight_by_pinyin_and_word(remove_delimiters(pinyin_segmentation_), std::move(word));
+    return update_weight_by_pinyin_and_word(CommonUtils::remove_apostrophe_delimiters(pinyin_segmentation_),
+                                            std::move(word));
 }
 
 int QuanpinDictionary::update_weight_by_pinyin_and_word(std::string pinyin, std::string word)
 {
-    pinyin = remove_delimiters(pinyin);
+    pinyin = CommonUtils::remove_apostrophe_delimiters(pinyin);
     const auto cuts = quanpin::cut_pinyin_by_mode(pinyin, "correction");
     if (cuts.empty())
         return ERROR_CODE;
@@ -914,7 +911,7 @@ int QuanpinDictionary::update_weight_by_pinyin_and_word(std::string pinyin, std:
 
 int QuanpinDictionary::delete_by_pinyin_and_word(std::string pinyin, std::string word)
 {
-    pinyin = remove_delimiters(pinyin);
+    pinyin = CommonUtils::remove_apostrophe_delimiters(pinyin);
     const auto cuts = quanpin::cut_pinyin_by_mode(pinyin, "correction");
     if (cuts.empty())
         return ERROR_CODE;
@@ -1214,12 +1211,12 @@ std::string QuanpinDictionary::build_sql_for_inserting_word(const std::string &k
 
 std::string QuanpinDictionary::build_sql_for_updating_word(const std::string &word)
 {
-    return build_sql_for_updating_word(remove_delimiters(pinyin_segmentation_), word);
+    return build_sql_for_updating_word(CommonUtils::remove_apostrophe_delimiters(pinyin_segmentation_), word);
 }
 
 std::string QuanpinDictionary::build_sql_for_updating_word(std::string pinyin, const std::string &word)
 {
-    pinyin = remove_delimiters(pinyin);
+    pinyin = CommonUtils::remove_apostrophe_delimiters(pinyin);
     const auto cuts = quanpin::cut_pinyin_by_mode(pinyin, "correction");
     if (cuts.empty())
     {
@@ -1248,7 +1245,7 @@ std::string QuanpinDictionary::build_sql_for_updating_word(std::string pinyin, c
 
 std::string QuanpinDictionary::build_sql_for_deleting_word(std::string pinyin, const std::string &word)
 {
-    pinyin = remove_delimiters(pinyin);
+    pinyin = CommonUtils::remove_apostrophe_delimiters(pinyin);
     const auto cuts = quanpin::cut_pinyin_by_mode(pinyin, "correction");
     if (cuts.empty())
     {
@@ -1268,7 +1265,7 @@ std::string QuanpinDictionary::build_sql_for_deleting_word(std::string pinyin, c
 
 bool QuanpinDictionary::do_validate(const std::string &key, const std::string &jp, const std::string &value)
 {
-    const std::string pure_key = remove_delimiters(key);
+    const std::string pure_key = CommonUtils::remove_apostrophe_delimiters(key);
     if (pure_key.empty())
     {
         return false;

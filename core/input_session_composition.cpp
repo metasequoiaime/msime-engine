@@ -1,5 +1,6 @@
 #include "input_session.h"
 #include "../common/helpcode_utils.h"
+#include "../common/string_utils.h"
 #include "../quanpin/quanpin_utils.h"
 #include "../shuangpin/shuangpin_query.h"
 #include "../shuangpin/shuangpin_utils.h"
@@ -12,20 +13,6 @@ namespace metasequoia
 namespace
 {
 constexpr size_t kMaxLearnedSentenceSyllables = 7;
-
-std::string remove_delimiters(const std::string &segmented)
-{
-    std::string normalized;
-    normalized.reserve(segmented.size());
-    for (const char ch : segmented)
-    {
-        if (ch != '\'')
-        {
-            normalized.push_back(ch);
-        }
-    }
-    return normalized;
-}
 
 void remove_consumed_leading_separators(std::string &raw_input, std::string &raw_input_with_cases)
 {
@@ -484,7 +471,7 @@ int InputSession::pin_candidate(std::string pinyin, std::string word)
 
 int InputSession::remove_candidate(std::string pinyin, std::string word)
 {
-    if (!is_wubi() && remove_delimiters(request().raw_input).size() == 1)
+    if (!is_wubi() && CommonUtils::remove_apostrophe_delimiters(request().raw_input).size() == 1)
     {
         return -1;
     }
@@ -517,13 +504,13 @@ bool InputSession::selection_completes_composition(const std::string &selected_p
             return !(required_length < total_input_length && word_pinyin_length < total_input_length);
         }
         // With no helpcode the pure pinyin is the whole effective input.
-        size_t consumed_length = remove_delimiters(selected_pinyin).size();
+        size_t consumed_length = CommonUtils::remove_apostrophe_delimiters(selected_pinyin).size();
         if (consumed_length == 0 || consumed_length > total_input_length)
             consumed_length = (std::min)(word_pinyin_length, total_input_length);
         return !(consumed_length < total_input_length);
     }
 
-    const std::string selected_pure_pinyin = remove_delimiters(selected_pinyin);
+    const std::string selected_pure_pinyin = CommonUtils::remove_apostrophe_delimiters(selected_pinyin);
     const std::string raw_input_without_helpcodes =
         quanpin::strip_active_helpcodes(request().raw_input, request().raw_input_with_cases);
     const std::string raw_input_with_cases_without_helpcodes =
@@ -566,7 +553,7 @@ InputSession::SelectionTransition InputSession::advance_composition_after_select
                 ? base.effective_raw_input.substr(0, total_input_length - base.helpcode_length)
                 : base.effective_raw_input;
 
-        size_t consumed_length = remove_delimiters(selected_pinyin).size();
+        size_t consumed_length = CommonUtils::remove_apostrophe_delimiters(selected_pinyin).size();
         if (base.helpcode_length > 0)
         {
             transition.continues_composition =
@@ -623,7 +610,7 @@ InputSession::SelectionTransition InputSession::advance_composition_after_select
     const std::string current_segmentation =
         request().normalized_segmentation.empty() ? request().segmentation : request().normalized_segmentation;
     const std::string current_segmentation_with_cases = get_pinyin_segmentation_with_cases();
-    const std::string selected_pure_pinyin = remove_delimiters(selected_pinyin);
+    const std::string selected_pure_pinyin = CommonUtils::remove_apostrophe_delimiters(selected_pinyin);
     const std::string raw_input_without_helpcodes =
         quanpin::strip_active_helpcodes(request().raw_input, request().raw_input_with_cases);
     const std::string raw_input_with_cases_without_helpcodes =

@@ -17,4 +17,16 @@ std::string wstring_to_string(const std::wstring &wstr)
     utf8::utf16to8(wstr.begin(), wstr.end(), std::back_inserter(result));
     return result;
 }
+
+std::string remove_apostrophe_delimiters(const std::string &text)
+{
+    std::string result;
+    result.reserve(text.size());
+    for (const char character : text)
+    {
+        if (character != '\'')
+            result.push_back(character);
+    }
+    return result;
+}
 } // namespace CommonUtils
