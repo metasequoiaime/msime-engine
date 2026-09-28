@@ -3,6 +3,7 @@
 #include "key_event.h"
 #include "fuzzy_pinyin_options.h"
 #include "scheme_type.h"
+#include "sentence_association_options.h"
 #include <string>
 #include <vector>
 
@@ -34,5 +35,7 @@ struct QueryRequest
     // this when it reorders the readings itself and crops the list before display; see
     // quanpin::make_sentence_lattice_options for why the default answers with one.
     bool sentence_alternatives = false;
+    SentenceAssociationOptions sentence_association;
+    std::string rescoring_context;
     bool valid = false;
 };

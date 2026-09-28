@@ -127,6 +127,8 @@ std::vector<WordItem> ShuangpinEngine::query(const QueryRequest &request)
     }
 
     set_sentence_alternatives(request.sentence_alternatives);
+    set_sentence_association(request.sentence_association);
+    set_rescoring_context(request.rescoring_context);
 
     const std::string &raw_input = request.raw_input;
     const std::string &raw_input_with_cases =

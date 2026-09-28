@@ -1013,6 +1013,7 @@ std::optional<std::string> InputSession::learn_candidate(std::size_t index)
 
     const WordItem &selected = candidates()[index];
     if (selected.source == CandidateSource::Generated || selected.source == CandidateSource::Fallback ||
+        selected.source == CandidateSource::NeuralDesktop || selected.source == CandidateSource::NeuralKeyboard ||
         selected.source == CandidateSource::CloudSuggestion || selected.source == CandidateSource::AiSuggestion)
     {
         return learn_sentence_candidate(selected);

@@ -411,7 +411,7 @@ std::vector<LatticePath> decode_word_lattice(const Segments &syllables, const Wo
 void merge_lattice_candidates(std::vector<WordItem> &candidates, const Segments &syllables,
                               const WordLatticeLookup &lookup, const std::string &typed_pinyin,
                               const WordLatticeOptions &options, const std::string &fallback_sentence,
-                              WholeSentenceComparison *comparison)
+                              WholeSentenceComparison *comparison, const std::vector<SourcedLatticeReranker> &rerankers)
 {
     if (!lookup || syllables.size() < 3)
         return;
@@ -457,14 +457,114 @@ void merge_lattice_candidates(std::vector<WordItem> &candidates, const Segments 
             }
         }
     }
+    std::unordered_set<std::string> already;
+    for (const auto &item : candidates)
+        already.insert(item.word);
+
+    if (!rerankers.empty())
+    {
+        std::optional<std::vector<LatticePath>> desktop_paths;
+        std::optional<std::vector<LatticePath>> keyboard_paths;
+        bool keyboard_enabled = false;
+        for (const SourcedLatticeReranker &entry : rerankers)
+        {
+            if (entry.source == CandidateSource::NeuralKeyboard)
+                keyboard_enabled = true;
+            if (!entry.rerank)
+                continue;
+            std::vector<LatticePath> reranked = paths;
+            if (!entry.rerank(reranked))
+                continue;
+            if (entry.source == CandidateSource::NeuralDesktop)
+                desktop_paths = std::move(reranked);
+            else if (entry.source == CandidateSource::NeuralKeyboard)
+                keyboard_paths = std::move(reranked);
+        }
+
+        const auto first_distinct = [&](const std::vector<LatticePath> &ranked) -> const LatticePath * {
+            for (const LatticePath &path : ranked)
+            {
+                if (already.find(path.sentence) != already.end())
+                {
+                    if (options.show_next_on_duplicate)
+                        continue;
+                    break;
+                }
+                return &path;
+            }
+            return nullptr;
+        };
+        const auto take = [&](const std::vector<LatticePath> &ranked, CandidateSource source) {
+            const LatticePath *path = first_distinct(ranked);
+            if (path == nullptr)
+                return std::optional<WordItem>{};
+            already.insert(path->sentence);
+            WordItem item(typed_pinyin, path->sentence, static_cast<std::int64_t>(path->log_prob * 1000.0), source,
+                          path->key);
+            item.sentence_association = true;
+            return std::optional<WordItem>(std::move(item));
+        };
+
+        std::optional<WordItem> lattice_item;
+        if (options.include_lattice_best)
+            lattice_item = take(paths, CandidateSource::Generated);
+        std::optional<WordItem> keyboard_item;
+        std::optional<WordItem> desktop_item;
+        bool keyboard_before_desktop = false;
+        if (keyboard_paths && desktop_paths)
+        {
+            const LatticePath *keyboard_best = first_distinct(*keyboard_paths);
+            const LatticePath *desktop_best = first_distinct(*desktop_paths);
+            keyboard_before_desktop = keyboard_best != nullptr && desktop_best != nullptr &&
+                                      keyboard_best->sentence == desktop_best->sentence;
+            if (keyboard_before_desktop)
+            {
+                keyboard_item = take(*keyboard_paths, CandidateSource::NeuralKeyboard);
+                desktop_item = take(*desktop_paths, CandidateSource::NeuralDesktop);
+            }
+            else
+            {
+                desktop_item = take(*desktop_paths, CandidateSource::NeuralDesktop);
+                keyboard_item = take(*keyboard_paths, CandidateSource::NeuralKeyboard);
+            }
+        }
+        else if (keyboard_paths)
+        {
+            keyboard_item = take(*keyboard_paths, CandidateSource::NeuralKeyboard);
+        }
+        else if (desktop_paths && !keyboard_enabled)
+        {
+            desktop_item = take(*desktop_paths, CandidateSource::NeuralDesktop);
+        }
+
+        std::vector<WordItem> extra;
+        if (lattice_item)
+            extra.push_back(std::move(*lattice_item));
+        if (keyboard_before_desktop)
+        {
+            if (keyboard_item)
+                extra.push_back(std::move(*keyboard_item));
+            if (desktop_item)
+                extra.push_back(std::move(*desktop_item));
+        }
+        else
+        {
+            if (desktop_item)
+                extra.push_back(std::move(*desktop_item));
+            if (keyboard_item)
+                extra.push_back(std::move(*keyboard_item));
+        }
+        if (extra.empty())
+            return;
+        const size_t insert_at = whole_sentence_insert_position(candidates, syllables.size());
+        candidates.insert(candidates.begin() + static_cast<std::ptrdiff_t>(insert_at), extra.begin(), extra.end());
+        return;
+    }
+
     // Searching several paths and showing one is the point of `emit`: the alternatives exist so the trigram has
     // something to reorder, not so the candidate page fills with near-duplicate sentences.
     if (options.emit > 0 && paths.size() > static_cast<size_t>(options.emit))
         paths.resize(static_cast<size_t>(options.emit));
-
-    std::unordered_set<std::string> already;
-    for (const auto &item : candidates)
-        already.insert(item.word);
 
     std::vector<WordItem> extra;
     for (const auto &path : paths)

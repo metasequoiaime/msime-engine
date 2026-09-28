@@ -6,6 +6,7 @@
 #include "../quanpin/quanpin_utils.h"
 #include "shuangpin_query.h"
 #include "shuangpin_utils.h"
+#include "../neural/neural_decoder.h"
 #include <algorithm>
 #include <mutex>
 #include <shared_mutex>
@@ -52,6 +53,10 @@ std::string escape_sql_text(std::string text)
 ShuangpinDictionary::ShuangpinDictionary(const ShuangpinProfile &profile, metasequoia::RuntimePaths paths)
     : profile_(profile), paths_(std::move(paths)), decoder_(paths_.resource(metasequoia::assets::pinyin_model),
                                                             paths_.user(metasequoia::assets::pinyin_user_dictionary)),
+      neural_desktop_model_(neural::shared_sentence_model(
+          metasequoia::path_to_utf8(paths_.resource(metasequoia::assets::neural_model_desktop)))),
+      neural_keyboard_model_(neural::shared_sentence_model(
+          metasequoia::path_to_utf8(paths_.resource(metasequoia::assets::neural_model_keyboard)))),
       helpcodes_(HelpcodeUtils::load_helpcode_keymap(paths_.resources, HelpcodeUtils::selected_helpcode_schema())),
       _kb_input_sequence(100), _cached_buffer(128), _cached_buffer_sgl(128), _cached_buffer_sgl_reversed(128),
       _cached_buffer_dbl(128), _cached_buffer_series(128)
@@ -78,6 +83,22 @@ ShuangpinDictionary::ShuangpinDictionary(const ShuangpinProfile &profile, metase
         quanpin::NgramTable::shared(paths_.dictionary(quanpin::kTrigramFileName));
         reset_cache_if_database_changed();
     }
+}
+
+void ShuangpinDictionary::set_sentence_association(const SentenceAssociationOptions &options)
+{
+    if (sentence_association_ == options)
+        return;
+    sentence_association_ = options;
+    reset_cache();
+}
+
+void ShuangpinDictionary::set_rescoring_context(const std::string &context)
+{
+    if (rescoring_context_ == context)
+        return;
+    rescoring_context_ = context;
+    reset_cache();
 }
 
 /**
@@ -158,8 +179,10 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generateSeries( //
     else
     {
         const std::string effective_cache_key = cache_key.empty() ? pinyin_sequence : cache_key;
+        const bool neural_enabled = (sentence_association_.neural_keyboard && neural_keyboard_model_ != nullptr) ||
+                                    (sentence_association_.neural_desktop && neural_desktop_model_ != nullptr);
         // 先看一下缓存里有没有
-        if (_cached_buffer_series.contains(effective_cache_key))
+        if (!neural_enabled && _cached_buffer_series.contains(effective_cache_key))
         {
             reset_cache_if_database_changed();
             if (const auto cached = _cached_buffer_series.get(effective_cache_key))
@@ -177,7 +200,7 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generateSeries( //
         }
         else
         { /* 可能数据库查询的结果是空，这时就需要联想，这个只适合在此处联想 */
-            if (candidate_list.size() == 0)
+            if (candidate_list.size() == 0 && sentence_association_.google)
             {
                 string quanpin_str =
                     ShuangpinUtil::convert_seg_shuangpin_to_seg_complete_pinyin(pinyin_segmentation, profile_);
@@ -224,7 +247,8 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generateSeries( //
         // this; this one kept inserting at index 0, so an assembled sentence
         // displaced the exact word, turning 筚路蓝缕 into 笔录蓝绿.
         std::string google_sentence;
-        if (quanpin_segments.size() >= 3 && quanpin_segmentation.find('\'') != std::string::npos)
+        if (sentence_association_.google && quanpin_segments.size() >= 3 &&
+            quanpin_segmentation.find('\'') != std::string::npos)
         {
             google_sentence = search_sentence_from_ime_engine(quanpin_segmentation);
             const bool duplicate = std::any_of(candidate_list.begin(), candidate_list.end(),
@@ -239,12 +263,27 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generateSeries( //
                 candidate_list.insert(candidate_list.begin() + at, std::move(sentence));
             }
         }
-        const auto lattice_options = quanpin::make_sentence_lattice_options(paths_, sentence_alternatives_);
-        quanpin::merge_lattice_candidates(candidate_list, quanpin_segments,
-                                          quanpin::make_lattice_db_lookup(quanpin_db_, quanpin_statement_cache_,
-                                                                          quanpin::QuerySource::Shuangpin,
-                                                                          lattice_options.span_limit),
-                                          pinyin_sequence, lattice_options);
+        std::vector<quanpin::SourcedLatticeReranker> rerankers;
+        if (sentence_association_.neural_keyboard && neural_keyboard_model_ != nullptr)
+            rerankers.push_back({quanpin::make_neural_reranker(neural_keyboard_model_, rescoring_context_),
+                                 CandidateSource::NeuralKeyboard});
+        if (sentence_association_.neural_desktop && neural_desktop_model_ != nullptr)
+            rerankers.push_back({quanpin::make_neural_reranker(neural_desktop_model_, rescoring_context_),
+                                 CandidateSource::NeuralDesktop});
+        const bool need_lattice = sentence_association_.word_lattice || !rerankers.empty();
+        auto lattice_options = quanpin::make_sentence_lattice_options(paths_, sentence_alternatives_);
+        lattice_options.nbest =
+            rerankers.empty() ? lattice_options.nbest : static_cast<int>(neural::RerankOptions{}.max_paths);
+        lattice_options.include_lattice_best = sentence_association_.word_lattice;
+        lattice_options.show_next_on_duplicate = sentence_association_.show_next_on_duplicate;
+        if (need_lattice)
+        {
+            quanpin::merge_lattice_candidates(candidate_list, quanpin_segments,
+                                              quanpin::make_lattice_db_lookup(quanpin_db_, quanpin_statement_cache_,
+                                                                              quanpin::QuerySource::Shuangpin,
+                                                                              lattice_options.span_limit),
+                                              pinyin_sequence, lattice_options, {}, nullptr, rerankers);
+        }
         if (!google_sentence.empty())
         {
             const auto google = std::find_if(candidate_list.begin(), candidate_list.end(), [&](const WordItem &item) {
@@ -263,7 +302,8 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generateSeries( //
         }
 
         /* 缓存起来 */
-        _cached_buffer_series.insert(effective_cache_key, candidate_list);
+        if (!neural_enabled)
+            _cached_buffer_series.insert(effective_cache_key, candidate_list);
     }
 
     return candidate_list;

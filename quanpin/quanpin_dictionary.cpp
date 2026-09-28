@@ -6,6 +6,8 @@
 #include "../common/helpcode_utils.h"
 #include "quanpin_query.h"
 #include "quanpin_utils.h"
+#include "lattice_rerank.h"
+#include "../neural/neural_decoder.h"
 #include "../shuangpin/shuangpin_utils.h"
 #include <algorithm>
 #include <climits>
@@ -125,6 +127,10 @@ QuanpinDictionary::QuanpinDictionary(std::string db_path, metasequoia::RuntimePa
     : cache_(128), series_cache_(128), segmentation_cache_(128), paths_(std::move(paths)),
       decoder_(paths_.resource(metasequoia::assets::pinyin_model),
                paths_.user(metasequoia::assets::pinyin_user_dictionary)),
+      neural_desktop_model_(neural::shared_sentence_model(
+          metasequoia::path_to_utf8(paths_.resource(metasequoia::assets::neural_model_desktop)))),
+      neural_keyboard_model_(neural::shared_sentence_model(
+          metasequoia::path_to_utf8(paths_.resource(metasequoia::assets::neural_model_keyboard)))),
       db_path_(db_path.empty() ? metasequoia::path_to_utf8(paths_.dictionary(metasequoia::assets::main_dictionary))
                                : std::move(db_path))
 {
@@ -179,6 +185,22 @@ void QuanpinDictionary::set_sentence_alternatives(bool enabled)
     series_cache_.clear();
 }
 
+void QuanpinDictionary::set_sentence_association(const SentenceAssociationOptions &options)
+{
+    if (sentence_association_ == options)
+        return;
+    sentence_association_ = options;
+    reset_cache();
+}
+
+void QuanpinDictionary::set_rescoring_context(const std::string &context)
+{
+    if (rescoring_context_ == context)
+        return;
+    rescoring_context_ = context;
+    reset_cache();
+}
+
 std::vector<WordItem> QuanpinDictionary::query_exact(const std::string &raw_input, const std::string &segmentation,
                                                      unsigned autocorrect_types)
 {
@@ -202,7 +224,9 @@ std::vector<WordItem> QuanpinDictionary::query_exact(const std::string &raw_inpu
 
     // Autocorrected results get their own cache slot so they never leak the
     // fallback tail into plain (correct) spellings sharing the same key.
-    if (series_cache_.contains(resolution.cache_key))
+    const bool neural_enabled = (sentence_association_.neural_keyboard && neural_keyboard_model_ != nullptr) ||
+                                (sentence_association_.neural_desktop && neural_desktop_model_ != nullptr);
+    if (!neural_enabled && series_cache_.contains(resolution.cache_key))
     {
         reset_cache_if_database_changed();
         if (auto cached = series_cache_.get(resolution.cache_key))
@@ -266,7 +290,8 @@ std::vector<WordItem> QuanpinDictionary::query_exact(const std::string &raw_inpu
                                                      alternative_segmentations, std::move(result));
         }
     }
-    series_cache_.insert(resolution.cache_key, result);
+    if (!neural_enabled)
+        series_cache_.insert(resolution.cache_key, result);
     return result;
 }
 
@@ -400,8 +425,12 @@ std::vector<WordItem> QuanpinDictionary::query_series(const std::string &raw_inp
         // whole_sentence_insert_position computes.  This used to insert at
         // index 0 unconditionally: an assembled sentence displaced the exact
         // word, turning 百依百顺 into 白一百顺 and 颁布实施 into 版不是是.
-        const std::string normalized = remove_delimiters(segmentation.empty() ? raw_input : segmentation);
-        const std::string google_sentence = search_sentence_from_ime_engine(normalized);
+        std::string google_sentence;
+        if (sentence_association_.google)
+        {
+            const std::string normalized = remove_delimiters(segmentation.empty() ? raw_input : segmentation);
+            google_sentence = search_sentence_from_ime_engine(normalized);
+        }
         if (!google_sentence.empty())
         {
             const auto duplicate = std::find_if(result.begin(), result.end(),
@@ -419,13 +448,30 @@ std::vector<WordItem> QuanpinDictionary::query_series(const std::string &raw_inp
             }
         }
 
+        std::vector<quanpin::SourcedLatticeReranker> rerankers;
+        if (sentence_association_.neural_keyboard && neural_keyboard_model_ != nullptr)
+            rerankers.push_back({quanpin::make_neural_reranker(neural_keyboard_model_, rescoring_context_),
+                                 CandidateSource::NeuralKeyboard});
+        if (sentence_association_.neural_desktop && neural_desktop_model_ != nullptr)
+            rerankers.push_back({quanpin::make_neural_reranker(neural_desktop_model_, rescoring_context_),
+                                 CandidateSource::NeuralDesktop});
+        const bool need_lattice = sentence_association_.word_lattice || !rerankers.empty();
         const auto lattice_options = quanpin::make_sentence_lattice_options(paths_, sentence_alternatives_);
         quanpin::WholeSentenceComparison sentences;
-        quanpin::merge_lattice_candidates(
-            result, segments,
-            quanpin::make_lattice_db_lookup(db_, statement_cache_, quanpin::QuerySource::Quanpin,
-                                            lattice_options.span_limit),
-            segmentation.empty() ? raw_input : segmentation, lattice_options, google_sentence, &sentences);
+        if (need_lattice)
+        {
+            auto options = lattice_options;
+            options.nbest =
+                rerankers.empty() ? lattice_options.nbest : static_cast<int>(neural::RerankOptions{}.max_paths);
+            options.include_lattice_best = sentence_association_.word_lattice;
+            options.show_next_on_duplicate = sentence_association_.show_next_on_duplicate;
+            quanpin::merge_lattice_candidates(result, segments,
+                                              quanpin::make_lattice_db_lookup(db_, statement_cache_,
+                                                                              quanpin::QuerySource::Quanpin,
+                                                                              options.span_limit),
+                                              segmentation.empty() ? raw_input : segmentation, options, google_sentence,
+                                              sentence_association_.google ? &sentences : nullptr, rerankers);
+        }
         // A sentence neither source produced on its own, assembled from one source's frame and the
         // other's disputed span. It only exists when it outscored both, so it goes in front of them.
         if (sentences.hybrid_leads(lattice_options.repair_margin) &&
@@ -445,7 +491,8 @@ std::vector<WordItem> QuanpinDictionary::query_series(const std::string &raw_inp
         // including the ones where the lattice read the sentence correctly and it did not. Now both
         // are scored on the same terms and the better one leads; a fallback the dictionary cannot
         // spell has no score, and keeps the seat it always had.
-        if (!google_sentence.empty() && !sentences.lattice_outranks_fallback(lattice_options.fallback_margin) &&
+        if (sentence_association_.google && !google_sentence.empty() &&
+            !sentences.lattice_outranks_fallback(lattice_options.fallback_margin) &&
             !sentences.hybrid_leads(lattice_options.repair_margin))
         {
             const auto google = std::find_if(result.begin(), result.end(), [&](const WordItem &item) {
@@ -690,6 +737,8 @@ std::vector<WordItem> QuanpinDictionary::append_ime_fallback(const std::string &
         return result;
     }
 
+    if (!sentence_association_.google)
+        return result;
     const std::string normalized = remove_delimiters(segmentation.empty() ? raw_input : segmentation);
     const std::string sentence = search_sentence_from_ime_engine(normalized);
     if (sentence.empty())

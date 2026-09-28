@@ -10,6 +10,9 @@
 #include "../core/word_item.h"
 #include "../quanpin/quanpin_query.h"
 #include "shuangpin_profile.h"
+#include "../core/sentence_association_options.h"
+#include "../neural/neural_decoder.h"
+#include "../quanpin/lattice_rerank.h"
 #include <shared_mutex>
 #include <array>
 #include <vector>
@@ -73,6 +76,8 @@ class ShuangpinDictionary
     explicit ShuangpinDictionary(const ShuangpinProfile &profile = GetXiaoheShuangpinProfile(),
                                  metasequoia::RuntimePaths paths = metasequoia::RuntimePaths::legacy());
     ~ShuangpinDictionary();
+    void set_sentence_association(const SentenceAssociationOptions &options);
+    void set_rescoring_context(const std::string &context);
 
     const ShuangpinProfile &profile() const
     {
@@ -86,7 +91,11 @@ class ShuangpinDictionary
     sqlite3_int64 data_version_ = -1;
     metasequoia::RuntimePaths paths_;
     bool sentence_alternatives_ = false;
+    SentenceAssociationOptions sentence_association_;
+    std::string rescoring_context_;
     metasequoia::PinyinDecoder decoder_;
+    const neural::SentenceModel *neural_desktop_model_ = nullptr;
+    const neural::SentenceModel *neural_keyboard_model_ = nullptr;
     HelpcodeUtils::SharedKeymap helpcodes_;
     std::unordered_map<std::string, sqlite3_stmt *> quanpin_statement_cache_;
     void reset_cache_if_database_changed();

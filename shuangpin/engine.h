@@ -41,6 +41,18 @@ class ShuangpinEngine
         if (fuzzy_dictionary_)
             fuzzy_dictionary_->set_sentence_alternatives(enabled);
     }
+    void set_sentence_association(const SentenceAssociationOptions &options)
+    {
+        dictionary_.set_sentence_association(options);
+        if (fuzzy_dictionary_)
+            fuzzy_dictionary_->set_sentence_association(options);
+    }
+    void set_rescoring_context(const std::string &context)
+    {
+        dictionary_.set_rescoring_context(context);
+        if (fuzzy_dictionary_)
+            fuzzy_dictionary_->set_rescoring_context(context);
+    }
 
   private:
     const ShuangpinProfile profile_;

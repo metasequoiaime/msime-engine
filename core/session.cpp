@@ -16,6 +16,8 @@ class Session::Impl
         session.set_shuangpin_preedit_uses_raw(options.shuangpin_preedit_uses_raw);
         session.set_quanpin_autocorrect_types(options.autocorrect_types);
         session.set_fuzzy_pinyin_options(options.fuzzy_pinyin);
+        session.set_sentence_association(options.sentence_association);
+        session.set_rescoring_context(options.rescoring_context);
         session.set_quanpin_helpcode_enabled(options.helpcode);
         session.set_shuangpin_helpcode_enabled(options.helpcode);
         if (!session.set_helpcode_schema(options.helpcode_schema) ||
@@ -196,6 +198,14 @@ void Session::set_wubi_mixed_pinyin(bool enabled)
 void Session::reset_cache()
 {
     impl_->session.reset_cache();
+}
+void Session::set_sentence_association(SentenceAssociationOptions options)
+{
+    impl_->session.set_sentence_association(options);
+}
+void Session::set_rescoring_context(std::string context)
+{
+    impl_->session.set_rescoring_context(std::move(context));
 }
 SessionSnapshot Session::snapshot() const
 {

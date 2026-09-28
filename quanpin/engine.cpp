@@ -36,6 +36,8 @@ std::vector<WordItem> QuanpinEngine::query(const QueryRequest &request)
     // The setter is a no-op when the value is unchanged, so this costs nothing per keystroke and
     // clears the cached lists exactly once, on the keystroke where the host's answer changes.
     dictionary_.set_sentence_alternatives(request.sentence_alternatives);
+    dictionary_.set_sentence_association(request.sentence_association);
+    dictionary_.set_rescoring_context(request.rescoring_context);
 
     const size_t helpcode_length =
         request.enable_quanpin_helpcode

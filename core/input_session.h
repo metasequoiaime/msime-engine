@@ -72,6 +72,14 @@ class InputSession
     const EnglishInputOptions &english_input_options() const;
     void set_mixed_expressive_options(MixedExpressiveOptions options);
     void set_wubi_input_options(metasequoia::WubiInputOptions options);
+    void set_sentence_association(const SentenceAssociationOptions &options)
+    {
+        engine_.set_sentence_association(options);
+    }
+    void set_rescoring_context(std::string context)
+    {
+        engine_.set_rescoring_context(std::move(context));
+    }
     const MixedExpressiveOptions &mixed_expressive_options() const;
     void set_dedicated_english_mode(bool enabled);
     bool dedicated_english_mode() const;

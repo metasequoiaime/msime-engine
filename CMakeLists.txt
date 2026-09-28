@@ -51,6 +51,9 @@ set(METASEQUOIA_IME_ENGINE_SOURCES
     local_modes/local_database.cpp
     local_modes/quick_phrase_query.cpp
     local_modes/unicode_query.cpp
+    neural/sentence_model.cpp
+    neural/neural_decoder.cpp
+    neural/rescore_worker.cpp
     providers/japanese_candidate_provider.cpp
     providers/pinyin_candidate_provider.cpp
     providers/provider_registry.cpp
@@ -60,6 +63,7 @@ set(METASEQUOIA_IME_ENGINE_SOURCES
     quanpin/quanpin_query.cpp
     quanpin/quanpin_utils.cpp
     quanpin/ngram_table.cpp
+    quanpin/lattice_rerank.cpp
     quanpin/word_lattice.cpp
     schemes/japanese_romaji_scheme.cpp
     schemes/quanpin_scheme.cpp
@@ -186,6 +190,10 @@ if(BUILD_TESTING)
         target_compile_options(test_ngram_table PRIVATE /utf-8)
     endif()
     add_test(NAME ngram_table COMMAND test_ngram_table)
+
+    add_executable(test_neural_sentence tests/src/test_neural_sentence.cpp)
+    target_link_libraries(test_neural_sentence PRIVATE MetasequoiaIme::Engine)
+    add_test(NAME neural_sentence COMMAND test_neural_sentence)
 
     # Measures conversion accuracy against a frozen eval set instead of asserting one behaviour, so it
     # needs a dictionary and a set on the command line; see tests/scripts/build_eval_set.py.

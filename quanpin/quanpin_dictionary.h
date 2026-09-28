@@ -8,6 +8,9 @@
 #include "../core/key_event.h"
 #include "../core/word_item.h"
 #include "quanpin_query.h"
+#include "lattice_rerank.h"
+#include "../core/sentence_association_options.h"
+#include "../neural/neural_decoder.h"
 #include "../core/fuzzy_pinyin_options.h"
 #include <sqlite3.h>
 #include <string>
@@ -41,6 +44,8 @@ class QuanpinDictionary
     // the list, which does not change between keystrokes. Changing it clears the cached lists,
     // which were built under the previous answer.
     void set_sentence_alternatives(bool enabled);
+    void set_sentence_association(const SentenceAssociationOptions &options);
+    void set_rescoring_context(const std::string &context);
 
     int create_word(std::string pinyin, std::string word);
     int create_word_from_canonical_pinyin(std::string pinyin, std::string word);
@@ -129,7 +134,11 @@ class QuanpinDictionary
     sqlite3_int64 data_version_ = -1;
     metasequoia::RuntimePaths paths_;
     bool sentence_alternatives_ = false;
+    SentenceAssociationOptions sentence_association_;
+    std::string rescoring_context_;
     metasequoia::PinyinDecoder decoder_;
+    const neural::SentenceModel *neural_desktop_model_ = nullptr;
+    const neural::SentenceModel *neural_keyboard_model_ = nullptr;
     std::unordered_map<std::string, sqlite3_stmt *> statement_cache_;
     std::string db_path_;
 

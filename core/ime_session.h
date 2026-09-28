@@ -3,6 +3,7 @@
 #include "composition_state.h"
 #include "input_session_types.h"
 #include "scheme_type.h"
+#include "sentence_association_options.h"
 #include "../providers/provider_registry.h"
 #include "../schemes/input_scheme.h"
 #include "../schemes/wubi_scheme.h"
@@ -25,6 +26,14 @@ class ImeSession
     void set_fuzzy_pinyin_options(metasequoia::FuzzyPinyinOptions options)
     {
         fuzzy_pinyin_ = options;
+    }
+    void set_sentence_association(const SentenceAssociationOptions &options)
+    {
+        sentence_association_ = options;
+    }
+    void set_rescoring_context(std::string context)
+    {
+        rescoring_context_ = std::move(context);
     }
     void set_wubi_input_options(metasequoia::WubiInputOptions options);
     void replace_shuangpin_raw_input(const std::string &raw_input, const std::string &raw_input_with_cases);
@@ -84,6 +93,8 @@ class ImeSession
     bool sentence_alternatives_ = false;
     unsigned quanpin_autocorrect_types_ = 0;
     metasequoia::FuzzyPinyinOptions fuzzy_pinyin_;
+    SentenceAssociationOptions sentence_association_;
+    std::string rescoring_context_;
     metasequoia::WubiInputOptions wubi_options_;
     // Resolved when the scheme changes rather than on every keystroke.
     WubiScheme *wubi_scheme_ = nullptr;
