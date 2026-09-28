@@ -1013,27 +1013,6 @@ int QuanpinDictionary::delete_data(const std::string &sql_str)
     return ok ? OK : ERROR_CODE;
 }
 
-std::string QuanpinDictionary::build_sql_for_creating_word(const std::string &pinyin)
-{
-    const auto cuts = quanpin::cut_pinyin_by_mode(pinyin, "correction");
-    if (cuts.empty())
-    {
-        return "";
-    }
-
-    std::string sql;
-    for (size_t i = 1; i <= cuts.front().size(); ++i)
-    {
-        std::vector<std::string> partial(cuts.front().begin(), cuts.front().begin() + i);
-        const std::string key = quanpin::join_segments(partial);
-        const std::string table = quanpin::build_table_name(partial);
-        const std::string each =
-            fmt::format("select * from(select * from {} where key = '{}' order by weight desc)", table, key);
-        sql = sql.empty() ? each : each + " union all " + sql;
-    }
-    return sql;
-}
-
 std::string QuanpinDictionary::build_sql_for_checking_word(const std::string &key, const std::string &jp,
                                                            const std::string &value)
 {

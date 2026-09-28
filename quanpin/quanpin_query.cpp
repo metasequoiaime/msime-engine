@@ -883,6 +883,27 @@ std::string build_table_name(const Segments &segments)
     return build_table_name_impl(segments);
 }
 
+std::string build_sql_for_creating_word(const std::string &pinyin)
+{
+    const auto cuts = cut_pinyin_by_mode(pinyin, "correction");
+    if (cuts.empty())
+    {
+        return {};
+    }
+
+    std::string sql;
+    for (size_t i = 1; i <= cuts.front().size(); ++i)
+    {
+        const Segments partial(cuts.front().begin(), cuts.front().begin() + i);
+        const std::string key = join_segments(partial);
+        const std::string table = build_table_name(partial);
+        const std::string each =
+            "select * from(select * from " + table + " where key = '" + key + "' order by weight desc)";
+        sql = sql.empty() ? each : each + " union all " + sql;
+    }
+    return sql;
+}
+
 std::string segments_to_jianpin(const Segments &segments)
 {
     return segments_to_jianpin_impl(segments);

@@ -707,7 +707,8 @@ std::string ShuangpinDictionary::get_quanpin_seg() const
 
 vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generate_for_creating_word(const string code)
 {
-    return metasequoia::sqlite_query_word_items(quanpin_db_.get(), build_quanpin_sql_for_creating_word(code));
+    const std::string normalized = normalize_shuangpin_to_quanpin_input(code);
+    return metasequoia::sqlite_query_word_items(quanpin_db_.get(), quanpin::build_sql_for_creating_word(normalized));
 }
 
 int ShuangpinDictionary::create_word(string pinyin, string word)
@@ -957,28 +958,6 @@ std::string ShuangpinDictionary::normalize_shuangpin_to_quanpin_segmentation(con
 std::string ShuangpinDictionary::normalize_shuangpin_to_quanpin_input(const std::string &pinyin) const
 {
     return CommonUtils::remove_apostrophe_delimiters(normalize_shuangpin_to_quanpin_segmentation(pinyin));
-}
-
-std::string ShuangpinDictionary::build_quanpin_sql_for_creating_word(const std::string &pinyin) const
-{
-    const std::string normalized = normalize_shuangpin_to_quanpin_input(pinyin);
-    const auto cuts = quanpin::cut_pinyin_by_mode(normalized, "correction");
-    if (cuts.empty())
-    {
-        return "";
-    }
-
-    std::string sql;
-    for (size_t i = 1; i <= cuts.front().size(); ++i)
-    {
-        std::vector<std::string> partial(cuts.front().begin(), cuts.front().begin() + i);
-        const std::string key = quanpin::join_segments(partial);
-        const std::string table = quanpin::build_table_name(partial);
-        const std::string each =
-            fmt::format("select * from(select * from {} where key = '{}' order by weight desc)", table, key);
-        sql = sql.empty() ? each : each + " union all " + sql;
-    }
-    return sql;
 }
 
 std::string ShuangpinDictionary::build_quanpin_sql_for_checking_word(const std::string &key, const std::string &jp,
