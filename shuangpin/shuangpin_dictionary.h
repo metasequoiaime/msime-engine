@@ -77,6 +77,7 @@ class ShuangpinDictionary
                                  metasequoia::RuntimePaths paths = metasequoia::RuntimePaths::legacy());
     ~ShuangpinDictionary();
     void set_sentence_association(const SentenceAssociationOptions &options);
+    // The context invalidates cached ordering only when neural reranking is active.
     void set_rescoring_context(const std::string &context);
 
     const ShuangpinProfile &profile() const
