@@ -2,10 +2,18 @@
 
 #include "word_item.h"
 
+#include <algorithm>
 #include <string>
+#include <string_view>
 #include <unordered_set>
 #include <utility>
 #include <vector>
+
+inline bool contains_candidate_word(const std::vector<WordItem> &candidates, std::string_view word)
+{
+    return std::any_of(candidates.begin(), candidates.end(),
+                       [word](const WordItem &item) { return item.word == word; });
+}
 
 inline void append_unique_candidates(std::vector<WordItem> &target, std::vector<WordItem> extra)
 {

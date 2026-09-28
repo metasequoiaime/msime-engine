@@ -1,6 +1,6 @@
 #pragma once
 
-#include "word_item.h"
+#include "candidate_utils.h"
 #include <algorithm>
 #include <string>
 #include <unordered_set>
@@ -35,7 +35,7 @@ inline bool replace_online_candidate_batch(std::vector<WordItem> &list, const st
     size_t index = std::min<size_t>(source == CandidateSource::AiSuggestion ? 2 : 1, list.size());
     for (const auto &word : unique_words)
     {
-        if (std::any_of(list.begin(), list.end(), [&](const WordItem &item) { return item.word == word; }))
+        if (contains_candidate_word(list, word))
             continue;
         list.insert(list.begin() + index++, WordItem(key, word, 1, source));
     }
