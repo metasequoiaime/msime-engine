@@ -126,14 +126,7 @@ std::vector<WordItem> JapaneseCandidateProvider::query(const QueryRequest &reque
 
     if (ensure_query_statement())
     {
-        sqlite3_reset(query_statement_.get());
-        sqlite3_clear_bindings(query_statement_.get());
-        sqlite3_bind_text(query_statement_.get(), 1, request.raw_input_with_cases.c_str(), -1, SQLITE_TRANSIENT);
-        sqlite3_bind_text(query_statement_.get(), 2, request.raw_input.c_str(), -1, SQLITE_TRANSIENT);
-        const std::string like_raw = EscapeLikePrefix(request.raw_input);
-        const std::string like_q = EscapeLikePrefix(std::string("q") + request.raw_input);
-        sqlite3_bind_text(query_statement_.get(), 3, like_raw.c_str(), -1, SQLITE_TRANSIENT);
-        sqlite3_bind_text(query_statement_.get(), 4, like_q.c_str(), -1, SQLITE_TRANSIENT);
+        bind_query_statement(request.raw_input_with_cases, request.raw_input);
         while (sqlite3_step(query_statement_.get()) == SQLITE_ROW)
         {
             const auto *code = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_.get(), 0));
@@ -174,14 +167,7 @@ std::optional<WordItem> JapaneseCandidateProvider::find_candidate(SchemeType sch
 {
     if (scheme != SchemeType::JapaneseRomaji || !ensure_query_statement())
         return std::nullopt;
-    sqlite3_reset(query_statement_.get());
-    sqlite3_clear_bindings(query_statement_.get());
-    sqlite3_bind_text(query_statement_.get(), 1, key.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(query_statement_.get(), 2, key.c_str(), -1, SQLITE_TRANSIENT);
-    const std::string like_raw = EscapeLikePrefix(key);
-    const std::string like_q = EscapeLikePrefix(std::string("q") + key);
-    sqlite3_bind_text(query_statement_.get(), 3, like_raw.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(query_statement_.get(), 4, like_q.c_str(), -1, SQLITE_TRANSIENT);
+    bind_query_statement(key, key);
     while (sqlite3_step(query_statement_.get()) == SQLITE_ROW)
     {
         const auto *code = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_.get(), 0));
@@ -191,6 +177,19 @@ std::optional<WordItem> JapaneseCandidateProvider::find_candidate(SchemeType sch
                             code);
     }
     return std::nullopt;
+}
+
+void JapaneseCandidateProvider::bind_query_statement(const std::string &raw_input_with_cases,
+                                                     const std::string &raw_input)
+{
+    sqlite3_reset(query_statement_.get());
+    sqlite3_clear_bindings(query_statement_.get());
+    sqlite3_bind_text(query_statement_.get(), 1, raw_input_with_cases.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(query_statement_.get(), 2, raw_input.c_str(), -1, SQLITE_TRANSIENT);
+    const std::string like_raw = EscapeLikePrefix(raw_input);
+    const std::string like_q = EscapeLikePrefix(std::string("q") + raw_input);
+    sqlite3_bind_text(query_statement_.get(), 3, like_raw.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(query_statement_.get(), 4, like_q.c_str(), -1, SQLITE_TRANSIENT);
 }
 
 void JapaneseCandidateProvider::reset_cache()
