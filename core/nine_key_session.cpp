@@ -1,3 +1,4 @@
+#include "candidate_utils.h"
 #include "nine_key_session.h"
 #include "../quanpin/quanpin_utils.h"
 #include "../user_dictionary/user_dictionary_journal.h"
@@ -394,8 +395,7 @@ bool NineKeySession::editable(std::size_t index) const
     if (index >= candidates_.size())
         return false;
     const auto &item = candidates_[index];
-    return !item.canonical_pinyin.empty() &&
-           (item.source == CandidateSource::Database || item.source == CandidateSource::UserDatabase);
+    return !item.canonical_pinyin.empty() && is_dictionary_candidate_source(item.source);
 }
 
 std::optional<std::string> NineKeySession::adjust_frequency(std::size_t index, bool force_top)

@@ -1,3 +1,4 @@
+#include "candidate_utils.h"
 #include "online_candidate_batch.h"
 #include "input_session.h"
 
@@ -754,8 +755,7 @@ KeyResult InputSession::commit(std::size_t index)
         text = preedit();
     }
     std::optional<std::string> diagnostic = learn_candidate(index);
-    const bool has_dictionary_reading = selected && (selected->source == CandidateSource::Database ||
-                                                     selected->source == CandidateSource::UserDatabase);
+    const bool has_dictionary_reading = selected && is_dictionary_candidate_source(selected->source);
     // Whole-sentence candidates produced by the lattice (and Google fallback
     // candidates) are valid pinyin selections when they carry a canonical
     // reading.  They must participate in the same creating-word completion
@@ -1025,7 +1025,7 @@ std::optional<std::string> InputSession::learn_candidate(std::size_t index)
     }
     if (!frequency_adjustment_configured_)
     {
-        if (selected.source == CandidateSource::Database || selected.source == CandidateSource::UserDatabase)
+        if (is_dictionary_candidate_source(selected.source))
         {
             const std::string &pinyin = selected.canonical_pinyin.empty() ? selected.pinyin : selected.canonical_pinyin;
             (void)engine_.update_weight_by_pinyin_and_word(selected.scheme, pinyin, selected.word);
@@ -1036,8 +1036,7 @@ std::optional<std::string> InputSession::learn_candidate(std::size_t index)
     {
         return std::nullopt;
     }
-    if ((selected.source != CandidateSource::Database && selected.source != CandidateSource::UserDatabase) ||
-        engine_.current_scheme_type() == SchemeType::JapaneseRomaji)
+    if (!is_dictionary_candidate_source(selected.source) || engine_.current_scheme_type() == SchemeType::JapaneseRomaji)
     {
         return std::nullopt;
     }
@@ -1051,8 +1050,7 @@ KeyResult InputSession::pin_candidate(std::size_t index)
         return {};
     const auto source = candidates()[index].source;
     if (source != CandidateSource::EnglishDictionary &&
-        ((source != CandidateSource::Database && source != CandidateSource::UserDatabase) ||
-         scheme() == SchemeType::JapaneseRomaji))
+        (!is_dictionary_candidate_source(source) || scheme() == SchemeType::JapaneseRomaji))
         return {};
 
     // Manual pinning is independent of automatic learning preferences and never selects text.
