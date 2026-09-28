@@ -9,6 +9,13 @@
 - `shouyou2_0`：`shouyou2_0_helpcode.txt`（首右2.0）
 - `shouyouplus`：`shouyouplus_helpcode.txt`（首右plus）
 - `xiaohe`：`xiaohe_helpcode.txt`（小鹤）
+- `jiajia`：`jiajia_helpcode.txt`（拼音加加）
+
+## 取码规则
+
+各方案的取码规则不同，写文档时不要互相套用：
+
+- `jiajia`（拼音加加）：按笔顺拆出前两个部件，各取读音首字母（妈 = 女 n + 马 m = `nm`，暗 = 日 r + 音 y = `ry`）。独体字和部首字使用本字声母加起笔笔画。来源与授权见 [NOTICE.md](./NOTICE.md)。
 
 用户可以把自定义方案放入 `helpcodes/custom/`。每个 `.txt` 文件对应方案名 `custom/<文件名去掉 .txt>`，由 `HelpcodeUtils::list_custom_helpcode_schemas` 扫描；文件开头的 `# name:` 和 `# name_en:` 注释提供设置页显示名。文件格式和升级保留规则见 [helpcodes/custom/README.md](./helpcodes/custom/README.md)。
 

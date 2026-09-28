@@ -18,7 +18,7 @@ This repository also holds the things the frontends must agree on: the cross-pro
 | `core/`, `quanpin/`, `shuangpin/`, `schemes/`, `providers/` | Input sessions and candidate lookup |
 | `contracts/` | The authoritative IPC wire format, dictionary format and WebView message schema |
 | `dictionary/` | Dictionary source data and the build scripts that produce the shipped databases |
-| `helpcode/` | Helpcode (形码) tables and generators |
+| `helpcode/` | Helpcode (形码) tables and generators, including six bundled schemes |
 | `voice/` | Recording, WAV encoding, recognition and text cleanup; builds independently |
 
 New platforms integrate through `<metasequoia/session.h>`. See [runtime architecture](docs/runtime-architecture.md).
