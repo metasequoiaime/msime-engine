@@ -126,6 +126,19 @@ inline void append_unique_candidates(std::vector<WordItem> &target, std::vector<
         target.push_back(std::move(item));
 }
 
+inline void append_unique_candidates_copy(std::vector<WordItem> &target, const std::vector<WordItem> &extra)
+{
+    std::unordered_set<std::string> seen_words;
+    seen_words.reserve(target.size() + extra.size());
+    for (const auto &item : target)
+        seen_words.insert(item.word);
+    for (const auto &item : extra)
+    {
+        if (seen_words.insert(item.word).second)
+            target.push_back(item);
+    }
+}
+
 inline void deduplicate_candidates_by_word(std::vector<WordItem> &candidates)
 {
     std::unordered_set<std::string> seen_words;
