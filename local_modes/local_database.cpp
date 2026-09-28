@@ -4,10 +4,13 @@
 #include "../common/sqlite_database.h"
 #include "../common/sqlite_statement.h"
 #include "../core/data_path.h"
+#include "../common/string_utils.h"
+#include "query_prefixes.h"
 
 #include <algorithm>
 #include <mutex>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 namespace metasequoia::local_modes
@@ -79,6 +82,48 @@ LocalQueryResult build_local_query_result(const std::string &pinyin, std::vector
         result.candidates.emplace_back(pinyin, entries[index].text, static_cast<std::int64_t>(count - index), source);
     }
     return result;
+}
+
+std::optional<LocalQueryEntry> read_text_sort_entry(sqlite3_stmt *statement)
+{
+    const auto *text = reinterpret_cast<const char *>(sqlite3_column_text(statement, 0));
+    return text == nullptr ? std::nullopt : std::optional<LocalQueryEntry>{{text, sqlite3_column_int(statement, 1)}};
+}
+
+LocalQueryResult query_prefix_dictionary(const std::string &code, SchemeType scheme,
+                                         const std::filesystem::path &database_path, int limit,
+                                         const ShuangpinProfile &profile, const char *sql, CandidateSource source,
+                                         const char *unavailable_diagnostic, const char *query_diagnostic,
+                                         const LocalQueryEntryReader &read_entry)
+{
+    if (!CommonUtils::is_ascii_letters_or_apostrophe(code) || limit <= 0)
+    {
+        return {};
+    }
+    if (database_path.empty())
+    {
+        return database_query_failure(unavailable_diagnostic);
+    }
+
+    const std::vector<std::string> prefixes = normalized_query_prefixes(code, scheme, profile);
+    const std::string &lower = prefixes.front();
+    const std::shared_ptr<sqlite3> database = open_local_database(database_path);
+    if (!database)
+    {
+        return database_query_failure(unavailable_diagnostic);
+    }
+
+    std::vector<LocalQueryEntry> entries;
+    if (!query_prefix_rows(database.get(), prefixes, sql, limit, [&](sqlite3_stmt *statement) {
+            if (const auto entry = read_entry(statement))
+            {
+                entries.push_back(std::move(*entry));
+            }
+        }))
+    {
+        return database_query_failure(query_diagnostic);
+    }
+    return build_local_query_result(lower, std::move(entries), limit, source);
 }
 
 std::shared_ptr<sqlite3> open_local_database(const std::filesystem::path &path)

@@ -1,12 +1,15 @@
 #pragma once
 
 #include "local_query_result.h"
+#include "../core/scheme_type.h"
+#include "../shuangpin/shuangpin_profile.h"
 
 #include <sqlite3.h>
 
 #include <filesystem>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -18,10 +21,21 @@ struct LocalQueryEntry
     int sort_order = 0;
 };
 
+using LocalQueryEntryReader = std::function<std::optional<LocalQueryEntry>(sqlite3_stmt *)>;
+
+std::optional<LocalQueryEntry> read_text_sort_entry(sqlite3_stmt *statement);
+
 // Builds the ranked result shared by local modes whose dictionaries return a
 // display string and catalog sort order.
 LocalQueryResult build_local_query_result(const std::string &pinyin, std::vector<LocalQueryEntry> entries, int limit,
                                           CandidateSource source);
+
+// Runs the common validation, database, prefix-range, and result-building path for local prefix dictionaries.
+LocalQueryResult query_prefix_dictionary(const std::string &code, SchemeType scheme,
+                                         const std::filesystem::path &database_path, int limit,
+                                         const ShuangpinProfile &profile, const char *sql, CandidateSource source,
+                                         const char *unavailable_diagnostic, const char *query_diagnostic,
+                                         const LocalQueryEntryReader &read_entry);
 
 // Opens a read-only connection for a local-mode query (jianpin, quick phrases,
 // emoji, kaomoji). These queries run on every keystroke of their mode, and a
