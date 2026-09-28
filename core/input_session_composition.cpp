@@ -669,7 +669,9 @@ InputSession::CloudQueryState InputSession::get_cloud_query_state() const
     }
 
     state.should_query = !request().normalized_input.empty();
-    state.query_text = request().normalized_input;
+    const std::string &segmentation =
+        request().normalized_segmentation.empty() ? request().normalized_input : request().normalized_segmentation;
+    state.query_text = quanpin::to_google_spelling(segmentation);
     return state;
 }
 
