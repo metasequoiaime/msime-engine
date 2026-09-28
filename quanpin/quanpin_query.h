@@ -53,7 +53,6 @@ std::string build_table_name(const Segments &segments);
 // Shuangpin may additionally accept an unresolved two-key-per-character input.
 bool has_valid_word_pinyin(const std::string &key, const std::string &jp, const std::string &word,
                            bool allow_shuangpin_fallback = false);
-std::string build_sql_for_creating_word(const std::string &pinyin);
 std::string build_sql_for_checking_word(const std::string &key, const std::string &value);
 std::string build_sql_for_inserting_word(const std::string &key, const std::string &jp, const std::string &value);
 std::string build_sql_for_updating_word(const Segments &segments, const std::string &key, const std::string &value);

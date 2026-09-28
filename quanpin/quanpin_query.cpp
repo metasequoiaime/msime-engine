@@ -855,27 +855,6 @@ bool has_valid_word_pinyin(const std::string &key, const std::string &jp, const 
     return allow_shuangpin_fallback && pure_key.size() % 2 == 0 && pure_key.size() == han_count * 2;
 }
 
-std::string build_sql_for_creating_word(const std::string &pinyin)
-{
-    const auto cuts = cut_pinyin_by_mode(pinyin, "correction");
-    if (cuts.empty())
-    {
-        return {};
-    }
-
-    std::string sql;
-    for (size_t i = 1; i <= cuts.front().size(); ++i)
-    {
-        const Segments partial(cuts.front().begin(), cuts.front().begin() + i);
-        const std::string key = join_segments(partial);
-        const std::string table = build_table_name(partial);
-        const std::string each =
-            "select * from(select * from " + table + " where key = '" + key + "' order by weight desc)";
-        sql = sql.empty() ? each : each + " union all " + sql;
-    }
-    return sql;
-}
-
 std::string build_sql_for_checking_word(const std::string &key, const std::string &value)
 {
     const auto cuts = cut_pinyin_by_mode(key, "correction");

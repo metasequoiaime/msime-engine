@@ -669,12 +669,6 @@ std::string ShuangpinDictionary::get_quanpin_seg() const
     return quanpin_str;
 }
 
-vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generate_for_creating_word(const string code)
-{
-    const std::string normalized = normalize_shuangpin_to_quanpin_input(code);
-    return metasequoia::sqlite_query_word_items(quanpin_db_.get(), quanpin::build_sql_for_creating_word(normalized));
-}
-
 int ShuangpinDictionary::create_word(string pinyin, string word)
 {
     return create_word_from_quanpin(shuangpin::normalize_input_with_delimiters(pinyin, profile_), std::move(word));
