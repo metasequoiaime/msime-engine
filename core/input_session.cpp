@@ -761,8 +761,7 @@ KeyResult InputSession::commit(std::size_t index)
     // reading.  They must participate in the same creating-word completion
     // path as dictionary rows so a preceding selected segment can be learned.
     const bool has_generated_reading =
-        selected && (selected->source == CandidateSource::Generated || selected->source == CandidateSource::Fallback) &&
-        !selected->canonical_pinyin.empty();
+        selected && is_generated_or_fallback_source(selected->source) && !selected->canonical_pinyin.empty();
     if ((has_dictionary_reading || has_generated_reading) && local_input_mode_ == LocalInputMode::None &&
         !dedicated_english_mode_ && (candidates_follow_pinyin() || selected->scheme == SchemeType::Quanpin))
     {
@@ -1017,9 +1016,9 @@ std::optional<std::string> InputSession::learn_candidate(std::size_t index)
     }
 
     const WordItem &selected = candidates()[index];
-    if (selected.source == CandidateSource::Generated || selected.source == CandidateSource::Fallback ||
-        selected.source == CandidateSource::NeuralDesktop || selected.source == CandidateSource::NeuralKeyboard ||
-        selected.source == CandidateSource::CloudSuggestion || selected.source == CandidateSource::AiSuggestion)
+    if (is_generated_or_fallback_source(selected.source) || selected.source == CandidateSource::NeuralDesktop ||
+        selected.source == CandidateSource::NeuralKeyboard || selected.source == CandidateSource::CloudSuggestion ||
+        selected.source == CandidateSource::AiSuggestion)
     {
         return learn_sentence_candidate(selected);
     }

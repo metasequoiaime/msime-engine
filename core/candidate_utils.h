@@ -15,6 +15,11 @@ inline bool contains_candidate_word(const std::vector<WordItem> &candidates, std
                        [word](const WordItem &item) { return item.word == word; });
 }
 
+inline bool is_generated_or_fallback_source(CandidateSource source)
+{
+    return source == CandidateSource::Generated || source == CandidateSource::Fallback;
+}
+
 inline bool is_dictionary_candidate_source(CandidateSource source)
 {
     return source == CandidateSource::Database || source == CandidateSource::UserDatabase;
