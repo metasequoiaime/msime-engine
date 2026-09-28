@@ -5,6 +5,7 @@
 
 #include <sqlite3.h>
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -20,6 +21,24 @@ inline bool sqlite_query_has_row(sqlite3 *database, const std::string &sql)
         return false;
     SqliteStatement statement(raw);
     return sqlite3_step(statement.get()) == SQLITE_ROW;
+}
+
+inline std::optional<WordItem> sqlite_query_word_item(sqlite3 *database, const std::string &table,
+                                                      const std::string &key, const std::string &value)
+{
+    if (database == nullptr || table.empty())
+        return std::nullopt;
+
+    sqlite3_stmt *raw = nullptr;
+    const std::string sql = "SELECT weight FROM \"" + table + "\" WHERE key=?1 AND value=?2 LIMIT 1";
+    if (sqlite3_prepare_v2(database, sql.c_str(), -1, &raw, nullptr) != SQLITE_OK)
+        return std::nullopt;
+    SqliteStatement statement(raw);
+    if (sqlite3_bind_text(statement.get(), 1, key.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
+        sqlite3_bind_text(statement.get(), 2, value.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
+        sqlite3_step(statement.get()) != SQLITE_ROW)
+        return std::nullopt;
+    return WordItem(key, value, sqlite3_column_int64(statement.get(), 0), CandidateSource::Database, key);
 }
 
 inline std::vector<WordItem> sqlite_query_word_items(sqlite3 *database, const std::string &sql)
