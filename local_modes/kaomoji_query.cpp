@@ -3,9 +3,9 @@
 #include "../common/sqlite_statement.h"
 #include "kaomoji_query.h"
 #include "local_database.h"
+#include "query_prefixes.h"
 
 #include "../core/data_path.h"
-#include "../shuangpin/shuangpin_query.h"
 
 #include <sqlite3.h>
 
@@ -39,16 +39,8 @@ LocalQueryResult query_kaomoji(const std::string &code, SchemeType scheme, const
         return database_query_failure("Kaomoji database is unavailable.");
     }
 
-    const std::string lower = CommonUtils::lowercase_ascii(code);
-    std::vector<std::string> prefixes{lower};
-    if (scheme == SchemeType::Shuangpin)
-    {
-        const std::string quanpin = shuangpin::normalize_input(lower, profile);
-        if (!quanpin.empty() && quanpin != lower)
-        {
-            prefixes.push_back(quanpin);
-        }
-    }
+    const std::vector<std::string> prefixes = normalized_query_prefixes(code, scheme, profile);
+    const std::string &lower = prefixes.front();
 
     const std::shared_ptr<sqlite3> database = open_local_database(database_path);
     if (!database)

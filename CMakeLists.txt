@@ -29,6 +29,7 @@ get_target_property(METASEQUOIA_IME_SPDLOG_INCLUDE_DIRS spdlog::spdlog_header_on
 set(METASEQUOIA_IME_ENGINE_SOURCES
     common/helpcode_utils.cpp
     common/string_utils.cpp
+    local_modes/query_prefixes.cpp
     core/session.cpp
     core/nine_key_session.cpp
     core/candidate_queries.cpp
