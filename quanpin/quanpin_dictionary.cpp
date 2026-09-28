@@ -17,7 +17,6 @@
 #include <algorithm>
 #include <climits>
 #include <cstring>
-#include <fmt/format.h>
 #include <unordered_set>
 #include <utf8/cpp17.h>
 
@@ -1041,10 +1040,7 @@ std::string QuanpinDictionary::build_sql_for_updating_word(std::string pinyin, c
         return "";
     }
 
-    const std::string table = quanpin::build_table_name(segments);
-    return fmt::format("update {0} set weight = ( select MAX(weight) + 1 from {0} AS sub where sub.key = '{1}') "
-                       "where key = '{1}' and value = '{2}';",
-                       table, CommonUtils::escape_sql_literal(pinyin), CommonUtils::escape_sql_literal(word));
+    return quanpin::build_sql_for_updating_word(segments, pinyin, word);
 }
 
 std::string QuanpinDictionary::build_sql_for_deleting_word(std::string pinyin, const std::string &word)
@@ -1063,8 +1059,7 @@ std::string QuanpinDictionary::build_sql_for_deleting_word(std::string pinyin, c
         return "";
     }
 
-    return fmt::format("delete from {} where key = '{}' and value = '{}';", quanpin::build_table_name(cuts.front()),
-                       CommonUtils::escape_sql_literal(normalized), CommonUtils::escape_sql_literal(word));
+    return quanpin::build_sql_for_deleting_word(cuts.front(), normalized, word);
 }
 
 bool QuanpinDictionary::do_validate(const std::string &key, const std::string &jp, const std::string &value)
