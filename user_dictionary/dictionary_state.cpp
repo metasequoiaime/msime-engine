@@ -1,6 +1,7 @@
 #include <metasequoia/dictionary_state.h>
 #include "user_dictionary_journal.h"
 #include "../core/data_path.h"
+#include "../common/sqlite_statement.h"
 #include "../contracts/assets/assets.h"
 #include <sqlite3.h>
 #include <utf8.h>
@@ -14,7 +15,7 @@ namespace metasequoia
 namespace
 {
 using Database = std::unique_ptr<sqlite3, decltype(&sqlite3_close)>;
-using Statement = std::unique_ptr<sqlite3_stmt, decltype(&sqlite3_finalize)>;
+using Statement = metasequoia::SqliteStatement;
 void require(bool condition)
 {
     if (!condition)
@@ -37,7 +38,7 @@ Statement prepare(sqlite3 *db, const char *sql)
 {
     sqlite3_stmt *raw = nullptr;
     const int status = sqlite3_prepare_v2(db, sql, -1, &raw, nullptr);
-    Statement result(raw, sqlite3_finalize);
+    Statement result(raw);
     require(status == SQLITE_OK);
     return result;
 }

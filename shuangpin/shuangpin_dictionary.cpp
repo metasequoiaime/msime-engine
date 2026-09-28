@@ -1,6 +1,7 @@
 #include "../core/online_candidate_batch.h"
 #include "shuangpin_dictionary.h"
 #include "../user_dictionary/user_dictionary_journal.h"
+#include "../common/sqlite_statement.h"
 #include "../common/helpcode_utils.h"
 #include "../quanpin/quanpin_query.h"
 #include "../quanpin/quanpin_utils.h"
@@ -25,6 +26,8 @@ using namespace std;
 
 namespace
 {
+using Statement = metasequoia::SqliteStatement;
+
 std::string double_helpcode_cache_key(const std::string &pinyin, const std::string &help_codes)
 {
     return pinyin + ":" + help_codes;
@@ -931,7 +934,7 @@ std::optional<WordItem> ShuangpinDictionary::find_candidate(const std::string &k
     const std::string sql = "SELECT weight FROM \"" + table + "\" WHERE key=?1 AND value=?2 LIMIT 1";
     if (sqlite3_prepare_v2(quanpin_db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
         return std::nullopt;
-    std::unique_ptr<sqlite3_stmt, decltype(&sqlite3_finalize)> guard(stmt, sqlite3_finalize);
+    Statement guard(stmt);
     if (sqlite3_bind_text(stmt, 1, key.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
         sqlite3_bind_text(stmt, 2, value.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
         sqlite3_step(stmt) != SQLITE_ROW)
@@ -967,12 +970,13 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::select_complete_data(
     {
         return candidateList;
     }
-    sqlite3_stmt *stmt;
+    sqlite3_stmt *stmt = nullptr;
     int exit = sqlite3_prepare_v2(target_db, sql_str.c_str(), -1, &stmt, 0);
     if (exit != SQLITE_OK)
     {
-        (void)0;
+        return candidateList;
     }
+    Statement guard(stmt);
     while (sqlite3_step(stmt) == SQLITE_ROW)
     {
         candidateList.emplace_back(                                               //
@@ -981,7 +985,6 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::select_complete_data(
             sqlite3_column_int64(stmt, 3), CandidateSource::Database,
             string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0)))); // canonical key
     }
-    sqlite3_finalize(stmt);
     return candidateList;
 }
 
@@ -991,19 +994,19 @@ int ShuangpinDictionary::check_data(sqlite3 *target_db, const std::string &sql_s
     {
         return false;
     }
-    sqlite3_stmt *stmt;
+    sqlite3_stmt *stmt = nullptr;
     int exit = sqlite3_prepare_v2(target_db, sql_str.c_str(), -1, &stmt, 0);
     if (exit != SQLITE_OK)
     {
-        (void)0;
+        return false;
     }
+    Statement guard(stmt);
     bool exists = false;
     exit = sqlite3_step(stmt);
     if (exit == SQLITE_ROW)
     {
         exists = true;
     }
-    sqlite3_finalize(stmt);
     return exists;
 }
 
@@ -1205,13 +1208,12 @@ void ShuangpinDictionary::reset_cache_if_database_changed()
     {
         return;
     }
+    Statement guard(statement);
     if (sqlite3_step(statement) != SQLITE_ROW)
     {
-        sqlite3_finalize(statement);
         return;
     }
     const sqlite3_int64 current_version = sqlite3_column_int64(statement, 0);
-    sqlite3_finalize(statement);
     if (data_version_ >= 0 && current_version != data_version_)
     {
         reset_cache();

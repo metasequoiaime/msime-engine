@@ -2,6 +2,7 @@
 #include "../contracts/dictionary/format.h"
 #include "quanpin_query.h"
 
+#include "../common/sqlite_statement.h"
 #include "quanpin_utils.h"
 #include "../shuangpin/shuangpin_utils.h"
 #include <algorithm>
@@ -17,6 +18,8 @@ namespace quanpin
 {
 namespace
 {
+
+using Statement = metasequoia::SqliteStatement;
 
 std::vector<std::string> split(const std::string &text, char delimiter)
 {
@@ -428,6 +431,7 @@ std::vector<QueryItem> run_query(sqlite3 *db, const std::string &sql, const std:
     {
         return {};
     }
+    Statement guard(stmt);
 
     sqlite3_bind_text(stmt, 1, value.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_int(stmt, 2, limit);
@@ -439,7 +443,6 @@ std::vector<QueryItem> run_query(sqlite3 *db, const std::string &sql, const std:
         const std::int64_t weight = sqlite3_column_int64(stmt, 1);
         rows.emplace_back(text == nullptr ? "" : reinterpret_cast<const char *>(text), weight);
     }
-    sqlite3_finalize(stmt);
     return rows;
 }
 
@@ -486,6 +489,7 @@ std::vector<QueryItem> run_query(sqlite3 *db, const std::string &sql, const std:
     {
         return {};
     }
+    Statement guard(stmt);
 
     sqlite3_bind_text(stmt, 1, lower_bound.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT);
@@ -498,7 +502,6 @@ std::vector<QueryItem> run_query(sqlite3 *db, const std::string &sql, const std:
         const std::int64_t weight = sqlite3_column_int64(stmt, 1);
         rows.emplace_back(text == nullptr ? "" : reinterpret_cast<const char *>(text), weight);
     }
-    sqlite3_finalize(stmt);
     return rows;
 }
 
@@ -546,6 +549,7 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, const std::string &sql,
     {
         return {};
     }
+    Statement guard(stmt);
 
     sqlite3_bind_text(stmt, 1, value.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_int(stmt, 2, limit);
@@ -562,7 +566,6 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, const std::string &sql,
             weight,
         });
     }
-    sqlite3_finalize(stmt);
     return rows;
 }
 
@@ -615,6 +618,7 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, const std::string &sql,
     {
         return {};
     }
+    Statement guard(stmt);
 
     sqlite3_bind_text(stmt, 1, lower_bound.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT);
@@ -631,7 +635,6 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, const std::string &sql,
             sqlite3_column_int64(stmt, 2),
         });
     }
-    sqlite3_finalize(stmt);
     return rows;
 }
 
@@ -1043,6 +1046,7 @@ std::vector<KeyedQueryItem> query_initial(sqlite3 *db, const std::string &prefix
     {
         return {};
     }
+    Statement guard(stmt);
 
     const std::string upper_bound = prefix + "{";
     sqlite3_bind_text(stmt, 1, prefix.c_str(), -1, SQLITE_TRANSIENT);
@@ -1057,7 +1061,6 @@ std::vector<KeyedQueryItem> query_initial(sqlite3 *db, const std::string &prefix
         rows.push_back(
             KeyedQueryItem{key == nullptr ? "" : key, value == nullptr ? "" : value, sqlite3_column_int64(stmt, 2)});
     }
-    sqlite3_finalize(stmt);
     return rows;
 }
 
