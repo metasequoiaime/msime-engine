@@ -5,6 +5,7 @@
 #include "../../contracts/dictionary/format.h"
 #include "../../quanpin/quanpin_query.h"
 #include "../../quanpin/quanpin_utils.h"
+#include "../../quanpin/engine.h"
 
 #include <sqlite3.h>
 
@@ -471,6 +472,8 @@ int run_test()
             type(alias_session, test_case.pinyin);
             require(candidate_index(alias_session, test_case.candidate) == 0,
                     "A v-form umlaut syllable did not query its canonical dictionary key.");
+            require(alias_session.candidates().front().corrected_from == test_case.pinyin,
+                    "A non-standard v-form umlaut syllable was not marked as corrected.");
         }
 
         // lue/nue are legal spellings of lve/nve and the dictionary stores only the v rows, so the alias
@@ -485,7 +488,36 @@ int run_test()
                     "A typed lue/nue syllable did not reach its v-spelled dictionary row.");
             require(ue_alias_session.preedit() == test_case.pinyin,
                     "The lue/nue alias rewrote the preedit instead of only the dictionary lookup key.");
+            const auto found = candidate_index(ue_alias_session, test_case.candidate);
+            require(ue_alias_session.candidates()[found].corrected_from == test_case.pinyin,
+                    "A non-standard ue-form umlaut syllable was not marked as corrected.");
         }
+
+        for (const auto &standard : {std::string("ju"), std::string("lve"), std::string("nve")})
+        {
+            metasequoia::InputSession standard_session;
+            type(standard_session, standard);
+            require(std::none_of(standard_session.candidates().begin(), standard_session.candidates().end(),
+                                 [](const WordItem &item) { return !item.corrected_from.empty(); }),
+                    "A standard umlaut spelling was incorrectly marked as corrected.");
+        }
+
+        // Direct dictionary operations must normalize aliases before writing canonical rows.
+        {
+            const auto paths = metasequoia::RuntimePaths::legacy();
+            QuanpinEngine engine(paths);
+            require(engine.update_weight_by_pinyin_and_word("nue", "虐") == 0,
+                    "Updating a candidate by its ue alias failed.");
+            require(engine.create_word("lue", "吕") == 0, "Creating a word by its ue alias failed.");
+        }
+        require(database.query_integer("SELECT weight FROM tbl_1_n WHERE key='nve' AND value='虐'") == 101,
+                "An alias weight update did not target the canonical nve row.");
+        require(database.query_integer("SELECT COUNT(*) FROM tbl_1_n WHERE key='nue'") == 0,
+                "An alias weight update created an invalid nue row.");
+        require(database.query_integer("SELECT COUNT(*) FROM tbl_1_l WHERE key='lve' AND value='吕'") == 1,
+                "An alias word creation did not target the canonical lve row.");
+        require(database.query_integer("SELECT COUNT(*) FROM tbl_1_l WHERE key='lue'") == 0,
+                "An alias word creation created an invalid lue row.");
 
         const std::array<UmlautAliasCase, 6> missing_final_g_cases = {{{"zhonguo", "中国"},
                                                                        {"zhon'guo", "中国"},
