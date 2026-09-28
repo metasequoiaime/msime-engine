@@ -923,18 +923,7 @@ int QuanpinDictionary::insert_word_to_series_cache_key(const std::string &cache_
         erase_candidates_by_source(list, source);
     }
 
-    if (!contains_candidate_word(list, word))
-    {
-        if (list.empty())
-        {
-            list.emplace_back(pinyin, word, 1, source);
-        }
-        else
-        {
-            const size_t index = source == CandidateSource::AiSuggestion ? std::min<size_t>(2, list.size()) : 1;
-            list.insert(list.begin() + index, WordItem(pinyin, word, 1, source));
-        }
-    }
+    insert_unique_candidate_by_source_priority(list, pinyin, word, source);
 
     if (source == CandidateSource::CloudSuggestion)
     {
