@@ -564,7 +564,7 @@ int QuanpinDictionary::handleVkCode(ImeKeyCode vk, ImeModifierMask modifiers_dow
     {
         if (wch >= u'A' && wch <= u'Z')
         {
-            pinyin_sequence_.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(wch))));
+            pinyin_sequence_.push_back(CommonUtils::lowercase_ascii_char(static_cast<unsigned char>(wch)));
         }
         else if (wch >= u'a' && wch <= u'z')
         {

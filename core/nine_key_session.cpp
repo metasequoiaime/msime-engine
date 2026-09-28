@@ -4,7 +4,6 @@
 #include "../common/helpcode_utils.h"
 #include "../common/string_utils.h"
 #include <algorithm>
-#include <cctype>
 #include <filesystem>
 #include <system_error>
 #include "contracts/assets/assets.h"
@@ -81,7 +80,7 @@ std::string DigitsForWord(const std::string &word)
     code.reserve(word.size());
     for (const unsigned char raw : word)
     {
-        const char letter = static_cast<char>(std::tolower(raw));
+        const char letter = CommonUtils::lowercase_ascii_char(raw);
         if (letter < 'a' || letter > 'z')
             return {};
         for (char digit = '2'; digit <= '9'; ++digit)

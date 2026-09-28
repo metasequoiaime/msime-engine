@@ -1,6 +1,6 @@
 #include "wubi_scheme.h"
+#include "../common/string_utils.h"
 #include <algorithm>
-#include <cctype>
 
 namespace
 {
@@ -21,7 +21,7 @@ std::string normalize_wubi_code(const std::string &input, size_t max_length, boo
     normalized.reserve((std::min)(input.size(), max_length));
     for (const unsigned char ch : input)
     {
-        const char lower = static_cast<char>(std::tolower(ch));
+        const char lower = CommonUtils::lowercase_ascii_char(ch);
         if (!is_wubi_letter(lower, mixed_pinyin_allowed, z_wildcard))
         {
             continue;

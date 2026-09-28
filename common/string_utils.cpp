@@ -25,6 +25,11 @@ bool starts_with(std::string_view text, std::string_view prefix)
     return text.size() >= prefix.size() && text.compare(0, prefix.size(), prefix) == 0;
 }
 
+char lowercase_ascii_char(unsigned char character)
+{
+    return static_cast<char>(std::tolower(character));
+}
+
 std::string::size_type count_utf8_chars(const std::string &text)
 {
     return utf8::distance(text.begin(), text.end());
@@ -80,7 +85,7 @@ bool is_ascii_letters_or_apostrophe(const std::string &text)
 std::string lowercase_ascii(std::string text)
 {
     std::transform(text.begin(), text.end(), text.begin(),
-                   [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
+                   [](unsigned char character) { return lowercase_ascii_char(character); });
     return text;
 }
 } // namespace CommonUtils

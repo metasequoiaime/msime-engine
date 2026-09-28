@@ -8,7 +8,6 @@
 #include "../local_modes/quick_phrase_query.h"
 #include "../local_modes/unicode_query.h"
 #include <algorithm>
-#include <cctype>
 #include <iterator>
 #include <unordered_set>
 namespace metasequoia
@@ -79,7 +78,8 @@ local_modes::LocalQueryResult CandidateQueries::local(LocalInputMode mode, const
                                              return std::equal(candidate.word.begin(), candidate.word.end(),
                                                                raw.begin(),
                                                                [](unsigned char left, unsigned char right) {
-                                                                   return std::tolower(left) == std::tolower(right);
+                                                                   return CommonUtils::lowercase_ascii_char(left) ==
+                                                                          CommonUtils::lowercase_ascii_char(right);
                                                                });
                                          }),
                           completions.end());
