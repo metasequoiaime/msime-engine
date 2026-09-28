@@ -936,6 +936,10 @@ std::optional<std::string> InputSession::learn_candidate(std::size_t index)
     }
 
     const WordItem &selected = candidates()[index];
+    if (selected.source == CandidateSource::Generated || selected.source == CandidateSource::Fallback)
+    {
+        return learn_sentence_candidate(selected);
+    }
     if (!frequency_adjustment_configured_)
     {
         if (selected.source == CandidateSource::Database || selected.source == CandidateSource::UserDatabase)

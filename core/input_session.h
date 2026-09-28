@@ -258,6 +258,7 @@ class InputSession
     void reset_composition();
     void discard_abandoned_phrase_progress();
     std::optional<std::string> learn_candidate(std::size_t index);
+    std::optional<std::string> learn_sentence_candidate(const WordItem &selected);
     std::optional<std::string> adjust_candidate_frequency(std::size_t index, FrequencyAdjustmentOptions options,
                                                           bool force_top);
 
