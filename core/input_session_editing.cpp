@@ -163,8 +163,9 @@ KeyResult InputSession::insert_at_caret(char character)
 {
     auto text = editing_text();
     const auto caret = caret_position();
-    const bool lower = character >= 'a' && character <= 'z';
-    const bool upper = character >= 'A' && character <= 'Z';
+    const auto unsigned_character = static_cast<unsigned char>(character);
+    const bool lower = CommonUtils::is_ascii_lowercase(unsigned_character);
+    const bool upper = CommonUtils::is_ascii_uppercase(unsigned_character);
     bool accepted = lower || upper;
     if (!dedicated_english_mode_)
     {

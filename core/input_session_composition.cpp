@@ -672,7 +672,8 @@ InputSession::CloudQueryState InputSession::get_cloud_query_state() const
 
         const char last =
             base.effective_raw_input_with_cases.empty() ? '\0' : base.effective_raw_input_with_cases.back();
-        const bool ends_with_input_key = (last >= 'a' && last <= 'z') || last == ';';
+        const bool ends_with_input_key =
+            CommonUtils::is_ascii_lowercase(static_cast<unsigned char>(last)) || last == ';';
         state.should_query =
             ends_with_input_key && shuangpin::is_complete_input(base.effective_raw_input, shuangpin_profile_);
 

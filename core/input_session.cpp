@@ -79,7 +79,7 @@ KeyResult InputSession::handle_character(char character, bool shift_only)
     caret_.reset();
     if (dedicated_english_mode_)
     {
-        const bool ascii_letter = (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z');
+        const bool ascii_letter = CommonUtils::is_ascii_letter(static_cast<unsigned char>(character));
         if (!ascii_letter)
         {
             return {true, std::nullopt, std::nullopt};
@@ -160,14 +160,15 @@ KeyResult InputSession::handle_character(char character, bool shift_only)
         return {true, std::nullopt, std::nullopt};
     }
 
-    const bool lowercase_letter = character >= 'a' && character <= 'z';
+    const bool lowercase_letter = CommonUtils::is_ascii_lowercase(static_cast<unsigned char>(character));
     const bool microsoft_final =
         character == ';' && scheme() == SchemeType::Shuangpin && shuangpin_profile_.name == "microsoft";
     // 長音符。The romaji table has carried {"-", "ー"} all along and nothing could reach it: the
     // gate below never let '-' through. Every word Japanese borrowed from another language needs
     // it, so the keyboard had to commit the composition and drop a bare ー beside it instead.
     const bool japanese_long_vowel = character == '-' && scheme() == SchemeType::JapaneseRomaji;
-    const bool active_helpcode = character >= 'A' && character <= 'Z' && has_composition() &&
+    const bool active_helpcode = CommonUtils::is_ascii_uppercase(static_cast<unsigned char>(character)) &&
+                                 has_composition() &&
                                  ((scheme() == SchemeType::Quanpin && quanpin_helpcode_enabled_) ||
                                   (scheme() == SchemeType::Shuangpin && shuangpin_helpcode_enabled_));
     if (!lowercase_letter && !active_helpcode && character != '\'' && !microsoft_final && !japanese_long_vowel)
@@ -789,7 +790,7 @@ KeyResult InputSession::handle_local_character(char character)
 {
     if (local_input_mode_ == LocalInputMode::TemporaryEnglish)
     {
-        const bool ascii_letter = (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z');
+        const bool ascii_letter = CommonUtils::is_ascii_letter(static_cast<unsigned char>(character));
         if (!ascii_letter)
         {
             return {};
@@ -813,7 +814,7 @@ KeyResult InputSession::handle_local_character(char character)
     }
     if (local_input_mode_ == LocalInputMode::SuperJianpin)
     {
-        const bool ascii_letter = (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z');
+        const bool ascii_letter = CommonUtils::is_ascii_letter(static_cast<unsigned char>(character));
         if (!ascii_letter)
         {
             return {true, std::nullopt, std::nullopt};
@@ -823,7 +824,7 @@ KeyResult InputSession::handle_local_character(char character)
     }
     if (local_input_mode_ == LocalInputMode::Emoji || local_input_mode_ == LocalInputMode::Kaomoji)
     {
-        const bool ascii_letter = (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z');
+        const bool ascii_letter = CommonUtils::is_ascii_letter(static_cast<unsigned char>(character));
         if (!ascii_letter && character != '\'')
         {
             return {true, std::nullopt, std::nullopt};
@@ -833,7 +834,7 @@ KeyResult InputSession::handle_local_character(char character)
     }
     if (local_input_mode_ == LocalInputMode::QuickPhrase)
     {
-        if (character < 'a' || character > 'z')
+        if (!CommonUtils::is_ascii_lowercase(static_cast<unsigned char>(character)))
         {
             return {true, std::nullopt, std::nullopt};
         }
@@ -842,7 +843,7 @@ KeyResult InputSession::handle_local_character(char character)
     }
     if (local_input_mode_ == LocalInputMode::DateTime)
     {
-        if (character < 'a' || character > 'z')
+        if (!CommonUtils::is_ascii_lowercase(static_cast<unsigned char>(character)))
         {
             return {true, std::nullopt, std::nullopt};
         }

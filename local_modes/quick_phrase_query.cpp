@@ -1,4 +1,5 @@
 #include "../contracts/assets/assets.h"
+#include "../common/string_utils.h"
 #include "../common/sqlite_statement.h"
 #include "quick_phrase_query.h"
 #include "local_database.h"
@@ -18,8 +19,9 @@ using Statement = metasequoia::SqliteStatement;
 
 bool valid_prefix(const std::string &prefix)
 {
-    return !prefix.empty() && std::all_of(prefix.begin(), prefix.end(),
-                                          [](unsigned char character) { return character >= 'a' && character <= 'z'; });
+    return !prefix.empty() && std::all_of(prefix.begin(), prefix.end(), [](unsigned char character) {
+        return CommonUtils::is_ascii_lowercase(character);
+    });
 }
 
 } // namespace

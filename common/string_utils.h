@@ -9,6 +9,9 @@ namespace CommonUtils
 std::wstring string_to_wstring(const std::string &str);
 std::string wstring_to_string(const std::wstring &wstr);
 bool starts_with(std::string_view text, std::string_view prefix);
+bool is_ascii_lowercase(unsigned char character);
+bool is_ascii_uppercase(unsigned char character);
+bool is_ascii_letter(unsigned char character);
 char lowercase_ascii_char(unsigned char character);
 char uppercase_ascii_char(unsigned char character);
 std::string::size_type count_utf8_chars(const std::string &text);

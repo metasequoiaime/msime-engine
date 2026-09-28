@@ -25,6 +25,21 @@ bool starts_with(std::string_view text, std::string_view prefix)
     return text.size() >= prefix.size() && text.compare(0, prefix.size(), prefix) == 0;
 }
 
+bool is_ascii_lowercase(unsigned char character)
+{
+    return character >= 'a' && character <= 'z';
+}
+
+bool is_ascii_uppercase(unsigned char character)
+{
+    return character >= 'A' && character <= 'Z';
+}
+
+bool is_ascii_letter(unsigned char character)
+{
+    return is_ascii_lowercase(character) || is_ascii_uppercase(character);
+}
+
 char lowercase_ascii_char(unsigned char character)
 {
     return static_cast<char>(std::tolower(character));
@@ -83,7 +98,7 @@ std::string escape_sql_literal(std::string text)
 bool is_ascii_letters_or_apostrophe(const std::string &text)
 {
     return !text.empty() && std::all_of(text.begin(), text.end(), [](unsigned char character) {
-        return (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') || character == '\'';
+        return is_ascii_letter(character) || character == '\'';
     });
 }
 
