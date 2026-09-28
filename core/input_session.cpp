@@ -577,6 +577,15 @@ std::optional<OnlineQuery> InputSession::online_query() const
     return query;
 }
 
+bool InputSession::online_source_is_eligible(const OnlineQuery &query, CandidateSource source)
+{
+    if (source == CandidateSource::CloudSuggestion)
+        return query.cloud_eligible;
+    if (source == CandidateSource::AiSuggestion)
+        return query.ai_eligible;
+    return false;
+}
+
 bool InputSession::apply_online_candidate(const OnlineQuery &query, std::string candidate, CandidateSource source)
 {
     if (candidate.empty() || !is_online_candidate_source(source))
@@ -585,9 +594,7 @@ bool InputSession::apply_online_candidate(const OnlineQuery &query, std::string 
     }
     const auto current = online_query();
     if (!current.has_value() || !online_requests_.matches(*current, query) ||
-        (source == CandidateSource::CloudSuggestion && !current->cloud_eligible) ||
-        (source == CandidateSource::AiSuggestion && !current->ai_eligible) ||
-        contains_candidate_word(candidates(), candidate))
+        !online_source_is_eligible(*current, source) || contains_candidate_word(candidates(), candidate))
     {
         return false;
     }
@@ -1149,9 +1156,7 @@ bool InputSession::apply_online_candidates(const OnlineQuery &query, const std::
     if (!replace_online_candidate_batch(validated, query.cache_key, words, source))
         return false;
     const auto current = online_query();
-    if (!current || !online_requests_.matches(*current, query) ||
-        (source == CandidateSource::CloudSuggestion && !current->cloud_eligible) ||
-        (source == CandidateSource::AiSuggestion && !current->ai_eligible))
+    if (!current || !online_requests_.matches(*current, query) || !online_source_is_eligible(*current, source))
         return false;
     if (engine_.apply_dynamic_candidates(words, source) != 0)
         return false;

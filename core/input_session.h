@@ -264,6 +264,7 @@ class InputSession
     // one, so the rest of the composition has to survive the selection.
     bool candidates_follow_pinyin() const;
     bool is_japanese() const;
+    static bool online_source_is_eligible(const OnlineQuery &query, CandidateSource source);
     void clear_pending_sequence();
     void apply_pending_sequence();
 
