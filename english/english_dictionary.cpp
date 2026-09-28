@@ -21,6 +21,16 @@ bool IsLowerAsciiWord(const std::string &value)
     return !value.empty() &&
            std::all_of(value.begin(), value.end(), [](unsigned char ch) { return ch >= 'a' && ch <= 'z'; });
 }
+
+Statement prepare_statement(sqlite3 *database, const char *sql)
+{
+    sqlite3_stmt *raw = nullptr;
+    const int status = sqlite3_prepare_v2(database, sql, -1, &raw, nullptr);
+    Statement result(raw);
+    if (status != SQLITE_OK)
+        return {};
+    return result;
+}
 } // namespace
 
 EnglishDictionary::EnglishDictionary(std::string db_path, bool initialize_schema, std::string translations_path,
@@ -51,31 +61,31 @@ std::vector<WordItem> EnglishDictionary::query_prefix(const std::string &prefix,
     const int sqlite_limit =
         static_cast<int>((std::min)(limit, static_cast<size_t>((std::numeric_limits<int>::max)())));
 
-    sqlite3_reset(query_statement_);
-    sqlite3_clear_bindings(query_statement_);
-    if (sqlite3_bind_text(query_statement_, 1, prefix.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
-        sqlite3_bind_text(query_statement_, 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
-        sqlite3_bind_int(query_statement_, 3, sqlite_limit) != SQLITE_OK)
+    sqlite3_reset(query_statement_.get());
+    sqlite3_clear_bindings(query_statement_.get());
+    if (sqlite3_bind_text(query_statement_.get(), 1, prefix.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
+        sqlite3_bind_text(query_statement_.get(), 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
+        sqlite3_bind_int(query_statement_.get(), 3, sqlite_limit) != SQLITE_OK)
     {
-        sqlite3_reset(query_statement_);
+        sqlite3_reset(query_statement_.get());
         return {};
     }
 
     std::vector<WordItem> candidates;
     int result = SQLITE_ROW;
-    while ((result = sqlite3_step(query_statement_)) == SQLITE_ROW)
+    while ((result = sqlite3_step(query_statement_.get())) == SQLITE_ROW)
     {
-        const auto *word = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_, 0));
-        const auto *display = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_, 1));
+        const auto *word = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_.get(), 0));
+        const auto *display = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_.get(), 1));
         if (word == nullptr || display == nullptr)
         {
             continue;
         }
-        candidates.emplace_back(word, display, sqlite3_column_int64(query_statement_, 2),
+        candidates.emplace_back(word, display, sqlite3_column_int64(query_statement_.get(), 2),
                                 CandidateSource::EnglishDictionary);
     }
 
-    sqlite3_reset(query_statement_);
+    sqlite3_reset(query_statement_.get());
     if (result != SQLITE_DONE)
     {
         (void)0;
@@ -120,11 +130,11 @@ std::string EnglishDictionary::query_chinese_gloss(const std::string &english)
         return {};
     if (ensure_gloss_statements())
     {
-        auto gloss = QueryGloss(en_zh_statement_, english);
+        auto gloss = QueryGloss(en_zh_statement_.get(), english);
         if (!gloss.empty())
             return gloss;
     }
-    return ensure_cache_statements() ? QueryGloss(cache_en_zh_statement_, english) : std::string{};
+    return ensure_cache_statements() ? QueryGloss(cache_en_zh_statement_.get(), english) : std::string{};
 }
 
 std::string EnglishDictionary::query_english_gloss(const std::string &chinese)
@@ -136,11 +146,11 @@ std::string EnglishDictionary::query_english_gloss(const std::string &chinese)
         return {};
     if (ensure_gloss_statements())
     {
-        auto gloss = QueryGloss(zh_en_statement_, chinese);
+        auto gloss = QueryGloss(zh_en_statement_.get(), chinese);
         if (!gloss.empty())
             return gloss;
     }
-    return ensure_cache_statements() ? QueryGloss(cache_zh_en_statement_, chinese) : std::string{};
+    return ensure_cache_statements() ? QueryGloss(cache_zh_en_statement_.get(), chinese) : std::string{};
 }
 
 bool EnglishDictionary::cache_gloss(bool chinese_to_english, const std::string &key, const std::string &gloss)
@@ -325,12 +335,17 @@ bool EnglishDictionary::ensure_query_statement()
         return true;
     }
 
-    if (db_ == nullptr &&
-        sqlite3_open_v2(db_path_.c_str(), &db_, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, nullptr) != SQLITE_OK)
+    if (!db_)
     {
-        (void)0;
-        close_database();
-        return false;
+        sqlite3 *raw = nullptr;
+        const int status = sqlite3_open_v2(db_path_.c_str(), &raw, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, nullptr);
+        metasequoia::SqliteDatabase opened(raw);
+        if (status != SQLITE_OK)
+        {
+            close_database();
+            return false;
+        }
+        db_ = std::move(opened);
     }
 
     constexpr const char *query_sql =
@@ -338,12 +353,13 @@ bool EnglishDictionary::ensure_query_statement()
         "WHERE word >= ?1 AND word < ?2 "
         "ORDER BY CASE WHEN word = ?1 THEN 0 ELSE 1 END, weight DESC, length(word), word, display "
         "LIMIT ?3";
-    if (sqlite3_prepare_v2(db_, query_sql, -1, &query_statement_, nullptr) != SQLITE_OK)
+    auto query = prepare_statement(db_.get(), query_sql);
+    if (!query)
     {
-        (void)0;
         close_database();
         return false;
     }
+    query_statement_ = std::move(query);
     return true;
 }
 
@@ -353,14 +369,20 @@ bool EnglishDictionary::ensure_gloss_statements()
         return true;
     if (!ensure_query_statement())
         return false;
-    if (sqlite3_prepare_v2(db_, "SELECT chinese_gloss FROM en_zh_glosses WHERE english=?1", -1, &en_zh_statement_,
-                           nullptr) != SQLITE_OK ||
-        sqlite3_prepare_v2(db_, "SELECT english_gloss FROM zh_en_glosses WHERE chinese=?1", -1, &zh_en_statement_,
-                           nullptr) != SQLITE_OK)
+    auto en_zh = prepare_statement(db_.get(), "SELECT chinese_gloss FROM en_zh_glosses WHERE english=?1");
+    if (!en_zh)
     {
         close_database();
         return false;
     }
+    en_zh_statement_ = std::move(en_zh);
+    auto zh_en = prepare_statement(db_.get(), "SELECT english_gloss FROM zh_en_glosses WHERE chinese=?1");
+    if (!zh_en)
+    {
+        close_database();
+        return false;
+    }
+    zh_en_statement_ = std::move(zh_en);
     return true;
 }
 
@@ -372,63 +394,48 @@ bool EnglishDictionary::ensure_cache_statements()
         return true;
     if (gloss_cache_path_.empty())
         return false;
-    if (cache_db_ == nullptr && sqlite3_open_v2(gloss_cache_path_.c_str(), &cache_db_,
-                                                SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, nullptr) != SQLITE_OK)
+    if (!cache_db_)
+    {
+        sqlite3 *raw = nullptr;
+        const int status =
+            sqlite3_open_v2(gloss_cache_path_.c_str(), &raw, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, nullptr);
+        metasequoia::SqliteDatabase opened(raw);
+        if (status != SQLITE_OK)
+        {
+            close_cache();
+            return false;
+        }
+        cache_db_ = std::move(opened);
+    }
+    auto cache_en_zh = prepare_statement(cache_db_.get(), "SELECT chinese_gloss FROM en_zh_glosses WHERE english=?1");
+    if (!cache_en_zh)
     {
         close_cache();
         return false;
     }
-    if (sqlite3_prepare_v2(cache_db_, "SELECT chinese_gloss FROM en_zh_glosses WHERE english=?1", -1,
-                           &cache_en_zh_statement_, nullptr) != SQLITE_OK ||
-        sqlite3_prepare_v2(cache_db_, "SELECT english_gloss FROM zh_en_glosses WHERE chinese=?1", -1,
-                           &cache_zh_en_statement_, nullptr) != SQLITE_OK)
+    cache_en_zh_statement_ = std::move(cache_en_zh);
+    auto cache_zh_en = prepare_statement(cache_db_.get(), "SELECT english_gloss FROM zh_en_glosses WHERE chinese=?1");
+    if (!cache_zh_en)
     {
         close_cache();
         return false;
     }
+    cache_zh_en_statement_ = std::move(cache_zh_en);
     return true;
 }
 
 void EnglishDictionary::close_cache()
 {
-    if (cache_en_zh_statement_ != nullptr)
-    {
-        sqlite3_finalize(cache_en_zh_statement_);
-        cache_en_zh_statement_ = nullptr;
-    }
-    if (cache_zh_en_statement_ != nullptr)
-    {
-        sqlite3_finalize(cache_zh_en_statement_);
-        cache_zh_en_statement_ = nullptr;
-    }
-    if (cache_db_ != nullptr)
-    {
-        sqlite3_close(cache_db_);
-        cache_db_ = nullptr;
-    }
+    cache_en_zh_statement_.reset();
+    cache_zh_en_statement_.reset();
+    cache_db_.reset();
 }
 
 void EnglishDictionary::close_database()
 {
     close_cache();
-    if (en_zh_statement_ != nullptr)
-    {
-        sqlite3_finalize(en_zh_statement_);
-        en_zh_statement_ = nullptr;
-    }
-    if (zh_en_statement_ != nullptr)
-    {
-        sqlite3_finalize(zh_en_statement_);
-        zh_en_statement_ = nullptr;
-    }
-    if (query_statement_ != nullptr)
-    {
-        sqlite3_finalize(query_statement_);
-        query_statement_ = nullptr;
-    }
-    if (db_ != nullptr)
-    {
-        sqlite3_close(db_);
-        db_ = nullptr;
-    }
+    en_zh_statement_.reset();
+    zh_en_statement_.reset();
+    query_statement_.reset();
+    db_.reset();
 }
