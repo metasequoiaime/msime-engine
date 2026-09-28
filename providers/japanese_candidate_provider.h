@@ -2,6 +2,8 @@
 
 #include "candidate_provider.h"
 #include "../common/cache.h"
+#include "../common/sqlite_database.h"
+#include "../common/sqlite_statement.h"
 #include "../japanese/japanese_sentence_decoder.h"
 #include <sqlite3.h>
 #include <memory>
@@ -33,8 +35,8 @@ class JapaneseCandidateProvider : public ICandidateProvider
 
     std::string db_path_;
     std::string model_path_;
-    sqlite3 *db_ = nullptr;
-    sqlite3_stmt *query_statement_ = nullptr;
+    metasequoia::SqliteDatabase db_;
+    metasequoia::SqliteStatement query_statement_;
     std::shared_ptr<const japanese::JapaneseSentenceDecoder> sentence_decoder_;
     CircularBuffer<std::string, std::vector<WordItem>> dynamic_candidates_{128};
 };

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "candidate_provider.h"
+#include "../common/sqlite_database.h"
+#include "../common/sqlite_statement.h"
 #include "../core/runtime_paths.h"
 #include <sqlite3.h>
 #include <string>
@@ -37,7 +39,7 @@ class WubiCandidateProvider : public ICandidateProvider
 
     std::string db_path_;
     metasequoia::RuntimePaths paths_;
-    sqlite3 *db_ = nullptr;
-    sqlite3_stmt *query_statement_ = nullptr;
-    sqlite3_stmt *wildcard_statement_ = nullptr;
+    metasequoia::SqliteDatabase db_;
+    metasequoia::SqliteStatement query_statement_;
+    metasequoia::SqliteStatement wildcard_statement_;
 };
