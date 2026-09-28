@@ -1,12 +1,12 @@
 #include <metasequoia/dictionary_state.h>
 #include "user_dictionary_journal.h"
 #include "../core/data_path.h"
+#include "../common/sqlite_database.h"
 #include "../common/sqlite_statement.h"
 #include "../contracts/assets/assets.h"
 #include <sqlite3.h>
 #include <utf8.h>
 #include <algorithm>
-#include <memory>
 #include <stdexcept>
 #include <type_traits>
 
@@ -14,7 +14,7 @@ namespace metasequoia
 {
 namespace
 {
-using Database = std::unique_ptr<sqlite3, decltype(&sqlite3_close)>;
+using Database = metasequoia::SqliteDatabase;
 using Statement = metasequoia::SqliteStatement;
 void require(bool condition)
 {
@@ -25,7 +25,7 @@ Database open(const std::filesystem::path &file, int flags)
 {
     sqlite3 *raw = nullptr;
     const int status = sqlite3_open_v2(path_to_utf8(file).c_str(), &raw, flags | SQLITE_OPEN_FULLMUTEX, nullptr);
-    Database db(raw, sqlite3_close);
+    Database db(raw);
     require(status == SQLITE_OK);
     sqlite3_busy_timeout(db.get(), 5000);
     return db;

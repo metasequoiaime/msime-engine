@@ -16,6 +16,7 @@
 #include <mutex>
 #include <numeric>
 #include "../core/data_path.h"
+#include "../common/sqlite_database.h"
 #include "../common/sqlite_statement.h"
 #include "../english/english_dictionary.h"
 #include "../local_modes/local_database.h"
@@ -24,15 +25,7 @@ namespace user_dictionary
 {
 namespace
 {
-struct DbCloser
-{
-    void operator()(sqlite3 *db) const
-    {
-        if (db != nullptr)
-            sqlite3_close(db);
-    }
-};
-using Db = std::unique_ptr<sqlite3, DbCloser>;
+using Db = metasequoia::SqliteDatabase;
 
 using Stmt = metasequoia::SqliteStatement;
 
@@ -55,14 +48,12 @@ const char *kind_name(DictionaryKind kind)
 Db open_database(const std::string &path, int flags)
 {
     sqlite3 *raw = nullptr;
-    if (sqlite3_open_v2(path.c_str(), &raw, flags | SQLITE_OPEN_FULLMUTEX, nullptr) != SQLITE_OK)
-    {
-        if (raw != nullptr)
-            sqlite3_close(raw);
+    const int status = sqlite3_open_v2(path.c_str(), &raw, flags | SQLITE_OPEN_FULLMUTEX, nullptr);
+    Db database(raw);
+    if (status != SQLITE_OK)
         return {};
-    }
-    sqlite3_busy_timeout(raw, 5000);
-    return Db(raw);
+    sqlite3_busy_timeout(database.get(), 5000);
+    return database;
 }
 
 Stmt prepare(sqlite3 *db, const std::string &sql)
@@ -387,7 +378,7 @@ std::shared_ptr<sqlite3> open_shared_database(const std::string &path)
     Db opened = open_database(path, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
     if (!opened || !ensure_schema(opened.get()))
         return {};
-    return std::shared_ptr<sqlite3>(opened.release(), [](sqlite3 *db) { sqlite3_close(db); });
+    return std::shared_ptr<sqlite3>(opened.release(), metasequoia::SqliteDatabaseCloser{});
 }
 
 std::shared_ptr<sqlite3> acquire_database(const std::string &path)
