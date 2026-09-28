@@ -38,6 +38,11 @@ struct WordItem
     // 原始输入字母串（对标 librime tips / 搜狗纠错标记）。填充规则见
     // QuanpinDictionary::mark_autocorrect_candidates；前端仅据非空与否附加轻标记。
     std::string corrected_from;
+    // Only whole-sentence association rows set this flag. Generated and
+    // fallback candidates are also used for raw passthrough, local modes and
+    // other synthesized values, so consumers must not infer sentence labels
+    // from CandidateSource alone.
+    bool sentence_association = false;
 
     WordItem() = default;
     WordItem(std::string pinyin_value, std::string word_value, std::int64_t weight_value,

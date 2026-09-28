@@ -419,9 +419,10 @@ std::vector<WordItem> QuanpinDictionary::query_series(const std::string &raw_inp
                 // reading so creating-word learning can persist them.
                 const auto at =
                     static_cast<std::ptrdiff_t>(quanpin::whole_sentence_insert_position(result, segments.size()));
-                result.insert(result.begin() + at,
-                              WordItem(segmentation.empty() ? raw_input : segmentation, google_sentence, 1,
-                                       CandidateSource::Fallback, segmentation));
+                WordItem sentence(segmentation.empty() ? raw_input : segmentation, google_sentence, 1,
+                                  CandidateSource::Fallback, segmentation);
+                sentence.sentence_association = true;
+                result.insert(result.begin() + at, std::move(sentence));
             }
         }
 
@@ -440,10 +441,11 @@ std::vector<WordItem> QuanpinDictionary::query_series(const std::string &raw_inp
         {
             const auto at =
                 static_cast<std::ptrdiff_t>(quanpin::whole_sentence_insert_position(result, segments.size()));
-            result.insert(result.begin() + at,
-                          WordItem(segmentation.empty() ? raw_input : segmentation, sentences.best_hybrid,
-                                   static_cast<std::int64_t>(*sentences.best_hybrid_score * 1000.0),
-                                   CandidateSource::Generated, segmentation));
+            WordItem sentence(segmentation.empty() ? raw_input : segmentation, sentences.best_hybrid,
+                              static_cast<std::int64_t>(*sentences.best_hybrid_score * 1000.0),
+                              CandidateSource::Generated, segmentation);
+            sentence.sentence_association = true;
+            result.insert(result.begin() + at, std::move(sentence));
         }
         // The fallback used to be pushed back in front of the lattice unconditionally, which is an
         // argument about sources rather than about sentences: it wins every input where it exists,
@@ -711,6 +713,7 @@ std::vector<WordItem> QuanpinDictionary::append_ime_fallback(const std::string &
         // Keep the complete reading for the creating-word persistence path.
         result.emplace_back(segmentation.empty() ? raw_input : segmentation, sentence, 1, CandidateSource::Fallback,
                             segmentation);
+        result.back().sentence_association = true;
     }
     return result;
 }

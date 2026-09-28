@@ -182,6 +182,7 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generateSeries( //
                     // Whole-sentence fallbacks must retain the converted
                     // quanpin reading for creating-word persistence.
                     candidate_list.emplace_back(_pinyin_sequence, res, 1, CandidateSource::Fallback, quanpin_str);
+                    candidate_list.back().sentence_association = true;
                 }
             }
         }
@@ -227,9 +228,10 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generateSeries( //
             {
                 const auto at = static_cast<std::ptrdiff_t>(
                     quanpin::whole_sentence_insert_position(candidate_list, quanpin_segments.size()));
-                candidate_list.insert(
-                    candidate_list.begin() + at,
-                    WordItem(_pinyin_sequence, google_sentence, 1, CandidateSource::Fallback, quanpin_segmentation));
+                WordItem sentence(_pinyin_sequence, google_sentence, 1, CandidateSource::Fallback,
+                                  quanpin_segmentation);
+                sentence.sentence_association = true;
+                candidate_list.insert(candidate_list.begin() + at, std::move(sentence));
             }
         }
         const auto lattice_options = quanpin::make_sentence_lattice_options(paths_, sentence_alternatives_);

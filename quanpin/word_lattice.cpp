@@ -473,7 +473,9 @@ void merge_lattice_candidates(std::vector<WordItem> &candidates, const Segments 
             continue;
         // Often negative (log-space). Ranking is insert order, not weight.
         const auto weight = static_cast<std::int64_t>(path.log_prob * 1000.0);
-        extra.emplace_back(typed_pinyin, path.sentence, weight, CandidateSource::Generated, path.key);
+        WordItem item(typed_pinyin, path.sentence, weight, CandidateSource::Generated, path.key);
+        item.sentence_association = true;
+        extra.push_back(std::move(item));
     }
     if (extra.empty())
         return;
