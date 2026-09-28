@@ -11,6 +11,19 @@
 
 namespace
 {
+void append_unique_candidates(std::vector<WordItem> &target, std::vector<WordItem> extra)
+{
+    std::unordered_set<std::string> seen_words;
+    seen_words.reserve(target.size() + extra.size());
+    for (const auto &item : target)
+        seen_words.insert(item.word);
+    for (auto &item : extra)
+    {
+        if (seen_words.insert(item.word).second)
+            target.push_back(std::move(item));
+    }
+}
+
 void ApplyShuangpinHelpcodeSegmentation(QueryRequest &request, const ShuangpinProfile &profile)
 {
     if (request.scheme != SchemeType::Shuangpin || !request.enable_shuangpin_helpcode ||
@@ -254,16 +267,8 @@ std::vector<WordItem> ImeSession::query_raw_candidates(const std::string &raw_in
     pinyin_request.key_strokes = request.key_strokes;
     if (!pinyin_request.valid)
         return candidates;
-    const auto pinyin_candidates = provider_registry_.resolve(SchemeType::Quanpin).query(pinyin_request);
-    std::unordered_set<std::string> seen_words;
-    seen_words.reserve(candidates.size() + pinyin_candidates.size());
-    for (const auto &item : candidates)
-        seen_words.insert(item.word);
-    for (const auto &item : pinyin_candidates)
-    {
-        if (seen_words.insert(item.word).second)
-            candidates.push_back(item);
-    }
+    auto pinyin_candidates = provider_registry_.resolve(SchemeType::Quanpin).query(pinyin_request);
+    append_unique_candidates(candidates, std::move(pinyin_candidates));
     return candidates;
 }
 
@@ -344,15 +349,7 @@ void ImeSession::refresh_candidates()
     if (!pinyin_request.valid)
         return;
     std::vector<WordItem> pinyin_candidates = provider_registry_.resolve(pinyin_request.scheme).query(pinyin_request);
-    std::unordered_set<std::string> seen_words;
-    seen_words.reserve(state_.candidates.size() + pinyin_candidates.size());
-    for (const WordItem &item : state_.candidates)
-        seen_words.insert(item.word);
-    for (WordItem &item : pinyin_candidates)
-    {
-        if (seen_words.insert(item.word).second)
-            state_.candidates.push_back(std::move(item));
-    }
+    append_unique_candidates(state_.candidates, std::move(pinyin_candidates));
 }
 
 void ImeSession::apply_request_options(QueryRequest &request) const
