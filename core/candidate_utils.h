@@ -118,6 +118,29 @@ inline void insert_cached_candidate(std::vector<WordItem> &candidates, const std
     }
 }
 
+template <typename Row>
+inline std::vector<WordItem> make_database_candidates(const std::string &pinyin, const std::vector<Row> &rows)
+{
+    std::vector<WordItem> candidates;
+    candidates.reserve(rows.size());
+    for (const auto &row : rows)
+    {
+        candidates.emplace_back(pinyin, row.value, row.weight, CandidateSource::Database, row.key);
+    }
+    return candidates;
+}
+
+template <typename Row> inline std::vector<WordItem> make_database_candidates(const std::vector<Row> &rows)
+{
+    std::vector<WordItem> candidates;
+    candidates.reserve(rows.size());
+    for (const auto &row : rows)
+    {
+        candidates.emplace_back(row.key, row.value, row.weight, CandidateSource::Database, row.key);
+    }
+    return candidates;
+}
+
 inline std::vector<WordItem> take_unique_candidates(std::vector<WordItem> candidates,
                                                     std::unordered_set<std::string> &seen_words)
 {

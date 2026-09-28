@@ -839,23 +839,18 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::query_from_quanpin_da
         return {};
     }
 
-    std::vector<WordItem> candidate_list;
     try
     {
         const auto flat_items = quanpin::query_segments_keyed_flat(
             segments, quanpin_db_.get(), quanpin_statement_cache_, INT_MAX, quanpin::QuerySource::Shuangpin);
-        candidate_list.reserve(flat_items.size());
-        for (const auto &item : flat_items)
-        {
-            candidate_list.emplace_back(pinyin_sequence, item.value, item.weight, CandidateSource::Database, item.key);
-        }
+        return make_database_candidates(pinyin_sequence, flat_items);
     }
     catch (const std::exception &ex)
     {
         (void)0;
     }
 
-    return candidate_list;
+    return {};
 }
 
 std::optional<WordItem> ShuangpinDictionary::find_candidate(const std::string &key, const std::string &value)
@@ -875,13 +870,7 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::query_initial_from_qu
     const std::string initial = ShuangpinUtil::convert_seg_shuangpin_to_seg_complete_pinyin(code, profile_);
     const auto rows = quanpin::query_initial(quanpin_db_.get(), initial, limit);
 
-    vector<WordItem> candidate_list;
-    candidate_list.reserve(rows.size());
-    for (const auto &item : rows)
-    {
-        candidate_list.emplace_back(code, item.value, item.weight, CandidateSource::Database, item.key);
-    }
-    return candidate_list;
+    return make_database_candidates(code, rows);
 }
 
 int ShuangpinDictionary::check_data(sqlite3 *target_db, const std::string &sql_str)

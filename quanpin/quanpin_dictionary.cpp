@@ -469,13 +469,7 @@ std::vector<WordItem> QuanpinDictionary::append_longer_phrase_candidates(const s
     const auto rows =
         quanpin::query_longer_phrases_keyed(normalize_umlaut_aliases(segments), db_.get(), statement_cache_,
                                             kLongerPhraseExtraSyllables, kLongerPhraseLimit);
-    std::vector<WordItem> items;
-    items.reserve(rows.size());
-    for (const auto &row : rows)
-    {
-        items.emplace_back(segmentation, row.value, row.weight, CandidateSource::Database, row.key);
-    }
-    return items;
+    return make_database_candidates(segmentation, rows);
 }
 
 std::vector<WordItem> QuanpinDictionary::query_single_path(const std::string &raw_input,
@@ -577,14 +571,8 @@ std::vector<WordItem> QuanpinDictionary::query_database(const quanpin::Segments 
         }
 
         const auto flat_items = quanpin::query_segments_keyed_flat(segments, db_.get(), statement_cache_, INT_MAX);
-        std::vector<WordItem> result;
-        result.reserve(flat_items.size());
         const std::string code = quanpin::join_segments(segments);
-        for (const auto &item : flat_items)
-        {
-            result.emplace_back(code, item.value, item.weight, CandidateSource::Database, item.key);
-        }
-        return result;
+        return make_database_candidates(code, flat_items);
     }
     catch (const std::exception &ex)
     {
@@ -601,13 +589,7 @@ std::vector<WordItem> QuanpinDictionary::query_initial(const std::string &code, 
     }
 
     const auto rows = quanpin::query_initial(db_.get(), code, limit);
-    std::vector<WordItem> result;
-    result.reserve(rows.size());
-    for (const auto &item : rows)
-    {
-        result.emplace_back(item.key, item.value, item.weight, CandidateSource::Database, item.key);
-    }
-    return result;
+    return make_database_candidates(rows);
 }
 
 std::vector<WordItem> QuanpinDictionary::merge_alternative_segmentations(
@@ -622,12 +604,7 @@ std::vector<WordItem> QuanpinDictionary::merge_alternative_segmentations(
     }
 
     const auto primary_full = query_single_path(raw_input, primary_segmentation, primary_segments);
-    std::vector<WordItem> alternative_full;
-    alternative_full.reserve(alternative_items.size());
-    for (const auto &item : alternative_items)
-    {
-        alternative_full.emplace_back(item.key, item.value, item.weight, CandidateSource::Database, item.key);
-    }
+    auto alternative_full = make_database_candidates(alternative_items);
 
     std::vector<WordItem> merged_full = primary_full;
     merged_full.insert(merged_full.end(), alternative_full.begin(), alternative_full.end());
