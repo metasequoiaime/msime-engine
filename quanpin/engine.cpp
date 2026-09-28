@@ -132,11 +132,6 @@ int QuanpinEngine::insert_word_to_series_cache(const QueryRequest &request, cons
                                                    autocorrect_types_from_request(request), word, source);
 }
 
-std::string QuanpinEngine::search_sentence_from_ime_engine(const std::string &user_pinyin)
-{
-    return dictionary_.search_sentence_from_ime_engine(user_pinyin);
-}
-
 void QuanpinEngine::reset_state()
 {
     dictionary_.reset_state();

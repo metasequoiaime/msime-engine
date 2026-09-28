@@ -25,7 +25,6 @@ class ShuangpinEngine
                                              const std::string &double_helpcodes = {});
     int insert_word_to_active_helpcode_cache(const std::string &pinyin, const std::vector<std::string> &words,
                                              CandidateSource source, const std::string &double_helpcodes = {});
-    std::string search_sentence_from_ime_engine(const std::string &user_pinyin);
     void reset_cache();
 
     void set_helpcode_keymap(HelpcodeUtils::SharedKeymap table)

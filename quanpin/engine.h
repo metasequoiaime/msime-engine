@@ -29,7 +29,6 @@ class QuanpinEngine
     int insert_word_to_series_cache(const QueryRequest &request, const std::string &word, CandidateSource source);
     int insert_word_to_series_cache(const QueryRequest &request, const std::vector<std::string> &words,
                                     CandidateSource source);
-    std::string search_sentence_from_ime_engine(const std::string &user_pinyin);
     void reset_state();
     void reset_cache();
     void set_helpcode_keymap(HelpcodeUtils::SharedKeymap table)
