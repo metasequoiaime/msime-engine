@@ -16,6 +16,7 @@
 #include <mutex>
 #include <numeric>
 #include "../core/data_path.h"
+#include "../common/sqlite_statement.h"
 #include "../english/english_dictionary.h"
 #include "../local_modes/local_database.h"
 
@@ -33,15 +34,7 @@ struct DbCloser
 };
 using Db = std::unique_ptr<sqlite3, DbCloser>;
 
-struct StmtCloser
-{
-    void operator()(sqlite3_stmt *stmt) const
-    {
-        if (stmt != nullptr)
-            sqlite3_finalize(stmt);
-    }
-};
-using Stmt = std::unique_ptr<sqlite3_stmt, StmtCloser>;
+using Stmt = metasequoia::SqliteStatement;
 
 const char *kind_name(DictionaryKind kind)
 {

@@ -6,6 +6,7 @@
 #include "../common/helpcode_utils.h"
 #include "quanpin_query.h"
 #include "quanpin_utils.h"
+#include "../common/sqlite_statement.h"
 #include "lattice_rerank.h"
 #include "../neural/neural_decoder.h"
 #include "../shuangpin/shuangpin_utils.h"
@@ -18,6 +19,8 @@
 
 namespace
 {
+using Statement = metasequoia::SqliteStatement;
+
 constexpr size_t kSparsePinyinFallbackThreshold = 8;
 // 续接词只取前三档音节长度:再长的条目权重已经掉到几十,占位不如留给前缀单字。
 constexpr size_t kLongerPhraseExtraSyllables = 3;
@@ -310,7 +313,7 @@ std::optional<WordItem> QuanpinDictionary::find_candidate(const std::string &key
     const std::string sql = "SELECT weight FROM \"" + table + "\" WHERE key=?1 AND value=?2 LIMIT 1";
     if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
         return std::nullopt;
-    std::unique_ptr<sqlite3_stmt, decltype(&sqlite3_finalize)> guard(stmt, sqlite3_finalize);
+    Statement guard(stmt);
     if (sqlite3_bind_text(stmt, 1, key.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
         sqlite3_bind_text(stmt, 2, value.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
         sqlite3_step(stmt) != SQLITE_ROW)
@@ -1031,13 +1034,12 @@ void QuanpinDictionary::reset_cache_if_database_changed()
     {
         return;
     }
+    Statement guard(statement);
     if (sqlite3_step(statement) != SQLITE_ROW)
     {
-        sqlite3_finalize(statement);
         return;
     }
     const sqlite3_int64 current_version = sqlite3_column_int64(statement, 0);
-    sqlite3_finalize(statement);
     if (data_version_ >= 0 && current_version != data_version_)
     {
         reset_cache();
@@ -1059,12 +1061,12 @@ std::vector<std::string> QuanpinDictionary::select_data(const std::string &sql_s
         (void)0;
         return candidate_list;
     }
+    Statement guard(stmt);
 
     while (sqlite3_step(stmt) == SQLITE_ROW)
     {
         candidate_list.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2))));
     }
-    sqlite3_finalize(stmt);
     return candidate_list;
 }
 
@@ -1082,6 +1084,7 @@ std::vector<WordItem> QuanpinDictionary::select_complete_data(const std::string 
         (void)0;
         return candidate_list;
     }
+    Statement guard(stmt);
 
     while (sqlite3_step(stmt) == SQLITE_ROW)
     {
@@ -1090,7 +1093,6 @@ std::vector<WordItem> QuanpinDictionary::select_complete_data(const std::string 
                                     sqlite3_column_int64(stmt, 3), CandidateSource::Database,
                                     std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0))));
     }
-    sqlite3_finalize(stmt);
     return candidate_list;
 }
 
@@ -1107,9 +1109,9 @@ int QuanpinDictionary::check_data(const std::string &sql_str)
         (void)0;
         return false;
     }
+    Statement guard(stmt);
 
     const bool exists = sqlite3_step(stmt) == SQLITE_ROW;
-    sqlite3_finalize(stmt);
     return exists;
 }
 
@@ -1126,8 +1128,8 @@ int QuanpinDictionary::insert_data(const std::string &sql_str)
         (void)0;
         return ERROR_CODE;
     }
+    Statement guard(stmt);
     const bool ok = sqlite3_step(stmt) == SQLITE_DONE;
-    sqlite3_finalize(stmt);
     return ok ? OK : ERROR_CODE;
 }
 
@@ -1144,8 +1146,8 @@ int QuanpinDictionary::update_data(const std::string &sql_str)
         (void)0;
         return ERROR_CODE;
     }
+    Statement guard(stmt);
     const bool ok = sqlite3_step(stmt) == SQLITE_DONE;
-    sqlite3_finalize(stmt);
     return ok ? OK : ERROR_CODE;
 }
 
@@ -1162,8 +1164,8 @@ int QuanpinDictionary::delete_data(const std::string &sql_str)
         (void)0;
         return ERROR_CODE;
     }
+    Statement guard(stmt);
     const bool ok = sqlite3_step(stmt) == SQLITE_DONE;
-    sqlite3_finalize(stmt);
     return ok ? OK : ERROR_CODE;
 }
 

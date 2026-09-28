@@ -1,6 +1,7 @@
 #include "../contracts/assets/assets.h"
 #include "english_dictionary.h"
 #include "../core/data_path.h"
+#include "../common/sqlite_statement.h"
 
 #include <algorithm>
 #include <cctype>
@@ -12,6 +13,8 @@
 
 namespace
 {
+using Statement = metasequoia::SqliteStatement;
+
 bool IsLowerAsciiWord(const std::string &value)
 {
     return !value.empty() &&
@@ -166,12 +169,14 @@ bool EnglishDictionary::upsert_gloss(const std::string &db_path, bool chinese_to
     sqlite3_stmt *statement = nullptr;
     const char *sql = chinese_to_english ? "INSERT OR REPLACE INTO zh_en_glosses(chinese,english_gloss) VALUES(?1,?2)"
                                          : "INSERT OR REPLACE INTO en_zh_glosses(english,chinese_gloss) VALUES(?1,?2)";
-    bool ok = sqlite3_prepare_v2(database, sql, -1, &statement, nullptr) == SQLITE_OK &&
-              sqlite3_bind_text(statement, 1, key.c_str(), -1, SQLITE_TRANSIENT) == SQLITE_OK &&
-              sqlite3_bind_text(statement, 2, gloss.c_str(), -1, SQLITE_TRANSIENT) == SQLITE_OK &&
-              sqlite3_step(statement) == SQLITE_DONE;
-    if (statement != nullptr)
-        sqlite3_finalize(statement);
+    const bool prepared = sqlite3_prepare_v2(database, sql, -1, &statement, nullptr) == SQLITE_OK;
+    bool ok = false;
+    {
+        Statement guard(statement);
+        ok = prepared && sqlite3_bind_text(statement, 1, key.c_str(), -1, SQLITE_TRANSIENT) == SQLITE_OK &&
+             sqlite3_bind_text(statement, 2, gloss.c_str(), -1, SQLITE_TRANSIENT) == SQLITE_OK &&
+             sqlite3_step(statement) == SQLITE_DONE;
+    }
     sqlite3_close(database);
     return ok;
 }
@@ -252,22 +257,23 @@ bool EnglishDictionary::ensure_schema(const std::string &db_path)
     bool has_weight = false;
     bool composite_primary_key = false;
     bool has_table = false;
-    sqlite3_stmt *columns = nullptr;
-    if (sqlite3_prepare_v2(database, "PRAGMA table_info(english_words)", -1, &columns, nullptr) == SQLITE_OK)
     {
-        int primary_key_columns = 0;
-        while (sqlite3_step(columns) == SQLITE_ROW)
+        sqlite3_stmt *columns = nullptr;
+        if (sqlite3_prepare_v2(database, "PRAGMA table_info(english_words)", -1, &columns, nullptr) == SQLITE_OK)
         {
-            has_table = true;
-            const auto *name = reinterpret_cast<const char *>(sqlite3_column_text(columns, 1));
-            has_weight = has_weight || (name != nullptr && std::string(name) == "weight");
-            if (sqlite3_column_int(columns, 5) > 0)
-                ++primary_key_columns;
+            Statement guard(columns);
+            int primary_key_columns = 0;
+            while (sqlite3_step(columns) == SQLITE_ROW)
+            {
+                has_table = true;
+                const auto *name = reinterpret_cast<const char *>(sqlite3_column_text(columns, 1));
+                has_weight = has_weight || (name != nullptr && std::string(name) == "weight");
+                if (sqlite3_column_int(columns, 5) > 0)
+                    ++primary_key_columns;
+            }
+            composite_primary_key = primary_key_columns == 2;
         }
-        composite_primary_key = primary_key_columns == 2;
     }
-    if (columns != nullptr)
-        sqlite3_finalize(columns);
 
     bool english_words_ok = false;
     if (!has_table)
