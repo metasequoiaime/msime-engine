@@ -322,11 +322,11 @@ std::string compute_helpcodes(const std::string &words, bool uppercase_all, cons
         if (uppercase_all)
         {
             std::transform(helpcodes.begin(), helpcodes.end(), helpcodes.begin(),
-                           [](unsigned char ch) { return static_cast<char>(std::toupper(ch)); });
+                           [](unsigned char ch) { return CommonUtils::uppercase_ascii_char(ch); });
         }
         else if (helpcodes.size() >= 2)
         {
-            helpcodes[1] = static_cast<char>(toupper(static_cast<unsigned char>(helpcodes[1])));
+            helpcodes[1] = CommonUtils::uppercase_ascii_char(static_cast<unsigned char>(helpcodes[1]));
         }
         helpcodes = "(" + helpcodes + ")";
     }
