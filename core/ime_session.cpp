@@ -100,38 +100,23 @@ void ImeSession::set_quanpin_autocorrect_types(unsigned autocorrect_types)
     quanpin_autocorrect_types_ = autocorrect_types;
 }
 
+void ImeSession::replace_raw_input_for_scheme(SchemeType expected, const std::string &raw_input,
+                                              const std::string &raw_input_with_cases)
+{
+    if (scheme_->type() != expected)
+        return;
+    scheme_->set_raw_input(raw_input, raw_input_with_cases);
+    refresh_candidates();
+}
+
 void ImeSession::replace_shuangpin_raw_input(const std::string &raw_input, const std::string &raw_input_with_cases)
 {
-    if (scheme_->type() != SchemeType::Shuangpin)
-    {
-        return;
-    }
-
-    auto *shuangpin_scheme = dynamic_cast<ShuangpinScheme *>(scheme_.get());
-    if (!shuangpin_scheme)
-    {
-        return;
-    }
-
-    shuangpin_scheme->set_raw_input(raw_input, raw_input_with_cases);
-    refresh_candidates();
+    replace_raw_input_for_scheme(SchemeType::Shuangpin, raw_input, raw_input_with_cases);
 }
 
 void ImeSession::replace_quanpin_raw_input(const std::string &raw_input, const std::string &raw_input_with_cases)
 {
-    if (scheme_->type() != SchemeType::Quanpin)
-    {
-        return;
-    }
-
-    auto *quanpin_scheme = dynamic_cast<QuanpinScheme *>(scheme_.get());
-    if (!quanpin_scheme)
-    {
-        return;
-    }
-
-    quanpin_scheme->set_raw_input(raw_input, raw_input_with_cases);
-    refresh_candidates();
+    replace_raw_input_for_scheme(SchemeType::Quanpin, raw_input, raw_input_with_cases);
 }
 
 void ImeSession::replace_wubi_raw_input(const std::string &raw_input, const std::string &raw_input_with_cases)
@@ -191,13 +176,7 @@ int ImeSession::cache_dynamic_candidate(const std::string &pinyin, const std::st
 
 void ImeSession::replace_japanese_raw_input(const std::string &raw_input, const std::string &raw_input_with_cases)
 {
-    if (scheme_->type() != SchemeType::JapaneseRomaji)
-        return;
-    auto *japanese_scheme = dynamic_cast<JapaneseRomajiScheme *>(scheme_.get());
-    if (!japanese_scheme)
-        return;
-    japanese_scheme->set_raw_input(raw_input, raw_input_with_cases);
-    refresh_candidates();
+    replace_raw_input_for_scheme(SchemeType::JapaneseRomaji, raw_input, raw_input_with_cases);
 }
 
 bool ImeSession::cycle_japanese_kana_variant()
