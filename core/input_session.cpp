@@ -1026,7 +1026,7 @@ std::optional<std::string> InputSession::learn_candidate(std::size_t index)
     {
         if (is_dictionary_candidate_source(selected.source))
         {
-            const std::string &pinyin = selected.canonical_pinyin.empty() ? selected.pinyin : selected.canonical_pinyin;
+            const std::string &pinyin = candidate_canonical_pinyin(selected);
             (void)engine_.update_weight_by_pinyin_and_word(selected.scheme, pinyin, selected.word);
         }
         return std::nullopt;

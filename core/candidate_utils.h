@@ -15,6 +15,11 @@ inline bool contains_candidate_word(const std::vector<WordItem> &candidates, std
                        [word](const WordItem &item) { return item.word == word; });
 }
 
+inline const std::string &candidate_canonical_pinyin(const WordItem &item)
+{
+    return item.canonical_pinyin.empty() ? item.pinyin : item.canonical_pinyin;
+}
+
 inline bool is_generated_or_fallback_source(CandidateSource source)
 {
     return source == CandidateSource::Generated || source == CandidateSource::Fallback;

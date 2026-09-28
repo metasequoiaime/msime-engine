@@ -100,9 +100,7 @@ KeyResult InputSession::set_candidate_position(std::size_t index, int position)
         return {};
     const bool wubi = selected.scheme == SchemeType::Wubi && local_input_mode_ != LocalInputMode::SuperJianpin;
     const auto context = position_context(english, wubi);
-    const auto key = english || wubi
-                         ? selected.pinyin
-                         : (selected.canonical_pinyin.empty() ? selected.pinyin : selected.canonical_pinyin);
+    const auto key = english || wubi ? selected.pinyin : candidate_canonical_pinyin(selected);
     if (context.empty() || key.empty())
         return {};
     const auto journal = path_to_utf8(paths_.user(assets::user_journal));
