@@ -81,6 +81,13 @@ int main()
         // Shipped dictionary scales, pinned by upstream 809c6299 and 9bbd86b6.
         insert("xian", "先", 1662684);
         insert("xi'an", "西安", 55003);
+        // Keep the strong alternative path covered when it falls outside the first page.
+        insert("xian", "现", 1500000);
+        insert("xian", "线", 1400000);
+        insert("xian", "县", 1300000);
+        insert("xian", "限", 1200000);
+        insert("xian", "显", 1100000);
+        insert("xian", "险", 1000000);
         insert("xie", "些", 3752167);
         insert("xie", "写", 605147);
         insert("xi'e", "西鄂", 6);
@@ -89,6 +96,16 @@ int main()
         insert("ji'ang", "激昂", 23740);
         insert("you'dian", "邮电", 999);
         insert("you'di'an", "尤迪安", 7);
+        // Keep the best alternative segmentation inside the first page. A protection slot should not
+        // move a candidate that natural ordering already placed where the user tuned it.
+        insert("jian", "见", 3460998);
+        insert("jian", "间", 3067939);
+        insert("jian", "剑", 1151704);
+        insert("jian", "件", 935235);
+        insert("jian", "建", 598616);
+        insert("jian", "检", 500000);
+        insert("ji'an", "吉安", 766925);
+        insert("ji'an", "积案", 9420);
         sqlite3_close(db);
         std::filesystem::create_directories(directory / "helpcodes");
         std::ofstream(directory / "helpcodes" / "helpcode.txt") << "中=ab\n宗=cd\n国=ef\n";
@@ -125,6 +142,8 @@ int main()
         const auto jiang_list = dictionary.query("jiang", "jiang", 0u, fuzzy_on);
         require(jiang_list.at(0).word == "将" && jiang_list.at(1).word == "僵" && position(jiang_list, "激昂") > 1,
                 "rare homophone word outranked the exact reading");
+        const auto jian_list = dictionary.query("jian", "jian", 0u, fuzzy_on);
+        require(position(jian_list, "吉安") == 4, "protected slot overrode a tuned candidate's earned rank");
         const auto youdian_list = dictionary.query("youdian", "you'dian", 0u, fuzzy_on);
         require(youdian_list.at(0).word == "邮电" && position(youdian_list, "尤迪安") > 0,
                 "longer alternative key outranked the exact reading");
