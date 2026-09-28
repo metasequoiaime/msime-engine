@@ -89,11 +89,6 @@ bool QuanpinEngine::expand_initial_candidates(const QueryRequest &request, std::
     return dictionary_.expand_initial_candidates(segments.front(), candidates);
 }
 
-int QuanpinEngine::handleVkCode(ImeKeyCode vk, ImeModifierMask modifiers_down, ImeCharacter wch)
-{
-    return dictionary_.handleVkCode(vk, modifiers_down, wch);
-}
-
 int QuanpinEngine::create_word(std::string pinyin, std::string word)
 {
     return dictionary_.create_word(std::move(pinyin), std::move(word));
