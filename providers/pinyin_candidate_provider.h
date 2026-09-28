@@ -31,6 +31,8 @@ class PinyinCandidateProvider : public ICandidateProvider
     }
 
   private:
+    std::optional<std::string> active_helpcode_for_request(const QueryRequest &request) const;
+
     const ShuangpinProfile shuangpin_profile_;
     QuanpinEngine quanpin_engine_;
     ShuangpinEngine shuangpin_engine_;
