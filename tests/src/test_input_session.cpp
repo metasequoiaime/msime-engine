@@ -200,11 +200,11 @@ int run_test()
 #ifndef METASEQUOIA_FREQUENCY_TESTS_ONLY
     {
         const std::filesystem::path helpcode_directory = data_directory / "helpcodes";
-        write_file(helpcode_directory / "helpcode.txt", "你=ab\n拟=cd\n好=ef\n");
+        write_file(helpcode_directory / "helpcode.txt", "你=ab\n拟=cd\n好=ef\n高=kw\n");
         write_file(helpcode_directory / "zrm_helpcode_big_unique.txt", "你=cb\n拟=ad\n好=ef\n");
         write_file(helpcode_directory / "shouyou2_0_helpcode.txt", "你=ab\n拟=cd\n好=ef\n");
         write_file(helpcode_directory / "shouyouplus_helpcode.txt", "你=ab\n拟=cd\n好=ef\n");
-        write_file(helpcode_directory / "xiaohe_helpcode.txt", "你=ab\n拟=cd\n好=ef\n");
+        write_file(helpcode_directory / "xiaohe_helpcode.txt", "你=ab\n拟=cd\n好=ef\n高=kw\n");
 
         Database database(data_directory / "msime.db");
         database.execute("CREATE TABLE tbl_2_n(key TEXT, jp TEXT, value TEXT, weight INTEGER)");
@@ -228,6 +228,8 @@ int run_test()
         database.execute("CREATE TABLE tbl_1_x(key TEXT, jp TEXT, value TEXT, weight INTEGER)");
         database.execute("INSERT INTO tbl_1_x VALUES('xu', 'x', '需', 100)");
         database.execute("CREATE TABLE tbl_1_y(key TEXT, jp TEXT, value TEXT, weight INTEGER)");
+        database.execute("CREATE TABLE tbl_1_g(key TEXT, jp TEXT, value TEXT, weight INTEGER)");
+        database.execute("INSERT INTO tbl_1_g VALUES('gao', 'g', '高', 100)");
         database.execute("INSERT INTO tbl_1_y VALUES('yu', 'y', '与', 100)");
 
         database.execute("INSERT INTO tbl_1_x VALUES('xi', 'x', '西', 100)");
@@ -887,6 +889,73 @@ int run_test()
         require(!shuangpin_helpcode_toggled.candidates().empty() &&
                     shuangpin_helpcode_toggled.raw_segmentation() == "ni'hc'A'E",
                 "Disabling Shuangpin helpcode mid-composition kept the stale filtered list and segmentation.");
+
+        // The full double-helpcode cache key includes the order of the two codes. Otherwise the first query wins:
+        // a reversed query can reuse the normal query's candidates, and vice versa.
+        const auto shuangpin_paths = metasequoia::RuntimePaths::legacy();
+        const auto shuangpin_helpcodes = HelpcodeUtils::load_helpcode_keymap(shuangpin_paths.resources, "xiaohe");
+        for (const bool reversed_first : {false, true})
+        {
+            ImeSession session(SchemeType::Shuangpin, GetXiaoheShuangpinProfile(), shuangpin_paths);
+            session.set_shuangpin_helpcode_enabled(true);
+            session.set_helpcode_keymap(shuangpin_helpcodes);
+            for (const bool reversed : {reversed_first, !reversed_first})
+            {
+                session.reset();
+                session.replace_shuangpin_raw_input("gcwk", reversed ? "gcwK" : "gcWk");
+                const auto &candidates = session.get_candidates();
+                const bool has_gao = std::any_of(candidates.begin(), candidates.end(),
+                                                 [](const WordItem &item) { return item.word == "高"; });
+                if (has_gao != !reversed)
+                {
+                    throw std::runtime_error(
+                        std::string("Double-helpcode query cache mixed normal and reversed code orders: ") +
+                        (reversed ? "reversed" : "normal") + " first=" + (reversed_first ? "reversed" : "normal") +
+                        " candidates=" + std::to_string(candidates.size()));
+                }
+            }
+        }
+
+        // An online candidate inserted while one double-helpcode order is active belongs only to that cache entry.
+        ImeSession dynamic_shuangpin(SchemeType::Shuangpin, GetXiaoheShuangpinProfile(), shuangpin_paths);
+        dynamic_shuangpin.set_shuangpin_helpcode_enabled(true);
+        dynamic_shuangpin.set_helpcode_keymap(shuangpin_helpcodes);
+        dynamic_shuangpin.replace_shuangpin_raw_input("gcwk", "gcWk");
+        dynamic_shuangpin.reset();
+        dynamic_shuangpin.replace_shuangpin_raw_input("gcwk", "gcwK");
+        require(dynamic_shuangpin.cache_dynamic_candidate_for_current_request("缓存回归词",
+                                                                              CandidateSource::CloudSuggestion) == 0,
+                "A dynamic candidate could not be inserted into the active double-helpcode cache.");
+        dynamic_shuangpin.reset();
+        dynamic_shuangpin.replace_shuangpin_raw_input("gcwk", "gcwK");
+        require(std::any_of(dynamic_shuangpin.get_candidates().begin(), dynamic_shuangpin.get_candidates().end(),
+                            [](const WordItem &item) {
+                                return item.word == "缓存回归词" && item.pinyin == "gcwk" &&
+                                       item.source == CandidateSource::CloudSuggestion;
+                            }),
+                "The active double-helpcode cache lost its dynamic candidate.");
+        dynamic_shuangpin.reset();
+        dynamic_shuangpin.replace_shuangpin_raw_input("gcwk", "gcWk");
+        require(std::none_of(dynamic_shuangpin.get_candidates().begin(), dynamic_shuangpin.get_candidates().end(),
+                             [](const WordItem &item) { return item.word == "缓存回归词"; }),
+                "A dynamic candidate leaked into the other double-helpcode cache order.");
+
+        // Batch insertion uses a separate provider overload and must keep the same cache boundary.
+        dynamic_shuangpin.reset();
+        dynamic_shuangpin.replace_shuangpin_raw_input("gcwk", "gcwK");
+        require(dynamic_shuangpin.apply_dynamic_candidates({"批量候选甲", "批量候选乙"},
+                                                           CandidateSource::AiSuggestion) == 0,
+                "A batch could not be inserted into the active double-helpcode cache.");
+        dynamic_shuangpin.reset();
+        dynamic_shuangpin.replace_shuangpin_raw_input("gcwk", "gcwK");
+        require(std::any_of(dynamic_shuangpin.get_candidates().begin(), dynamic_shuangpin.get_candidates().end(),
+                            [](const WordItem &item) { return item.word == "批量候选乙"; }),
+                "The active double-helpcode cache lost a batch candidate.");
+        dynamic_shuangpin.reset();
+        dynamic_shuangpin.replace_shuangpin_raw_input("gcwk", "gcWk");
+        require(std::none_of(dynamic_shuangpin.get_candidates().begin(), dynamic_shuangpin.get_candidates().end(),
+                             [](const WordItem &item) { return item.word == "批量候选乙"; }),
+                "A batch candidate leaked into the other double-helpcode cache order.");
 
         require(!session.handle_character('1').handled, "A digit was swallowed instead of passed through.");
         require(!session.handle_command(metasequoia::Command::Backspace).handled,
