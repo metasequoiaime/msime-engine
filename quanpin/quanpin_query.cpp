@@ -27,6 +27,27 @@ using Statement = metasequoia::SqliteStatement;
 
 constexpr size_t kCorrectionPathLimit = 32;
 
+sqlite3_stmt *prepare_cached_statement(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache,
+                                       const std::string &sql)
+{
+    const auto found = statement_cache.find(sql);
+    if (found != statement_cache.end())
+    {
+        sqlite3_stmt *statement = found->second.get();
+        sqlite3_reset(statement);
+        sqlite3_clear_bindings(statement);
+        return statement;
+    }
+
+    sqlite3_stmt *statement = nullptr;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &statement, nullptr) != SQLITE_OK)
+    {
+        return nullptr;
+    }
+    statement_cache.emplace(sql, metasequoia::SqliteStatement(statement));
+    return statement;
+}
+
 using CorrectionAliases = std::unordered_map<std::string, std::vector<std::string>>;
 
 const CorrectionAliases &pinyin_correction_aliases()
@@ -422,22 +443,9 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, const std::string &sql,
 std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache,
                                             const std::string &sql, const std::string &value, int limit)
 {
-    sqlite3_stmt *stmt = nullptr;
-    const auto found = statement_cache.find(sql);
-    if (found != statement_cache.end())
-    {
-        stmt = found->second.get();
-        sqlite3_reset(stmt);
-        sqlite3_clear_bindings(stmt);
-    }
-    else
-    {
-        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
-        {
-            return {};
-        }
-        statement_cache.emplace(sql, metasequoia::SqliteStatement(stmt));
-    }
+    sqlite3_stmt *stmt = prepare_cached_statement(db, statement_cache, sql);
+    if (stmt == nullptr)
+        return {};
 
     sqlite3_bind_text(stmt, 1, value.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_int(stmt, 2, limit);
@@ -472,22 +480,9 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, metasequoia::SqliteStat
                                             const std::string &sql, const std::string &lower_bound,
                                             const std::string &upper_bound, int limit)
 {
-    sqlite3_stmt *stmt = nullptr;
-    const auto found = statement_cache.find(sql);
-    if (found != statement_cache.end())
-    {
-        stmt = found->second.get();
-        sqlite3_reset(stmt);
-        sqlite3_clear_bindings(stmt);
-    }
-    else
-    {
-        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
-        {
-            return {};
-        }
-        statement_cache.emplace(sql, metasequoia::SqliteStatement(stmt));
-    }
+    sqlite3_stmt *stmt = prepare_cached_statement(db, statement_cache, sql);
+    if (stmt == nullptr)
+        return {};
 
     sqlite3_bind_text(stmt, 1, lower_bound.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT);
@@ -521,22 +516,9 @@ std::vector<KeyedQueryItem> run_keyed_batch_query(sqlite3 *db, metasequoia::Sqli
     const std::string sql = "SELECT \"key\", \"value\", \"weight\" FROM \"" + table + "\" WHERE \"key\" IN (" +
                             placeholders + ") ORDER BY \"weight\" DESC LIMIT ?";
 
-    sqlite3_stmt *stmt = nullptr;
-    const auto found = statement_cache.find(sql);
-    if (found != statement_cache.end())
-    {
-        stmt = found->second.get();
-        sqlite3_reset(stmt);
-        sqlite3_clear_bindings(stmt);
-    }
-    else
-    {
-        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
-        {
-            return {};
-        }
-        statement_cache.emplace(sql, metasequoia::SqliteStatement(stmt));
-    }
+    sqlite3_stmt *stmt = prepare_cached_statement(db, statement_cache, sql);
+    if (stmt == nullptr)
+        return {};
 
     for (size_t index = 0; index < keys.size(); ++index)
     {
