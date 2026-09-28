@@ -1,4 +1,5 @@
 #include "quanpin_scheme.h"
+#include "input_scheme_utils.h"
 #include "../common/string_utils.h"
 #include "../common/helpcode_utils.h"
 #include "../quanpin/quanpin_query.h"
@@ -7,65 +8,17 @@
 
 void QuanpinScheme::reset()
 {
-    raw_input_.clear();
-    key_strokes_.clear();
+    input_scheme::reset_state(raw_input_, key_strokes_);
 }
 
 void QuanpinScheme::set_raw_input(const std::string &raw_input, const std::string &raw_input_with_cases)
 {
-    raw_input_ = raw_input_with_cases.empty() ? raw_input : raw_input_with_cases;
-    key_strokes_.clear();
+    input_scheme::set_raw_input(raw_input_, key_strokes_, raw_input, raw_input_with_cases);
 }
 
 void QuanpinScheme::handle_key(ImeKeyCode vk, ImeModifierMask modifiers_down, ImeCharacter wch)
 {
-    if (vk == ImeKey::Backspace)
-    {
-        if (!raw_input_.empty())
-        {
-            raw_input_.pop_back();
-        }
-        if (!key_strokes_.empty())
-        {
-            key_strokes_.pop_back();
-        }
-        return;
-    }
-
-    if (vk == ImeKey::Escape || vk == ImeKey::Return)
-    {
-        reset();
-        return;
-    }
-
-    if (vk == ImeKey::Apostrophe)
-    {
-        if (raw_input_.empty() || raw_input_.back() != '\'')
-        {
-            key_strokes_.push_back(KeyStroke{vk, modifiers_down, wch});
-            raw_input_.push_back('\'');
-        }
-        return;
-    }
-
-    if (!ImeKey::is_ascii_letter(vk))
-    {
-        return;
-    }
-
-    key_strokes_.push_back(KeyStroke{vk, modifiers_down, wch});
-    if (wch >= L'A' && wch <= L'Z')
-    {
-        raw_input_.push_back(static_cast<char>(wch));
-    }
-    else if (wch >= L'a' && wch <= L'z')
-    {
-        raw_input_.push_back(static_cast<char>(wch));
-    }
-    else
-    {
-        raw_input_.push_back(static_cast<char>(vk + ('a' - 'A')));
-    }
+    input_scheme::handle_key(vk, modifiers_down, wch, raw_input_, key_strokes_);
 }
 
 QueryRequest QuanpinScheme::build_request() const
