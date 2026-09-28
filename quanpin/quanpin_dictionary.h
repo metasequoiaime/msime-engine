@@ -105,7 +105,6 @@ class QuanpinDictionary
         const std::string &raw_input, const std::string &primary_segmentation,
         const quanpin::Segments &primary_segments, const std::vector<quanpin::Segments> &alternative_segmentations,
         std::vector<WordItem> result);
-    static void append_unique_words(std::vector<WordItem> &result, const std::vector<WordItem> &extra);
     void mark_autocorrect_candidates(std::vector<WordItem> &candidates, const std::string &raw_input);
 
     std::vector<std::string> select_data(const std::string &sql_str);

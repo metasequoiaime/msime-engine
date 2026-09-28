@@ -246,7 +246,7 @@ std::vector<WordItem> QuanpinDictionary::query_exact(const std::string &raw_inpu
         result = query_series(raw_input, pinyin_segmentation_, resolution.corrected_segments);
         const std::string fallback_segmentation =
             segmentation.empty() ? quanpin::join_segments(segments) : segmentation;
-        append_unique_words(result, query_series(raw_input, fallback_segmentation, segments));
+        append_unique_candidates_copy(result, query_series(raw_input, fallback_segmentation, segments));
     }
     else
     {
@@ -669,9 +669,9 @@ std::vector<WordItem> QuanpinDictionary::merge_alternative_segmentations(
 
     std::vector<WordItem> merged = std::move(merged_full);
     // Append all of result, not a suffix of it: query_series prepends whole-sentence candidates, so any index
-    // arithmetic that assumes result starts with primary_full silently drops them. append_unique_words dedups by
-    // word, so the primary rows already in merged are not duplicated.
-    append_unique_words(merged, result);
+    // arithmetic that assumes result starts with primary_full silently drops them. append_unique_candidates_copy dedups
+    // by word, so the primary rows already in merged are not duplicated.
+    append_unique_candidates_copy(merged, result);
     return merged;
 }
 
@@ -717,20 +717,9 @@ std::vector<WordItem> QuanpinDictionary::append_sparse_pinyin_fallbacks(const qu
         const std::string fallback_segmentation = quanpin::join_segments(fallback_segments);
         const std::string fallback_input = CommonUtils::remove_apostrophe_delimiters(fallback_segmentation);
         const auto fallback_result = query_single_path(fallback_input, fallback_segmentation, fallback_segments);
-        append_unique_words(result, fallback_result);
+        append_unique_candidates_copy(result, fallback_result);
     }
     return result;
-}
-
-void QuanpinDictionary::append_unique_words(std::vector<WordItem> &result, const std::vector<WordItem> &extra)
-{
-    for (const auto &item : extra)
-    {
-        if (!contains_candidate_word(result, item.word))
-        {
-            result.push_back(item);
-        }
-    }
 }
 
 void QuanpinDictionary::mark_autocorrect_candidates(std::vector<WordItem> &candidates, const std::string &raw_input)
@@ -1245,7 +1234,7 @@ std::vector<WordItem> QuanpinDictionary::query(const std::string &raw_input, con
         // Keep ordinary cache slots free of preference-specific candidates.
         const auto typed =
             segmentation.empty() ? quanpin::join_segments(resolve_segments(raw_input, segmentation)) : segmentation;
-        append_unique_words(result, fuzzy_candidates(typed, fuzzy));
+        append_unique_candidates_copy(result, fuzzy_candidates(typed, fuzzy));
         const auto matched_letters = [](const WordItem &item) {
             size_t letters = 0;
             for (const char ch : item.pinyin)
