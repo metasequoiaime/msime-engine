@@ -4,7 +4,6 @@
 #include "../common/helpcode_utils.h"
 #include "shuangpin_utils.h"
 #include <algorithm>
-#include <boost/algorithm/string/case_conv.hpp>
 
 namespace shuangpin
 {
@@ -74,7 +73,7 @@ std::vector<std::size_t> segment_raw_boundaries(const std::string &raw_input, co
             // when they form an accepted syllable, otherwise one.
             const bool two_key = (chunk_end - position) >= 2 &&
                                  ShuangpinUtil::is_accepted_syllable_code(
-                                     boost::algorithm::to_lower_copy(raw_input.substr(position, 2)), profile);
+                                     CommonUtils::lowercase_ascii(raw_input.substr(position, 2)), profile);
             position += two_key ? 2u : 1u;
             boundaries.push_back(position);
         }
@@ -235,7 +234,7 @@ std::string apply_segmentation_cases(const std::string &segmented_input, const s
         }
     }
 
-    if (extracted_input != boost::algorithm::to_lower_copy(remove_manual_delimiters(raw_input_with_cases)))
+    if (extracted_input != CommonUtils::lowercase_ascii(remove_manual_delimiters(raw_input_with_cases)))
     {
         return segmented_input;
     }

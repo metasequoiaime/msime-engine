@@ -19,7 +19,6 @@
 #include <utility>
 #include <cstdlib>
 #include <climits>
-#include <boost/algorithm/string.hpp>
 #include <fmt/xchar.h>
 #include <utf8/cpp17.h>
 
@@ -1327,7 +1326,7 @@ std::string ShuangpinDictionary::get_pinyin_segmentation_with_cases()
         }
     }
 
-    if (extracted_pinyin != boost::algorithm::to_lower_copy(_pinyin_sequence_with_cases))
+    if (extracted_pinyin != CommonUtils::lowercase_ascii(_pinyin_sequence_with_cases))
     {
         return res;
     }
