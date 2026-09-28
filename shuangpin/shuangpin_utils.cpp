@@ -253,12 +253,6 @@ std::string ShuangpinUtil::GetFullHelpCodes(std::string pinyin)
 
 namespace shuangpin
 {
-
-std::string get_local_appdata_path()
-{
-    return ShuangpinUtil::get_local_appdata_path();
-}
-
 std::filesystem::path get_data_file_path(const std::filesystem::path &relative_path)
 {
     return metasequoia::data_file_path(relative_path);
