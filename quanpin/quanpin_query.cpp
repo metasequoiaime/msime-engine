@@ -2,6 +2,7 @@
 #include "../contracts/dictionary/format.h"
 #include "quanpin_query.h"
 
+#include "../common/sqlite_database.h"
 #include "../common/sqlite_statement.h"
 #include "quanpin_utils.h"
 #include "../shuangpin/shuangpin_utils.h"
@@ -13,6 +14,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 
 namespace quanpin
 {
@@ -391,37 +393,28 @@ class SqliteDb
   public:
     explicit SqliteDb(const std::string &db_path)
     {
-        if (sqlite3_open(db_path.c_str(), &db_) != SQLITE_OK)
+        sqlite3 *raw = nullptr;
+        const int status = sqlite3_open(db_path.c_str(), &raw);
+        metasequoia::SqliteDatabase opened(raw);
+        if (status != SQLITE_OK)
         {
-            const std::string message = db_ != nullptr ? sqlite3_errmsg(db_) : "sqlite open failed";
-            if (db_ != nullptr)
-            {
-                sqlite3_close(db_);
-                db_ = nullptr;
-            }
+            const std::string message = opened != nullptr ? sqlite3_errmsg(opened.get()) : "sqlite open failed";
             throw std::runtime_error(message);
         }
         // Keep ad-hoc query connections consistent with the dictionary
         // objects: a concurrent commit should be waited out, not reported as
         // an empty result.
-        sqlite3_busy_timeout(db_, kDictionaryBusyTimeoutMs);
-    }
-
-    ~SqliteDb()
-    {
-        if (db_ != nullptr)
-        {
-            sqlite3_close(db_);
-        }
+        sqlite3_busy_timeout(opened.get(), kDictionaryBusyTimeoutMs);
+        db_ = std::move(opened);
     }
 
     sqlite3 *get() const
     {
-        return db_;
+        return db_.get();
     }
 
   private:
-    sqlite3 *db_ = nullptr;
+    metasequoia::SqliteDatabase db_;
 };
 
 std::vector<QueryItem> run_query(sqlite3 *db, const std::string &sql, const std::string &value, int limit)
