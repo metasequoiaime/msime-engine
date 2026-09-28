@@ -1,6 +1,7 @@
 #include "../contracts/assets/assets.h"
 #include "../contracts/dictionary/format.h"
 #include "user_dictionary_journal.h"
+#include "../core/candidate_utils.h"
 #include <metasequoia/personal_dictionary.h>
 
 #include <sqlite3.h>
@@ -965,7 +966,7 @@ bool adjust_candidate_ranking(const std::string &main_db_path, const std::string
     std::vector<bool> owns_entry_key;
     for (const auto &item : ordered_candidates)
     {
-        if (item.source != CandidateSource::Database && item.source != CandidateSource::UserDatabase)
+        if (!is_dictionary_candidate_source(item.source))
             continue;
         const std::string item_key =
             kind == DictionaryKind::Wubi ? item.pinyin : candidate_dictionary_key(item, context_key);

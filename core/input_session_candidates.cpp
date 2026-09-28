@@ -1,3 +1,4 @@
+#include "candidate_utils.h"
 #include "input_session.h"
 #include "data_path.h"
 #include "../common/helpcode_utils.h"
@@ -95,9 +96,7 @@ KeyResult InputSession::set_candidate_position(std::size_t index, int position)
         return {};
     const auto selected = candidates()[index];
     const bool english = selected.source == CandidateSource::EnglishDictionary;
-    if (!english &&
-        ((selected.source != CandidateSource::Database && selected.source != CandidateSource::UserDatabase) ||
-         scheme() == SchemeType::JapaneseRomaji))
+    if (!english && (!is_dictionary_candidate_source(selected.source) || scheme() == SchemeType::JapaneseRomaji))
         return {};
     const bool wubi = selected.scheme == SchemeType::Wubi && local_input_mode_ != LocalInputMode::SuperJianpin;
     const auto context = position_context(english, wubi);
@@ -127,9 +126,8 @@ KeyResult InputSession::remove_candidate(std::size_t index)
         return {};
     const auto selected = candidates()[index];
     const bool english = selected.source == CandidateSource::EnglishDictionary;
-    if (!english &&
-        ((selected.source != CandidateSource::Database && selected.source != CandidateSource::UserDatabase) ||
-         scheme() == SchemeType::JapaneseRomaji || HelpcodeUtils::count_utf8_chars(selected.word) <= 1))
+    if (!english && (!is_dictionary_candidate_source(selected.source) || scheme() == SchemeType::JapaneseRomaji ||
+                     HelpcodeUtils::count_utf8_chars(selected.word) <= 1))
         return {};
 
     const bool wubi = selected.scheme == SchemeType::Wubi && local_input_mode_ != LocalInputMode::SuperJianpin;

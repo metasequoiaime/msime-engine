@@ -1,4 +1,5 @@
 #include "word_lattice.h"
+#include "../core/candidate_utils.h"
 
 #include <algorithm>
 #include <cmath>
@@ -588,8 +589,7 @@ size_t whole_sentence_insert_position(const std::vector<WordItem> &candidates, s
 {
     size_t insert_at = 0;
     while (insert_at < candidates.size() && covers_all_syllables(candidates[insert_at], n_syllables) &&
-           (candidates[insert_at].source == CandidateSource::Database ||
-            candidates[insert_at].source == CandidateSource::UserDatabase))
+           is_dictionary_candidate_source(candidates[insert_at].source))
         ++insert_at;
     return insert_at;
 }
