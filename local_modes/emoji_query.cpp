@@ -1,4 +1,5 @@
 #include "../contracts/assets/assets.h"
+#include "../common/string_utils.h"
 #include "../common/sqlite_statement.h"
 #include "emoji_query.h"
 #include "local_database.h"
@@ -9,7 +10,6 @@
 #include <sqlite3.h>
 
 #include <algorithm>
-#include <cctype>
 #include <memory>
 #include <unordered_set>
 #include <utility>
@@ -20,20 +20,6 @@ namespace metasequoia::local_modes
 namespace
 {
 using Statement = metasequoia::SqliteStatement;
-
-bool valid_code(const std::string &code)
-{
-    return !code.empty() && std::all_of(code.begin(), code.end(), [](unsigned char character) {
-        return (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') || character == '\'';
-    });
-}
-
-std::string lower_ascii(std::string text)
-{
-    std::transform(text.begin(), text.end(), text.begin(),
-                   [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
-    return text;
-}
 
 LocalQueryResult query_failure(const char *diagnostic)
 {
@@ -49,7 +35,7 @@ LocalQueryResult query_emoji(const std::string &code, SchemeType scheme, int lim
 LocalQueryResult query_emoji(const std::string &code, SchemeType scheme, const std::filesystem::path &database_path,
                              int limit, const ShuangpinProfile &profile)
 {
-    if (!valid_code(code) || limit <= 0)
+    if (!CommonUtils::is_ascii_letters_or_apostrophe(code) || limit <= 0)
     {
         return {};
     }
@@ -58,7 +44,7 @@ LocalQueryResult query_emoji(const std::string &code, SchemeType scheme, const s
         return query_failure("Emoji database is unavailable.");
     }
 
-    const std::string lower = lower_ascii(code);
+    const std::string lower = CommonUtils::lowercase_ascii(code);
     std::vector<std::string> prefixes{lower};
     if (scheme == SchemeType::Shuangpin)
     {
