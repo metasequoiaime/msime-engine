@@ -69,18 +69,16 @@ ShuangpinDictionary::ShuangpinDictionary(const ShuangpinProfile &profile, metase
     quanpin_db_path_ = metasequoia::path_to_utf8(paths_.dictionary(metasequoia::assets::main_dictionary));
     // No SQLITE_OPEN_CREATE: a missing dictionary must stay missing instead of being materialised as an empty file,
     // and the handle has to become null so the quanpin_db_ == nullptr guards on the query paths actually fire.
-    int exit = sqlite3_open_v2(quanpin_db_path_.c_str(), &quanpin_db_, SQLITE_OPEN_READWRITE, nullptr);
-    if (exit != SQLITE_OK)
-    {
-        sqlite3_close(quanpin_db_);
-        quanpin_db_ = nullptr;
-    }
-    else
+    sqlite3 *raw = nullptr;
+    const int status = sqlite3_open_v2(quanpin_db_path_.c_str(), &raw, SQLITE_OPEN_READWRITE, nullptr);
+    metasequoia::SqliteDatabase opened(raw);
+    if (status == SQLITE_OK)
     {
         // See QuanpinDictionary's constructor: readers must wait out a commit
         // rather than fail with SQLITE_BUSY.
-        sqlite3_busy_timeout(quanpin_db_, quanpin::kDictionaryBusyTimeoutMs);
-        quanpin::warm_up(quanpin_db_, quanpin_statement_cache_);
+        sqlite3_busy_timeout(opened.get(), quanpin::kDictionaryBusyTimeoutMs);
+        quanpin_db_ = std::move(opened);
+        quanpin::warm_up(quanpin_db_.get(), quanpin_statement_cache_);
         // Off the typing path, for the reason QuanpinDictionary's constructor gives.
         quanpin::NgramTable::shared(paths_.dictionary(quanpin::kBigramFileName));
         quanpin::NgramTable::shared(paths_.dictionary(quanpin::kTrigramFileName));
@@ -286,11 +284,11 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generateSeries( //
         lattice_options.show_next_on_duplicate = sentence_association_.show_next_on_duplicate;
         if (need_lattice)
         {
-            quanpin::merge_lattice_candidates(candidate_list, quanpin_segments,
-                                              quanpin::make_lattice_db_lookup(quanpin_db_, quanpin_statement_cache_,
-                                                                              quanpin::QuerySource::Shuangpin,
-                                                                              lattice_options.span_limit),
-                                              pinyin_sequence, lattice_options, {}, nullptr, rerankers);
+            quanpin::merge_lattice_candidates(
+                candidate_list, quanpin_segments,
+                quanpin::make_lattice_db_lookup(quanpin_db_.get(), quanpin_statement_cache_,
+                                                quanpin::QuerySource::Shuangpin, lattice_options.span_limit),
+                pinyin_sequence, lattice_options, {}, nullptr, rerankers);
         }
         if (!google_sentence.empty())
         {
@@ -737,7 +735,7 @@ std::string ShuangpinDictionary::get_quanpin_seg() const
 
 vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generate_for_creating_word(const string code)
 {
-    return select_complete_data(quanpin_db_, build_quanpin_sql_for_creating_word(code));
+    return select_complete_data(quanpin_db_.get(), build_quanpin_sql_for_creating_word(code));
 }
 
 int ShuangpinDictionary::create_word(string pinyin, string word)
@@ -763,11 +761,11 @@ int ShuangpinDictionary::create_word_from_quanpin(string pinyin, string word)
     {
         return ERROR_CODE;
     }
-    if (check_data(quanpin_db_, build_quanpin_sql_for_checking_word(pinyin, jp, word)))
+    if (check_data(quanpin_db_.get(), build_quanpin_sql_for_checking_word(pinyin, jp, word)))
     {
         return OK;
     }
-    if (insert_data(quanpin_db_, build_quanpin_sql_for_inserting_word(pinyin, jp, word)) != OK)
+    if (insert_data(quanpin_db_.get(), build_quanpin_sql_for_inserting_word(pinyin, jp, word)) != OK)
     {
         return ERROR_CODE;
     }
@@ -837,7 +835,7 @@ int ShuangpinDictionary::update_weight_by_pinyin_and_word(string pinyin, string 
     if (segments.size() > han_count)
         segments.resize(han_count);
     const std::string normalized = quanpin::join_segments(segments);
-    if (update_data(quanpin_db_, build_quanpin_sql_for_updating_word(normalized, word)) != OK)
+    if (update_data(quanpin_db_.get(), build_quanpin_sql_for_updating_word(normalized, word)) != OK)
     {
         return ERROR_CODE;
     }
@@ -884,10 +882,7 @@ ShuangpinDictionary::~ShuangpinDictionary()
             sqlite3_finalize(stmt);
         }
     }
-    if (quanpin_db_)
-    {
-        sqlite3_close(quanpin_db_);
-    }
+    quanpin_db_.reset();
 }
 
 vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::query_from_quanpin_database(
@@ -909,8 +904,8 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::query_from_quanpin_da
     std::vector<WordItem> candidate_list;
     try
     {
-        const auto flat_items = quanpin::query_segments_keyed_flat(segments, quanpin_db_, quanpin_statement_cache_,
-                                                                   INT_MAX, quanpin::QuerySource::Shuangpin);
+        const auto flat_items = quanpin::query_segments_keyed_flat(
+            segments, quanpin_db_.get(), quanpin_statement_cache_, INT_MAX, quanpin::QuerySource::Shuangpin);
         candidate_list.reserve(flat_items.size());
         for (const auto &item : flat_items)
         {
@@ -932,7 +927,7 @@ std::optional<WordItem> ShuangpinDictionary::find_candidate(const std::string &k
         return std::nullopt;
     sqlite3_stmt *stmt = nullptr;
     const std::string sql = "SELECT weight FROM \"" + table + "\" WHERE key=?1 AND value=?2 LIMIT 1";
-    if (sqlite3_prepare_v2(quanpin_db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
+    if (sqlite3_prepare_v2(quanpin_db_.get(), sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
         return std::nullopt;
     Statement guard(stmt);
     if (sqlite3_bind_text(stmt, 1, key.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
@@ -951,7 +946,7 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::query_initial_from_qu
     }
 
     const std::string initial = ShuangpinUtil::convert_seg_shuangpin_to_seg_complete_pinyin(code, profile_);
-    const auto rows = quanpin::query_initial(quanpin_db_, initial, limit);
+    const auto rows = quanpin::query_initial(quanpin_db_.get(), initial, limit);
 
     vector<WordItem> candidate_list;
     candidate_list.reserve(rows.size());
@@ -1204,7 +1199,7 @@ void ShuangpinDictionary::reset_cache_if_database_changed()
         return;
     }
     sqlite3_stmt *statement = nullptr;
-    if (sqlite3_prepare_v2(quanpin_db_, "PRAGMA data_version", -1, &statement, nullptr) != SQLITE_OK)
+    if (sqlite3_prepare_v2(quanpin_db_.get(), "PRAGMA data_version", -1, &statement, nullptr) != SQLITE_OK)
     {
         return;
     }

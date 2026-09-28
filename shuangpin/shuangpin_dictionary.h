@@ -6,6 +6,7 @@
 #include "../contracts/assets/assets.h"
 
 #include "../common/cache.h"
+#include "../common/sqlite_database.h"
 #include "../core/key_event.h"
 #include "../core/word_item.h"
 #include "../quanpin/quanpin_query.h"
@@ -88,7 +89,7 @@ class ShuangpinDictionary
   private:
     const ShuangpinProfile profile_;
     std::string quanpin_db_path_;
-    sqlite3 *quanpin_db_ = nullptr;
+    metasequoia::SqliteDatabase quanpin_db_;
     sqlite3_int64 data_version_ = -1;
     metasequoia::RuntimePaths paths_;
     bool sentence_alternatives_ = false;

@@ -140,21 +140,19 @@ QuanpinDictionary::QuanpinDictionary(std::string db_path, metasequoia::RuntimePa
 
     // No SQLITE_OPEN_CREATE: a missing dictionary must stay missing instead of being materialised as an empty file,
     // and the handle has to become null so the db_ == nullptr guards on the query paths actually fire.
-    const int exit = sqlite3_open_v2(db_path_.c_str(), &db_, SQLITE_OPEN_READWRITE, nullptr);
-    if (exit != SQLITE_OK)
-    {
-        sqlite3_close(db_);
-        db_ = nullptr;
-    }
-    else
+    sqlite3 *raw = nullptr;
+    const int status = sqlite3_open_v2(db_path_.c_str(), &raw, SQLITE_OPEN_READWRITE, nullptr);
+    metasequoia::SqliteDatabase opened(raw);
+    if (status == SQLITE_OK)
     {
         // Learning and settings writes briefly hold the commit lock. Waiting
         // here prevents a query that lands in that window from becoming an
         // empty candidate page.
-        sqlite3_busy_timeout(db_, quanpin::kDictionaryBusyTimeoutMs);
+        sqlite3_busy_timeout(opened.get(), quanpin::kDictionaryBusyTimeoutMs);
+        db_ = std::move(opened);
     }
 
-    quanpin::warm_up(db_, statement_cache_);
+    quanpin::warm_up(db_.get(), statement_cache_);
     // Mapping the tables and checking they are sorted is a sequential pass over fifteen megabytes. Left to the first
     // query that wants them, that lands on a keystroke; here it joins the work of opening the dictionary, which the
     // host already does off the typing path.
@@ -172,10 +170,7 @@ QuanpinDictionary::~QuanpinDictionary()
             sqlite3_finalize(stmt);
         }
     }
-    if (db_ != nullptr)
-    {
-        sqlite3_close(db_);
-    }
+    db_.reset();
 }
 
 void QuanpinDictionary::set_sentence_alternatives(bool enabled)
@@ -311,7 +306,7 @@ std::optional<WordItem> QuanpinDictionary::find_candidate(const std::string &key
         return std::nullopt;
     sqlite3_stmt *stmt = nullptr;
     const std::string sql = "SELECT weight FROM \"" + table + "\" WHERE key=?1 AND value=?2 LIMIT 1";
-    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
+    if (sqlite3_prepare_v2(db_.get(), sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
         return std::nullopt;
     Statement guard(stmt);
     if (sqlite3_bind_text(stmt, 1, key.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
@@ -475,7 +470,7 @@ std::vector<WordItem> QuanpinDictionary::query_series(const std::string &raw_inp
             options.include_lattice_best = sentence_association_.word_lattice;
             options.show_next_on_duplicate = sentence_association_.show_next_on_duplicate;
             quanpin::merge_lattice_candidates(result, segments,
-                                              quanpin::make_lattice_db_lookup(db_, statement_cache_,
+                                              quanpin::make_lattice_db_lookup(db_.get(), statement_cache_,
                                                                               quanpin::QuerySource::Quanpin,
                                                                               options.span_limit),
                                               segmentation.empty() ? raw_input : segmentation, options, google_sentence,
@@ -535,8 +530,9 @@ std::vector<WordItem> QuanpinDictionary::append_longer_phrase_candidates(const s
     {
         return {};
     }
-    const auto rows = quanpin::query_longer_phrases_keyed(normalize_umlaut_aliases(segments), db_, statement_cache_,
-                                                          kLongerPhraseExtraSyllables, kLongerPhraseLimit);
+    const auto rows =
+        quanpin::query_longer_phrases_keyed(normalize_umlaut_aliases(segments), db_.get(), statement_cache_,
+                                            kLongerPhraseExtraSyllables, kLongerPhraseLimit);
     std::vector<WordItem> items;
     items.reserve(rows.size());
     for (const auto &row : rows)
@@ -644,7 +640,7 @@ std::vector<WordItem> QuanpinDictionary::query_database(const quanpin::Segments 
             return result;
         }
 
-        const auto flat_items = quanpin::query_segments_keyed_flat(segments, db_, statement_cache_, INT_MAX);
+        const auto flat_items = quanpin::query_segments_keyed_flat(segments, db_.get(), statement_cache_, INT_MAX);
         std::vector<WordItem> result;
         result.reserve(flat_items.size());
         const std::string code = quanpin::join_segments(segments);
@@ -668,7 +664,7 @@ std::vector<WordItem> QuanpinDictionary::query_initial(const std::string &code, 
         return {};
     }
 
-    const auto rows = quanpin::query_initial(db_, code, limit);
+    const auto rows = quanpin::query_initial(db_.get(), code, limit);
     std::vector<WordItem> result;
     result.reserve(rows.size());
     for (const auto &item : rows)
@@ -683,7 +679,7 @@ std::vector<WordItem> QuanpinDictionary::merge_alternative_segmentations(
     const std::vector<quanpin::Segments> &alternative_segmentations, std::vector<WordItem> result)
 {
     const auto alternative_items = quanpin::query_exact_segmentations_keyed_flat(
-        alternative_segmentations, db_, statement_cache_, kAlternativeSegmentationCandidateLimit);
+        alternative_segmentations, db_.get(), statement_cache_, kAlternativeSegmentationCandidateLimit);
     if (alternative_items.empty())
     {
         return result;
@@ -1030,7 +1026,7 @@ void QuanpinDictionary::reset_cache_if_database_changed()
         return;
     }
     sqlite3_stmt *statement = nullptr;
-    if (sqlite3_prepare_v2(db_, "PRAGMA data_version", -1, &statement, nullptr) != SQLITE_OK)
+    if (sqlite3_prepare_v2(db_.get(), "PRAGMA data_version", -1, &statement, nullptr) != SQLITE_OK)
     {
         return;
     }
@@ -1056,7 +1052,7 @@ std::vector<std::string> QuanpinDictionary::select_data(const std::string &sql_s
     }
 
     sqlite3_stmt *stmt = nullptr;
-    if (sqlite3_prepare_v2(db_, sql_str.c_str(), -1, &stmt, 0) != SQLITE_OK)
+    if (sqlite3_prepare_v2(db_.get(), sql_str.c_str(), -1, &stmt, 0) != SQLITE_OK)
     {
         (void)0;
         return candidate_list;
@@ -1079,7 +1075,7 @@ std::vector<WordItem> QuanpinDictionary::select_complete_data(const std::string 
     }
 
     sqlite3_stmt *stmt = nullptr;
-    if (sqlite3_prepare_v2(db_, sql_str.c_str(), -1, &stmt, 0) != SQLITE_OK)
+    if (sqlite3_prepare_v2(db_.get(), sql_str.c_str(), -1, &stmt, 0) != SQLITE_OK)
     {
         (void)0;
         return candidate_list;
@@ -1104,7 +1100,7 @@ int QuanpinDictionary::check_data(const std::string &sql_str)
     }
 
     sqlite3_stmt *stmt = nullptr;
-    if (sqlite3_prepare_v2(db_, sql_str.c_str(), -1, &stmt, 0) != SQLITE_OK)
+    if (sqlite3_prepare_v2(db_.get(), sql_str.c_str(), -1, &stmt, 0) != SQLITE_OK)
     {
         (void)0;
         return false;
@@ -1123,7 +1119,7 @@ int QuanpinDictionary::insert_data(const std::string &sql_str)
     }
 
     sqlite3_stmt *stmt = nullptr;
-    if (sqlite3_prepare_v2(db_, sql_str.c_str(), -1, &stmt, 0) != SQLITE_OK)
+    if (sqlite3_prepare_v2(db_.get(), sql_str.c_str(), -1, &stmt, 0) != SQLITE_OK)
     {
         (void)0;
         return ERROR_CODE;
@@ -1141,7 +1137,7 @@ int QuanpinDictionary::update_data(const std::string &sql_str)
     }
 
     sqlite3_stmt *stmt = nullptr;
-    if (sqlite3_prepare_v2(db_, sql_str.c_str(), -1, &stmt, 0) != SQLITE_OK)
+    if (sqlite3_prepare_v2(db_.get(), sql_str.c_str(), -1, &stmt, 0) != SQLITE_OK)
     {
         (void)0;
         return ERROR_CODE;
@@ -1159,7 +1155,7 @@ int QuanpinDictionary::delete_data(const std::string &sql_str)
     }
 
     sqlite3_stmt *stmt = nullptr;
-    if (sqlite3_prepare_v2(db_, sql_str.c_str(), -1, &stmt, 0) != SQLITE_OK)
+    if (sqlite3_prepare_v2(db_.get(), sql_str.c_str(), -1, &stmt, 0) != SQLITE_OK)
     {
         (void)0;
         return ERROR_CODE;
@@ -1312,7 +1308,7 @@ std::vector<WordItem> QuanpinDictionary::fuzzy_candidates(const std::string &seg
         if (paths.empty())
             continue;
         budget -= paths.size();
-        const auto rows = quanpin::query_exact_segmentations_keyed_flat(paths, db_, statement_cache_, 128);
+        const auto rows = quanpin::query_exact_segmentations_keyed_flat(paths, db_.get(), statement_cache_, 128);
         for (const auto &row : rows)
         {
             WordItem item(quanpin::join_segments(prefix), row.value, row.weight, CandidateSource::Database, row.key);
