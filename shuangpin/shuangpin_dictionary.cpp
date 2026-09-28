@@ -722,7 +722,7 @@ int ShuangpinDictionary::create_word_from_quanpin(string pinyin, string word)
 
     pinyin = quanpin::join_segments(segments);
     const string jp = quanpin::segments_to_jianpin(segments);
-    if (!do_validate(pinyin, jp, word))
+    if (!quanpin::has_valid_word_pinyin(pinyin, jp, word, true))
     {
         return ERROR_CODE;
     }
@@ -934,7 +934,7 @@ std::string ShuangpinDictionary::build_quanpin_sql_for_updating_word(std::string
 
     pinyin = quanpin::join_segments(segments);
     const std::string jp = quanpin::segments_to_jianpin(segments);
-    if (!do_validate(pinyin, jp, word))
+    if (!quanpin::has_valid_word_pinyin(pinyin, jp, word, true))
     {
         return "";
     }
@@ -953,35 +953,12 @@ std::string ShuangpinDictionary::build_quanpin_sql_for_deleting_canonical_word(c
 
     const std::string normalized = quanpin::join_segments(cuts.front());
     const std::string jp = quanpin::segments_to_jianpin(cuts.front());
-    if (!do_validate(normalized, jp, word))
+    if (!quanpin::has_valid_word_pinyin(normalized, jp, word, true))
     {
         return "";
     }
 
     return quanpin::build_sql_for_deleting_word(cuts.front(), normalized, word);
-}
-
-bool ShuangpinDictionary::do_validate(string key, string jp, string value) const
-{
-    const std::string pure_key = CommonUtils::remove_apostrophe_delimiters(key);
-    if (pure_key.empty())
-    {
-        return false;
-    }
-
-    const size_t han_count = HelpcodeUtils::count_han_chars(value);
-    if (jp.size() != han_count)
-    {
-        return false;
-    }
-
-    const auto cuts = quanpin::cut_pinyin_by_mode(pure_key, "correction");
-    if (!cuts.empty())
-    {
-        return cuts.front().size() == han_count;
-    }
-
-    return pure_key.size() % 2 == 0 && pure_key.size() == han_count * 2;
 }
 
 string ShuangpinDictionary::search_sentence_from_ime_engine(const string &user_pinyin)
