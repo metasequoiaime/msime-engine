@@ -8,9 +8,7 @@
 
 #include <sqlite3.h>
 
-#include <algorithm>
 #include <memory>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -42,18 +40,12 @@ LocalQueryResult query_emoji(const std::string &code, SchemeType scheme, const s
         return database_query_failure("Emoji database is unavailable.");
     }
 
-    struct Entry
-    {
-        std::string text;
-        int sort_order;
-    };
-    std::vector<Entry> entries;
-    std::unordered_set<std::string> seen;
+    std::vector<LocalQueryEntry> entries;
     constexpr const char *kSql = "SELECT emoji,sort_order FROM emoji_pinyin WHERE key>=?1 AND key<?2 "
                                  "ORDER BY sort_order LIMIT ?3";
     if (!query_prefix_rows(database.get(), prefixes, kSql, limit, [&](sqlite3_stmt *statement) {
             const auto *text = reinterpret_cast<const char *>(sqlite3_column_text(statement, 0));
-            if (text != nullptr && seen.insert(text).second)
+            if (text != nullptr)
             {
                 entries.push_back({text, sqlite3_column_int(statement, 1)});
             }
@@ -62,16 +54,6 @@ LocalQueryResult query_emoji(const std::string &code, SchemeType scheme, const s
         return database_query_failure("Emoji database could not be queried.");
     }
 
-    std::stable_sort(entries.begin(), entries.end(),
-                     [](const Entry &left, const Entry &right) { return left.sort_order < right.sort_order; });
-    const std::size_t count = std::min(static_cast<std::size_t>(limit), entries.size());
-    LocalQueryResult result;
-    result.candidates.reserve(count);
-    for (std::size_t index = 0; index < count; ++index)
-    {
-        result.candidates.emplace_back(lower, entries[index].text, static_cast<std::int64_t>(count - index),
-                                       CandidateSource::Emoji);
-    }
-    return result;
+    return build_local_query_result(lower, std::move(entries), limit, CandidateSource::Emoji);
 }
 } // namespace metasequoia::local_modes
