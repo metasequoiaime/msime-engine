@@ -1,7 +1,7 @@
+#include "../common/string_utils.h"
 #include "unicode_query.h"
 
 #include <algorithm>
-#include <cctype>
 #include <cstdint>
 #include <cstdio>
 #include <iterator>
@@ -11,11 +11,6 @@ namespace metasequoia::local_modes
 {
 namespace
 {
-bool is_hex_character(unsigned char character)
-{
-    return std::isxdigit(character) != 0;
-}
-
 bool is_unicode_scalar(std::uint32_t codepoint)
 {
     return codepoint <= 0x10ffffU && (codepoint < 0xd800U || codepoint > 0xdfffU);
@@ -54,8 +49,9 @@ std::vector<WordItem> query_unicode(const std::string &hex_part, int limit)
     }
 
     const std::string hex = hex_part.substr(offset);
-    if (hex.empty() || hex.size() > 6 ||
-        !std::all_of(hex.begin(), hex.end(), [](unsigned char character) { return is_hex_character(character); }))
+    if (hex.empty() || hex.size() > 6 || !std::all_of(hex.begin(), hex.end(), [](unsigned char character) {
+            return CommonUtils::is_ascii_hex_digit(character);
+        }))
     {
         return {};
     }
@@ -64,7 +60,7 @@ std::vector<WordItem> query_unicode(const std::string &hex_part, int limit)
     for (const unsigned char character : hex)
     {
         codepoint <<= 4;
-        if (character >= '0' && character <= '9')
+        if (CommonUtils::is_ascii_digit(character))
         {
             codepoint |= static_cast<std::uint32_t>(character - '0');
         }

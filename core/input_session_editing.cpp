@@ -172,8 +172,7 @@ KeyResult InputSession::insert_at_caret(char character)
         switch (local_input_mode_)
         {
         case LocalInputMode::Unicode:
-            accepted = (character >= '0' && character <= '9') || (character >= 'a' && character <= 'f') ||
-                       (character >= 'A' && character <= 'F') ||
+            accepted = CommonUtils::is_ascii_hex_digit(unsigned_character) ||
                        (character == '+' && caret == 1 && text.find('+') == std::string::npos);
             break;
         case LocalInputMode::QuickPhrase:

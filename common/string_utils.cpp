@@ -40,6 +40,17 @@ bool is_ascii_letter(unsigned char character)
     return is_ascii_lowercase(character) || is_ascii_uppercase(character);
 }
 
+bool is_ascii_digit(unsigned char character)
+{
+    return character >= '0' && character <= '9';
+}
+
+bool is_ascii_hex_digit(unsigned char character)
+{
+    return is_ascii_digit(character) || (character >= 'a' && character <= 'f') ||
+           (character >= 'A' && character <= 'F');
+}
+
 char lowercase_ascii_char(unsigned char character)
 {
     return static_cast<char>(std::tolower(character));
