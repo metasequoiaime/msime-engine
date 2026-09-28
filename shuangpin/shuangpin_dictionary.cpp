@@ -1207,9 +1207,7 @@ int ShuangpinDictionary::insert_word_to_cached_buffer_series(const std::string &
     // Keep at most one cloud/AI suggestion in the series cache for this key.
     if (source == CandidateSource::AiSuggestion || source == CandidateSource::CloudSuggestion)
     {
-        list.erase(
-            std::remove_if(list.begin(), list.end(), [source](const WordItem &item) { return item.source == source; }),
-            list.end());
+        erase_candidates_by_source(list, source);
     }
 
     if (!contains_candidate_word(list, word))
@@ -1253,9 +1251,7 @@ int ShuangpinDictionary::insert_word_to_active_helpcode_cache(const std::string 
             auto list = opt.value();
             if (source == CandidateSource::AiSuggestion || source == CandidateSource::CloudSuggestion)
             {
-                list.erase(std::remove_if(list.begin(), list.end(),
-                                          [source](const WordItem &item) { return item.source == source; }),
-                           list.end());
+                erase_candidates_by_source(list, source);
             }
             if (!contains_candidate_word(list, word))
             {
