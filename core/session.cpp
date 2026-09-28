@@ -193,7 +193,9 @@ void Session::set_dedicated_english(bool enabled)
 }
 void Session::set_wubi_mixed_pinyin(bool enabled)
 {
-    impl_->session.set_wubi_input_options(WubiInputOptions{enabled});
+    auto options = impl_->session.wubi_input_options();
+    options.mixed_pinyin = enabled;
+    impl_->session.set_wubi_input_options(options);
 }
 void Session::reset_cache()
 {
@@ -233,7 +235,8 @@ SessionSnapshot Session::snapshot() const
         view.candidate_sources.push_back(candidate.source);
         // `pinyin` rather than `canonical_pinyin`: the former is what composition advancement
         // consumes, which is the question being asked.
-        view.candidate_answers_key.push_back(session.selection_completes_composition(candidate.pinyin, candidate.word));
+        view.candidate_answers_key.push_back(
+            session.selection_completes_composition(candidate.pinyin, candidate.word, candidate.scheme));
     }
     view.candidate_annotations = session.candidate_annotations();
     return view;

@@ -16,17 +16,22 @@ std::vector<WordItem> PinyinCandidateProvider::query(const QueryRequest &request
         return {};
     }
 
+    std::vector<WordItem> candidates;
     if (request.scheme == SchemeType::Shuangpin)
     {
-        return shuangpin_engine_.query(request);
+        candidates = shuangpin_engine_.query(request);
     }
-
-    if (request.scheme == SchemeType::Quanpin)
+    else if (request.scheme == SchemeType::Quanpin)
     {
-        return quanpin_engine_.query(request);
+        candidates = quanpin_engine_.query(request);
     }
-
-    return {};
+    else
+    {
+        return {};
+    }
+    for (WordItem &item : candidates)
+        item.scheme = request.scheme;
+    return candidates;
 }
 
 bool PinyinCandidateProvider::expand_initial_candidates(const QueryRequest &request, std::vector<WordItem> &candidates)

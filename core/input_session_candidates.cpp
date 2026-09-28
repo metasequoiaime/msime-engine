@@ -16,7 +16,7 @@ void InputSession::enable_fixed_positions()
     update_mixed_candidates();
 }
 
-std::string InputSession::position_context(bool english) const
+std::string InputSession::position_context(bool english, bool wubi) const
 {
     if (english)
     {
@@ -30,7 +30,7 @@ std::string InputSession::position_context(bool english) const
     }
     if (local_input_mode_ == LocalInputMode::SuperJianpin)
         return local_modes::jianpin_ranking_context(local_preedit_.substr(1), scheme(), shuangpin_profile_);
-    if (wubi_candidates_are_native())
+    if (wubi)
         return engine_.get_request().raw_input;
     std::string context = get_quanpin();
     if (context.empty())
@@ -48,10 +48,41 @@ void InputSession::apply_candidate_positions(std::vector<WordItem> &items)
     if (!fixed_positions_enabled_ || items.empty())
         return;
     const auto journal = path_to_utf8(paths_.user(assets::user_journal));
-    if (local_input_mode_ == LocalInputMode::None && !dedicated_english_mode_ && scheme() != SchemeType::JapaneseRomaji)
+    const bool regular =
+        local_input_mode_ == LocalInputMode::None && !dedicated_english_mode_ && scheme() != SchemeType::JapaneseRomaji;
+    if (regular && is_wubi())
+    {
+        std::vector<WordItem> wubi_items;
+        std::vector<WordItem> pinyin_items;
+        for (auto &item : items)
+            (is_wubi_native_candidate(item) ? wubi_items : pinyin_items).push_back(std::move(item));
+        const bool include_missing = engine_.get_request().raw_input.size() == 1;
+        if (!wubi_items.empty())
+            user_dictionary::apply_fixed_positions(
+                journal, position_context(false, true), wubi_items, include_missing,
+                [this](const std::string &key, const std::string &word) {
+                    return engine_.find_candidate(SchemeType::Wubi, key, word);
+                },
+                has_active_helpcode());
+        if (!pinyin_items.empty())
+            user_dictionary::apply_fixed_positions(
+                journal, position_context(false, false), pinyin_items, include_missing,
+                [this](const std::string &key, const std::string &word) {
+                    return engine_.find_candidate(SchemeType::Quanpin, key, word);
+                },
+                has_active_helpcode());
+        items.clear();
+        items.insert(items.end(), std::make_move_iterator(wubi_items.begin()),
+                     std::make_move_iterator(wubi_items.end()));
+        items.insert(items.end(), std::make_move_iterator(pinyin_items.begin()),
+                     std::make_move_iterator(pinyin_items.end()));
+    }
+    else if (regular)
         user_dictionary::apply_fixed_positions(
-            journal, position_context(false), items, engine_.get_request().raw_input.size() == 1,
-            [this](const std::string &key, const std::string &word) { return engine_.find_candidate(key, word); },
+            journal, position_context(false, false), items, engine_.get_request().raw_input.size() == 1,
+            [this](const std::string &key, const std::string &word) {
+                return engine_.find_candidate(scheme(), key, word);
+            },
             has_active_helpcode());
     else if (local_input_mode_ == LocalInputMode::SuperJianpin)
         user_dictionary::apply_fixed_positions(journal, position_context(false), items, false);
@@ -70,8 +101,8 @@ KeyResult InputSession::set_candidate_position(std::size_t index, int position)
         ((selected.source != CandidateSource::Database && selected.source != CandidateSource::UserDatabase) ||
          scheme() == SchemeType::JapaneseRomaji))
         return {};
-    const auto context = position_context(english);
-    const bool wubi = wubi_candidates_are_native() && local_input_mode_ != LocalInputMode::SuperJianpin;
+    const bool wubi = selected.scheme == SchemeType::Wubi && local_input_mode_ != LocalInputMode::SuperJianpin;
+    const auto context = position_context(english, wubi);
     const auto key = english || wubi
                          ? selected.pinyin
                          : (selected.canonical_pinyin.empty() ? selected.pinyin : selected.canonical_pinyin);
@@ -103,7 +134,7 @@ KeyResult InputSession::remove_candidate(std::size_t index)
          scheme() == SchemeType::JapaneseRomaji || HelpcodeUtils::count_utf8_chars(selected.word) <= 1))
         return {};
 
-    const bool wubi = wubi_candidates_are_native() && local_input_mode_ != LocalInputMode::SuperJianpin;
+    const bool wubi = selected.scheme == SchemeType::Wubi && local_input_mode_ != LocalInputMode::SuperJianpin;
     const auto kind = english
                           ? user_dictionary::DictionaryKind::English
                           : (wubi ? user_dictionary::DictionaryKind::Wubi : user_dictionary::DictionaryKind::Pinyin);

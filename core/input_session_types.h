@@ -99,10 +99,10 @@ struct MixedExpressiveOptions
 
 struct WubiInputOptions
 {
-    // Answer an unmatched wubi code with quanpin candidates for the same letters. A code that the
-    // table does know keeps its own candidates untouched, so this only ever appears where nothing
-    // could be typed at all, and a fluent wubi typist never sees it.
+    // Query Wubi and Quanpin together, keeping Wubi candidates first and appending distinct
+    // pinyin candidates. The z wildcard is an independent Wubi setting.
     bool mixed_pinyin = false;
+    bool z_wildcard = false;
 };
 
 // Immutable description of the current composition for asynchronous providers. Frontends copy

@@ -72,6 +72,7 @@ class InputSession
     const EnglishInputOptions &english_input_options() const;
     void set_mixed_expressive_options(MixedExpressiveOptions options);
     void set_wubi_input_options(metasequoia::WubiInputOptions options);
+    const metasequoia::WubiInputOptions &wubi_input_options() const;
     void set_sentence_association(const SentenceAssociationOptions &options)
     {
         engine_.set_sentence_association(options);
@@ -121,6 +122,7 @@ class InputSession
         std::string current_segmentation;
         std::string current_segmentation_with_cases;
         std::string selected_canonical_pinyin;
+        bool wubi_native = false;
     };
 
     struct CloudQueryState
@@ -177,6 +179,8 @@ class InputSession
     std::vector<std::size_t> segment_raw_boundaries() const;
     std::string get_quanpin() const;
     bool is_all_complete_pure_pinyin() const;
+    bool wubi_unique_four_code() const;
+    bool wubi_four_code_is_complete() const;
     bool has_active_helpcode() const;
 
     void set_pinyin_sequence(const std::string &pinyin_sequence);
@@ -189,7 +193,8 @@ class InputSession
     int cache_dynamic_candidate(const std::string &pinyin, const std::string &word, CandidateSource source);
     SelectionTransition advance_composition_after_selection(const std::string &selected_pinyin,
                                                             const std::string &selected_word,
-                                                            const std::string &selected_canonical_pinyin);
+                                                            const std::string &selected_canonical_pinyin,
+                                                            SchemeType selected_scheme = SchemeType::Quanpin);
     // Whether selecting this candidate would finish the composition rather than leave input to
     // answer — that is, whether it covers the whole key.
     //
@@ -201,7 +206,8 @@ class InputSession
     // key are alternatives to each other, and a prefix is not an alternative to a full answer. The
     // consumer cannot derive it — the candidate's own character count agrees with this only while a
     // key has one segmentation, and `xian` reads as both 现 and 西安.
-    bool selection_completes_composition(const std::string &selected_pinyin, const std::string &selected_word) const;
+    bool selection_completes_composition(const std::string &selected_pinyin, const std::string &selected_word,
+                                         SchemeType selected_scheme = SchemeType::Quanpin) const;
     CloudQueryState get_cloud_query_state() const;
     CreatingWordProgress update_creating_word_progress(const std::string &current_pinyin,
                                                        const std::string &current_word,
@@ -251,6 +257,8 @@ class InputSession
     // fallback carries pinyin words, so ranking, fixed positions and removal have to key
     // off the pinyin rather than off the code that produced them.
     bool wubi_candidates_are_native() const;
+    static bool is_wubi_native_candidate(const WordItem &item);
+    std::size_t wubi_native_candidate_count() const;
     // The candidates on offer behave like pinyin: quanpin, shuangpin, or a wubi code the
     // table could not answer. Committing one of these commits a spelling out of a longer
     // one, so the rest of the composition has to survive the selection.
@@ -275,7 +283,7 @@ class InputSession
     std::size_t quantized_prefix_end() const;
     void refresh_prefix_candidates();
     void apply_candidate_positions(std::vector<WordItem> &items);
-    std::string position_context(bool english) const;
+    std::string position_context(bool english, bool wubi = false) const;
     bool fixed_positions_enabled_ = false;
     void update_dedicated_english_candidates();
     void reset_composition();

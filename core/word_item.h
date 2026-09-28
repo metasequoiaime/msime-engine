@@ -1,5 +1,6 @@
 #pragma once
 
+#include "scheme_type.h"
 #include <string>
 #include <cstdint>
 #include <utility>
@@ -34,6 +35,9 @@ struct WordItem
     std::string word;
     std::int64_t weight = 0;
     CandidateSource source = CandidateSource::Database;
+    // Mixed Wubi input can contain candidates from both dictionaries; route candidate operations
+    // by the scheme that produced each row.
+    SchemeType scheme = SchemeType::Quanpin;
     int fixed_position = 0;
     bool fuzzy = false; // Matched typed code may differ from canonical pronunciation.
     // 非空表示该候选来自纠错解释（scheme 别名层或纠错表改写了输入字母），值为纠错前的

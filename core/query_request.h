@@ -37,5 +37,7 @@ struct QueryRequest
     bool sentence_alternatives = false;
     SentenceAssociationOptions sentence_association;
     std::string rescoring_context;
+    // Wubi wildcard mode treats each z in the code as one arbitrary letter.
+    bool wubi_z_wildcard = false;
     bool valid = false;
 };
