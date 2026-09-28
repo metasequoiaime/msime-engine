@@ -70,6 +70,20 @@ inline void insert_unique_candidate_by_source_priority(std::vector<WordItem> &ca
     candidates.insert(candidates.begin() + index, WordItem(pinyin, word, 1, source));
 }
 
+inline bool move_candidate_to_position(std::vector<WordItem> &candidates, std::string_view word, CandidateSource source,
+                                       std::size_t position)
+{
+    const auto candidate = std::find_if(candidates.begin(), candidates.end(), [word, source](const WordItem &item) {
+        return item.word == word && item.source == source;
+    });
+    if (candidate == candidates.end() || candidate - candidates.begin() <= static_cast<std::ptrdiff_t>(position))
+        return false;
+    WordItem moved = std::move(*candidate);
+    candidates.erase(candidate);
+    candidates.insert(candidates.begin() + std::min(position, candidates.size()), std::move(moved));
+    return true;
+}
+
 inline void move_candidate_source_to_position(std::vector<WordItem> &candidates, CandidateSource source,
                                               std::size_t position)
 {
