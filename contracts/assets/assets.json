@@ -76,6 +76,33 @@
       ]
     },
     {
+      "id": "neural_model_desktop",
+      "path": "sentence-model-desktop.safetensors",
+      "role": "resource",
+      "source": "neural-model/sentence-model-desktop.safetensors",
+      "profiles": [
+        "desktop"
+      ]
+    },
+    {
+      "id": "neural_model_keyboard",
+      "path": "sentence-model.safetensors",
+      "role": "resource",
+      "source": "neural-model/sentence-model.safetensors",
+      "profiles": [
+        "desktop"
+      ]
+    },
+    {
+      "id": "notice_19",
+      "path": "licenses/chinese-ime-lm-NOTICE.md",
+      "role": "notice",
+      "source": "neural-model/NOTICE.md",
+      "profiles": [
+        "desktop"
+      ]
+    },
+    {
       "id": "pinyin_model",
       "path": "dict_pinyin.dat",
       "role": "resource",

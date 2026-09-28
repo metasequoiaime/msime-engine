@@ -4,6 +4,7 @@
 #include "../../core/runtime_paths.h"
 #include "../../shuangpin/shuangpin_profile.h"
 #include "../../core/fuzzy_pinyin_options.h"
+#include "../../core/sentence_association_options.h"
 #include "personal_dictionary.h"
 #include <memory>
 
@@ -28,6 +29,10 @@ struct SessionOptions
     // default: a host that does not reorder and crop the readings itself would put several near
     // duplicate sentences on the first page of candidates.
     bool sentence_alternatives = false;
+    // Whole-sentence sources. Google and the lattice remain enabled by default;
+    // neural modes rerank the lattice n-best only when explicitly enabled.
+    SentenceAssociationOptions sentence_association;
+    std::string rescoring_context;
     FuzzyPinyinOptions fuzzy_pinyin;
     FrequencyAdjustmentOptions frequency;
     LocalModeOptions local_modes;
@@ -122,6 +127,8 @@ class Session
     // Answer an unmatched wubi code with quanpin candidates for the same letters.
     void set_wubi_mixed_pinyin(bool enabled);
     void reset_cache();
+    void set_sentence_association(SentenceAssociationOptions options);
+    void set_rescoring_context(std::string context);
     SessionSnapshot snapshot() const;
     // Authoritative offsets in snapshot().editing_text for pinyin-unit editing.
     // Empty for idle, local modes, non-pinyin schemes and active nine-key input.

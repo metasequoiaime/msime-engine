@@ -16,6 +16,8 @@ enum class CandidateSource
     Kaomoji,
     Generated,
     Fallback,
+    NeuralDesktop,
+    NeuralKeyboard,
 };
 
 struct WordItem

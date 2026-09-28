@@ -70,6 +70,8 @@ struct WordLatticeOptions
 {
     int beam = 32;
     int nbest = 5;
+    bool include_lattice_best = true;
+    bool show_next_on_duplicate = false;
     // Cap on lexemes per span (injected lookups). DB lookup already applies
     // the same cap in query_segments_keyed_flat.
     int span_limit = 32;
@@ -117,6 +119,14 @@ struct WordLatticeOptions
 };
 
 using WordLatticeLookup = std::function<std::vector<LatticeLexeme>(const Segments &span)>;
+
+using LatticeReranker = std::function<bool(std::vector<LatticePath> &paths)>;
+
+struct SourcedLatticeReranker
+{
+    LatticeReranker rerank;
+    CandidateSource source = CandidateSource::Generated;
+};
 
 std::vector<LatticePath> decode_word_lattice(const Segments &syllables, const WordLatticeLookup &lookup,
                                              const WordLatticeOptions &options = {});
@@ -167,7 +177,8 @@ void merge_lattice_candidates(std::vector<WordItem> &candidates, const Segments 
                               const WordLatticeLookup &lookup, const std::string &typed_pinyin,
                               const WordLatticeOptions &options = {},
                               // Scored against the decoded paths on the same terms when given.
-                              const std::string &fallback_sentence = {}, WholeSentenceComparison *comparison = nullptr);
+                              const std::string &fallback_sentence = {}, WholeSentenceComparison *comparison = nullptr,
+                              const std::vector<SourcedLatticeReranker> &rerankers = {});
 
 // Index of the first row a synthesised whole sentence may take, which is after the leading run of
 // exact full-cover Database/UserDatabase hits. Both whole-sentence sources share it so neither can

@@ -242,6 +242,34 @@ void test_trigram_reorders_the_paths()
     check(all.nbest == 6 && all.emit == 0, "asking for alternatives searches the same six and shows them");
 }
 
+void test_lattice_reranker_sources_one_path_each()
+{
+    std::unordered_map<std::string, std::vector<quanpin::LatticeLexeme>> rows;
+    rows["ni'hao'xue"] = {{"ni'hao'xue", "你好学", 20000}};
+    rows["ni'hao"] = {{"ni'hao", "你好", 20000}};
+    rows["ni"] = {{"ni", "你", 20000}, {"ni", "泥", 19000}};
+    rows["hao"] = {{"hao", "好", 20000}};
+    rows["xue"] = {{"xue", "学", 20000}};
+    const quanpin::Segments syllables = {"ni", "hao", "xue"};
+    std::vector<WordItem> candidates;
+    quanpin::WordLatticeOptions options;
+    options.nbest = 2;
+    options.include_lattice_best = false;
+    options.emit = 0;
+    const quanpin::SourcedLatticeReranker reranker{[](std::vector<quanpin::LatticePath> &paths) {
+                                                       if (paths.size() < 2)
+                                                           return false;
+                                                       std::reverse(paths.begin(), paths.end());
+                                                       return true;
+                                                   },
+                                                   CandidateSource::NeuralKeyboard};
+    quanpin::merge_lattice_candidates(candidates, syllables, table_lookup(rows), "nihaoxue", options, {}, nullptr,
+                                      {reranker});
+    check(candidates.size() == 1, "a completed reranker contributes one sentence");
+    check(!candidates.empty() && candidates.front().source == CandidateSource::NeuralKeyboard,
+          "the reranked sentence records its source");
+}
+
 } // namespace
 
 int main()
@@ -250,6 +278,7 @@ int main()
     test_rejects_bad_files();
     test_lattice_uses_the_transition();
     test_trigram_reorders_the_paths();
+    test_lattice_reranker_sources_one_path_each();
     std::filesystem::remove_all(scratch_dir());
     if (failures)
     {

@@ -8,3 +8,4 @@ log.*
 **/__pycache__/
 *.pyc
 .venv/
+/neural-model/*.safetensors
