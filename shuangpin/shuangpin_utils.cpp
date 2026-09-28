@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <unordered_set>
-#include <utf8.h>
 #include <spdlog/spdlog.h>
 #include <vector>
 #include <boost/algorithm/string.hpp>
@@ -190,7 +189,7 @@ string::size_type ShuangpinUtil::get_first_char_size(string words)
  */
 string::size_type ShuangpinUtil::count_utf8_chars(const string &str)
 {
-    return utf8::distance(str.begin(), str.end());
+    return CommonUtils::count_utf8_chars(str);
 }
 
 /**

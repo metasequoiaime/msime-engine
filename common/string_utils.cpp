@@ -20,6 +20,11 @@ std::string wstring_to_string(const std::wstring &wstr)
     return result;
 }
 
+std::string::size_type count_utf8_chars(const std::string &text)
+{
+    return utf8::distance(text.begin(), text.end());
+}
+
 std::vector<std::string> split_by_delimiter(const std::string &text, char delimiter)
 {
     std::vector<std::string> parts;
