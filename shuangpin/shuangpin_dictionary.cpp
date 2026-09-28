@@ -1,4 +1,5 @@
 #include "../core/online_candidate_batch.h"
+#include "../core/candidate_utils.h"
 #include "shuangpin_dictionary.h"
 #include "../user_dictionary/user_dictionary_journal.h"
 #include "../common/sqlite_statement.h"
@@ -1216,8 +1217,7 @@ int ShuangpinDictionary::insert_word_to_cached_buffer_series(const std::string &
             list.end());
     }
 
-    const auto exists = std::find_if(list.begin(), list.end(), [&](const WordItem &item) { return item.word == word; });
-    if (exists == list.end())
+    if (!contains_candidate_word(list, word))
     {
         if (list.empty())
         {
@@ -1262,9 +1262,7 @@ int ShuangpinDictionary::insert_word_to_active_helpcode_cache(const std::string 
                                           [source](const WordItem &item) { return item.source == source; }),
                            list.end());
             }
-            const auto exists =
-                std::find_if(list.begin(), list.end(), [&](const WordItem &item) { return item.word == word; });
-            if (exists == list.end())
+            if (!contains_candidate_word(list, word))
             {
                 if (list.size() >= 1)
                 {

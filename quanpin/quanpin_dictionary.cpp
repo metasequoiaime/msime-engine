@@ -1,4 +1,5 @@
 #include "../core/online_candidate_batch.h"
+#include "../core/candidate_utils.h"
 #include "fuzzy_pinyin.h"
 #include "quanpin_dictionary.h"
 #include "../user_dictionary/user_dictionary_journal.h"
@@ -935,8 +936,7 @@ int QuanpinDictionary::insert_word_to_series_cache_key(const std::string &cache_
             list.end());
     }
 
-    const auto exists = std::find_if(list.begin(), list.end(), [&](const WordItem &item) { return item.word == word; });
-    if (exists == list.end())
+    if (!contains_candidate_word(list, word))
     {
         if (list.empty())
         {
