@@ -25,4 +25,8 @@ inline constexpr ImeKeyCode Space = 0x20;
 inline constexpr ImeKeyCode Semicolon = 0xBA;
 inline constexpr ImeKeyCode Minus = 0xBD;
 inline constexpr ImeKeyCode Apostrophe = 0xDE;
+inline constexpr bool is_ascii_letter(ImeKeyCode key)
+{
+    return key >= 'A' && key <= 'Z';
+}
 } // namespace ImeKey

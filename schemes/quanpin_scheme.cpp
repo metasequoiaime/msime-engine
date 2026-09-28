@@ -5,14 +5,6 @@
 #include "../quanpin/quanpin_utils.h"
 #include "../shuangpin/shuangpin_query.h"
 
-namespace
-{
-bool is_alpha_vk(ImeKeyCode vk)
-{
-    return vk >= 'A' && vk <= 'Z';
-}
-} // namespace
-
 void QuanpinScheme::reset()
 {
     raw_input_.clear();
@@ -56,7 +48,7 @@ void QuanpinScheme::handle_key(ImeKeyCode vk, ImeModifierMask modifiers_down, Im
         return;
     }
 
-    if (!is_alpha_vk(vk))
+    if (!ImeKey::is_ascii_letter(vk))
     {
         return;
     }

@@ -4,11 +4,6 @@
 
 namespace
 {
-bool is_alpha_vk(ImeKeyCode vk)
-{
-    return vk >= 'A' && vk <= 'Z';
-}
-
 bool is_microsoft_ing_key(ImeKeyCode vk, ImeCharacter wch, const std::string &raw_input,
                           const ShuangpinProfile &profile)
 {
@@ -70,7 +65,7 @@ void ShuangpinScheme::handle_key(ImeKeyCode vk, ImeModifierMask modifiers_down, 
     }
 
     const bool microsoft_ing_key = is_microsoft_ing_key(vk, wch, raw_input_, profile_);
-    if (!is_alpha_vk(vk) && !microsoft_ing_key)
+    if (!ImeKey::is_ascii_letter(vk) && !microsoft_ing_key)
     {
         return;
     }
