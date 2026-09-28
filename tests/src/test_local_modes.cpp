@@ -1,6 +1,7 @@
 #include "../../local_modes/date_time_query.h"
 #include "../../local_modes/emoji_query.h"
 #include "../../local_modes/kaomoji_query.h"
+#include "../../local_modes/local_database.h"
 #include "../../local_modes/quick_phrase_query.h"
 #include "../../core/data_path.h"
 
@@ -8,6 +9,7 @@
 
 #include <array>
 #include <chrono>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <stdexcept>
@@ -54,6 +56,21 @@ void require(bool condition, const char *message)
     {
         throw std::runtime_error(message);
     }
+}
+
+void set_data_directory(const std::filesystem::path &directory)
+{
+#ifdef _WIN32
+    if (_wputenv_s(L"METASEQUOIA_IME_DATA_DIR", directory.c_str()) != 0)
+    {
+        throw std::runtime_error("Failed to set the test data directory.");
+    }
+#else
+    if (setenv("METASEQUOIA_IME_DATA_DIR", metasequoia::path_to_utf8(directory).c_str(), 1) != 0)
+    {
+        throw std::runtime_error("Failed to set the test data directory.");
+    }
+#endif
 }
 
 LocalDateTime sample_time()
@@ -314,6 +331,25 @@ int main()
                 corrupt_kaomoji.diagnostic->find("privatecode") == std::string::npos &&
                 corrupt_kaomoji.diagnostic->find("private-corrupt") == std::string::npos,
             "A corrupt kaomoji database lacked a privacy-safe diagnostic.");
+
+    // The shipped dictionary names are cached, while fixture paths stay
+    // operation-scoped so a test can remove its temporary directory right
+    // after a query. Holding the first connection proves that close clears
+    // the cache without invalidating an in-flight reader.
+    set_data_directory(quick_phrase_directory);
+    metasequoia::local_modes::close_cached_local_databases();
+    auto first_connection = metasequoia::local_modes::open_local_database(quick_phrase_database);
+    auto second_connection = metasequoia::local_modes::open_local_database(quick_phrase_database);
+    require(first_connection && second_connection && first_connection.get() == second_connection.get(),
+            "The active shipped dictionary did not reuse its read-only connection.");
+    metasequoia::local_modes::close_cached_local_databases();
+    auto third_connection = metasequoia::local_modes::open_local_database(quick_phrase_database);
+    require(third_connection && third_connection.get() != first_connection.get(),
+            "Closing cached local databases did not release the previous generation.");
+    metasequoia::local_modes::close_cached_local_databases();
+    first_connection.reset();
+    second_connection.reset();
+    third_connection.reset();
     std::filesystem::remove_all(quick_phrase_directory);
     return 0;
 }

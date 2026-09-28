@@ -15,6 +15,7 @@
 #include <numeric>
 #include "../core/data_path.h"
 #include "../english/english_dictionary.h"
+#include "../local_modes/local_database.h"
 
 namespace user_dictionary
 {
@@ -452,6 +453,10 @@ void close_default_user_database()
     // data directory; a connection left open would block that on Windows.
     const std::lock_guard<std::mutex> guard(database_cache_mutex());
     default_database_cache() = {};
+    // Local-mode queries share connections to the shipped dictionaries in the
+    // same data directory. Release them along with the journal before a data
+    // generation is deleted or replaced.
+    metasequoia::local_modes::close_cached_local_databases();
 }
 
 bool ensure_user_database(const std::string &user_db_path)

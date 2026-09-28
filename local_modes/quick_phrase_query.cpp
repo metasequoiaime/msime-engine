@@ -1,5 +1,6 @@
 #include "../contracts/assets/assets.h"
 #include "quick_phrase_query.h"
+#include "local_database.h"
 
 #include "../core/data_path.h"
 
@@ -12,17 +13,6 @@ namespace metasequoia::local_modes
 {
 namespace
 {
-struct DatabaseCloser
-{
-    void operator()(sqlite3 *database) const
-    {
-        if (database != nullptr)
-        {
-            sqlite3_close(database);
-        }
-    }
-};
-
 struct StatementCloser
 {
     void operator()(sqlite3_stmt *statement) const
@@ -34,7 +24,6 @@ struct StatementCloser
     }
 };
 
-using Database = std::unique_ptr<sqlite3, DatabaseCloser>;
 using Statement = std::unique_ptr<sqlite3_stmt, StatementCloser>;
 
 bool valid_prefix(const std::string &prefix)
@@ -66,18 +55,11 @@ QuickPhraseQueryResult query_quick_phrases(const std::string &prefix, const std:
         return query_failure("Quick phrase database is unavailable.");
     }
 
-    sqlite3 *raw_database = nullptr;
-    if (sqlite3_open_v2(path_to_utf8(database_path).c_str(), &raw_database,
-                        SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, nullptr) != SQLITE_OK)
+    const std::shared_ptr<sqlite3> database = open_local_database(database_path);
+    if (!database)
     {
-        if (raw_database != nullptr)
-        {
-            sqlite3_close(raw_database);
-        }
         return query_failure("Quick phrase database is unavailable.");
     }
-    Database database(raw_database);
-    sqlite3_busy_timeout(database.get(), 1000);
 
     constexpr const char *kSql = "SELECT key,value,weight FROM quick_parases WHERE key>=?1 AND key<?2 "
                                  "ORDER BY weight DESC,key,value LIMIT ?3";
