@@ -161,17 +161,6 @@ string ShuangpinUtil::pinyin_segmentation(string sp_str, const ShuangpinProfile 
  * @return std::string
  */
 /**
- * @brief Get first UTF-8 char size
- *
- * @param words UTF-8 string
- * @return string::size_type Char size
- */
-string::size_type ShuangpinUtil::get_first_char_size(string words)
-{
-    return CommonUtils::utf8_code_point_length(words);
-}
-
-/**
  * @brief Extract preview without helpcodes
  *
  * @param candidate UTF-8 string
