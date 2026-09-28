@@ -148,6 +148,21 @@ int main()
                     quanpin.candidates()[2].source == CandidateSource::AiSuggestion,
                 "The AI candidate was not inserted in slot three.");
 
+        metasequoia::InputSession deduplicated_batch(SchemeType::Quanpin);
+        type(deduplicated_batch, "ni");
+        const auto batch_query = deduplicated_batch.online_query();
+        require(batch_query.has_value(), "The deduplication batch did not expose an online query.");
+        const std::vector<std::string> repeated_ai = {
+            "重复候选", "重复候选", "候选一", "候选二", "候选三", "候选四",
+            "候选五",   "候选六",   "候选七", "候选八", "候选九",
+        };
+        require(deduplicated_batch.apply_online_candidates(*batch_query, repeated_ai, CandidateSource::AiSuggestion),
+                "A duplicate AI batch was rejected before applying its unique quota.");
+        require(std::count_if(
+                    deduplicated_batch.candidates().begin(), deduplicated_batch.candidates().end(),
+                    [](const WordItem &candidate) { return candidate.source == CandidateSource::AiSuggestion; }) == 10,
+                "The duplicate AI batch did not keep all ten unique candidates.");
+
         require(quanpin.apply_online_candidate(*query, "呢", CandidateSource::CloudSuggestion),
                 "A replacement cloud candidate was rejected.");
         require(quanpin.candidates()[1].word == "呢" && !has_word(quanpin, "泥"),
