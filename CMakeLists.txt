@@ -233,14 +233,13 @@ if(BUILD_TESTING)
     target_link_libraries(test_candidate_removal PRIVATE MetasequoiaIme::Engine)
     add_test(NAME candidate_removal COMMAND test_candidate_removal)
 
-    # These two are the disk-bound outliers. Both spend their time building, staging and tearing
-    # down dictionaries on disk rather than in the decoder, and Windows runs them 15-25x slower than
-    # the other platforms: runtime_isolation takes 10.6s there against 0.70s on macOS, and
-    # candidate_removal 7.6s against 0.30s. That leaves them alone in having single-digit headroom
-    # under the Windows job's 60s default, and a runner that lost disk throughput has already pushed
-    # runtime_isolation past it while the CPU-bound tests barely moved. A timeout is here to catch a
-    # hang, which is unbounded, so it is set against a hang rather than against the runner's best
-    # day; the other twenty tests keep the strict default.
+    # These are the Windows outliers. The first two spend their time building, staging and tearing
+    # down dictionaries on disk, while input_session exercises a large number of dictionary-backed
+    # editing paths. Windows runs them much slower than the other platforms: runtime_isolation takes
+    # 10.6s there against 0.70s on macOS, candidate_removal 7.6s against 0.30s, and input_session
+    # can exceed the 60s default after its caret and sentence-association coverage grows. A timeout
+    # is here to catch a hang, which is unbounded, so it is set against a hang rather than against
+    # the runner's best day; the other tests keep the strict default.
     set_tests_properties(runtime_isolation candidate_removal PROPERTIES TIMEOUT 300)
 
     add_executable(test_fuzzy_pinyin tests/src/test_fuzzy_pinyin.cpp)
@@ -260,6 +259,7 @@ if(BUILD_TESTING)
     target_compile_definitions(test_input_session PRIVATE METASEQUOIA_SKIP_FREQUENCY_TESTS)
     target_link_libraries(test_input_session PRIVATE MetasequoiaIme::Engine)
     add_test(NAME input_session COMMAND test_input_session)
+    set_tests_properties(input_session PROPERTIES TIMEOUT 300)
 
     add_executable(test_frequency_input_session tests/src/test_input_session.cpp)
     target_compile_definitions(test_frequency_input_session PRIVATE METASEQUOIA_FREQUENCY_TESTS_ONLY)
