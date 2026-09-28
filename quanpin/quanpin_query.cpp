@@ -754,6 +754,16 @@ std::vector<KeyedQueryItem> query_single_cut_keyed(sqlite3 *db, metasequoia::Sql
     return run_keyed_query(db, statement_cache, jp_sql, jp, limit);
 }
 
+void append_unique_query_items(std::vector<QueryItem> &target, const std::vector<QueryItem> &items,
+                               std::unordered_set<std::string> &seen)
+{
+    for (const auto &item : items)
+    {
+        if (seen.insert(item.first).second)
+            target.push_back(item);
+    }
+}
+
 std::vector<QueryItem> sort_and_limit_query_items(std::vector<QueryItem> items, int limit)
 {
     std::sort(items.begin(), items.end(),
@@ -990,15 +1000,7 @@ std::vector<QueryItem> query_words_flat(const std::string &pinyin, const std::st
     std::vector<QueryItem> items;
     std::unordered_set<std::string> seen;
     for (const auto &entry : result.results)
-    {
-        for (const auto &item : entry.items)
-        {
-            if (seen.insert(item.first).second)
-            {
-                items.push_back(item);
-            }
-        }
-    }
+        append_unique_query_items(items, entry.items, seen);
 
     return sort_and_limit_query_items(std::move(items), limit);
 }
@@ -1010,15 +1012,7 @@ std::vector<QueryItem> query_segments_flat(const Segments &segments, const std::
     std::vector<QueryItem> items;
     std::unordered_set<std::string> seen;
     for (const auto &entry : result.results)
-    {
-        for (const auto &item : entry.items)
-        {
-            if (seen.insert(item.first).second)
-            {
-                items.push_back(item);
-            }
-        }
-    }
+        append_unique_query_items(items, entry.items, seen);
 
     return sort_and_limit_query_items(std::move(items), limit);
 }
@@ -1034,13 +1028,7 @@ std::vector<QueryItem> query_segments_flat(const Segments &segments, sqlite3 *db
 
     std::vector<QueryItem> items;
     std::unordered_set<std::string> seen;
-    for (const auto &item : query_single_cut(db, statement_cache, segments, limit, source))
-    {
-        if (seen.insert(item.first).second)
-        {
-            items.push_back(item);
-        }
-    }
+    append_unique_query_items(items, query_single_cut(db, statement_cache, segments, limit, source), seen);
 
     return sort_and_limit_query_items(std::move(items), limit);
 }
