@@ -1194,7 +1194,7 @@ void ShuangpinDictionary::reset_cache_if_database_changed()
 int ShuangpinDictionary::insert_word_to_cached_buffer_series(const std::string &pinyin, const std::string &word,
                                                              CandidateSource source)
 {
-    if (source == CandidateSource::AiSuggestion || source == CandidateSource::CloudSuggestion)
+    if (is_online_candidate_source(source))
         return insert_word_to_cached_buffer_series(pinyin, std::vector<std::string>{word}, source);
     (void)0;
     if (pinyin.empty() || word.empty())
@@ -1205,7 +1205,7 @@ int ShuangpinDictionary::insert_word_to_cached_buffer_series(const std::string &
     auto list = _cached_buffer_series.get(pinyin).value_or(std::vector<WordItem>{});
 
     // Keep at most one cloud/AI suggestion in the series cache for this key.
-    if (source == CandidateSource::AiSuggestion || source == CandidateSource::CloudSuggestion)
+    if (is_online_candidate_source(source))
     {
         erase_candidates_by_source(list, source);
     }
@@ -1225,13 +1225,13 @@ int ShuangpinDictionary::insert_word_to_active_helpcode_cache(const std::string 
                                                               CandidateSource source,
                                                               const std::string &double_helpcodes)
 {
-    if (source == CandidateSource::AiSuggestion || source == CandidateSource::CloudSuggestion)
+    if (is_online_candidate_source(source))
         return insert_word_to_active_helpcode_cache(pinyin, std::vector<std::string>{word}, source, double_helpcodes);
     auto insert_into_cache = [&](auto &cache, const std::string &cache_key) {
         if (auto opt = cache.get(cache_key))
         {
             auto list = opt.value();
-            if (source == CandidateSource::AiSuggestion || source == CandidateSource::CloudSuggestion)
+            if (is_online_candidate_source(source))
             {
                 erase_candidates_by_source(list, source);
             }

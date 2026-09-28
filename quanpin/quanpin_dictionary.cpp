@@ -913,12 +913,12 @@ int QuanpinDictionary::insert_word_to_series_cache(const std::string &raw_input,
 int QuanpinDictionary::insert_word_to_series_cache_key(const std::string &cache_key, const std::string &pinyin,
                                                        const std::string &word, CandidateSource source)
 {
-    if (source == CandidateSource::AiSuggestion || source == CandidateSource::CloudSuggestion)
+    if (is_online_candidate_source(source))
         return insert_word_to_series_cache_key(cache_key, pinyin, std::vector<std::string>{word}, source);
     auto list = series_cache_.get(cache_key).value_or(std::vector<WordItem>{});
 
     // Keep at most one cloud/AI suggestion in the series cache for this key.
-    if (source == CandidateSource::AiSuggestion || source == CandidateSource::CloudSuggestion)
+    if (is_online_candidate_source(source))
     {
         erase_candidates_by_source(list, source);
     }

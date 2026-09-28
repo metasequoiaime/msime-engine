@@ -579,7 +579,7 @@ std::optional<OnlineQuery> InputSession::online_query() const
 
 bool InputSession::apply_online_candidate(const OnlineQuery &query, std::string candidate, CandidateSource source)
 {
-    if (candidate.empty() || (source != CandidateSource::CloudSuggestion && source != CandidateSource::AiSuggestion))
+    if (candidate.empty() || !is_online_candidate_source(source))
     {
         return false;
     }
