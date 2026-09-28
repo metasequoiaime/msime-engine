@@ -4,14 +4,6 @@
 #include <algorithm>
 #include <cctype>
 
-namespace
-{
-bool IsRomajiKey(ImeKeyCode vk)
-{
-    return vk >= 'A' && vk <= 'Z';
-}
-} // namespace
-
 void JapaneseRomajiScheme::reset()
 {
     raw_input_.clear();
@@ -48,7 +40,7 @@ void JapaneseRomajiScheme::handle_key(ImeKeyCode vk, ImeModifierMask modifiers_d
         key_strokes_.push_back(KeyStroke{vk, modifiers_down, wch});
         return;
     }
-    if (!IsRomajiKey(vk))
+    if (!ImeKey::is_ascii_letter(vk))
         return;
 
     key_strokes_.push_back(KeyStroke{vk, modifiers_down, wch});
