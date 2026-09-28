@@ -1041,6 +1041,12 @@ std::optional<std::string> InputSession::adjust_candidate_frequency(std::size_t 
 }
 void InputSession::set_quanpin_autocorrect_types(unsigned autocorrect_types)
 {
+    // Hosts may re-apply their configuration before every key. An unchanged
+    // value must not rebuild and copy the mixed candidate list on that hot path.
+    if (quanpin_autocorrect_types_ == autocorrect_types)
+    {
+        return;
+    }
     quanpin_autocorrect_types_ = autocorrect_types;
     engine_.set_quanpin_autocorrect_types(autocorrect_types);
     update_mixed_candidates();
