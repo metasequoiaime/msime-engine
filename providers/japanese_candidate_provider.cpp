@@ -1,4 +1,5 @@
 #include "japanese_candidate_provider.h"
+#include "../core/candidate_utils.h"
 #include "../japanese/japanese_matrix_search.h"
 #include "../japanese/romaji_converter.h"
 #include "../quanpin/quanpin_query.h"
@@ -228,9 +229,7 @@ int JapaneseCandidateProvider::cache_dynamic_candidate(SchemeType scheme, const 
         return -1;
     }
     auto items = dynamic_candidates_.get(code).value_or(std::vector<WordItem>{});
-    items.erase(
-        std::remove_if(items.begin(), items.end(), [source](const WordItem &item) { return item.source == source; }),
-        items.end());
+    erase_candidates_by_source(items, source);
     items.emplace_back(code, word, 1, source, code);
     dynamic_candidates_.insert(code, items);
     return kNoMutation;
