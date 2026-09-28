@@ -14,10 +14,9 @@ inline bool sqlite_data_version_changed(sqlite3 *database, sqlite3_int64 &last_v
     if (database == nullptr)
         return false;
 
-    sqlite3_stmt *raw = nullptr;
-    if (sqlite3_prepare_v2(database, "PRAGMA data_version", -1, &raw, nullptr) != SQLITE_OK)
+    auto statement = sqlite_prepare_statement(database, "PRAGMA data_version");
+    if (!statement)
         return false;
-    SqliteStatement statement(raw);
     if (sqlite3_step(statement.get()) != SQLITE_ROW)
         return false;
 

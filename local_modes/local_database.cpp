@@ -131,12 +131,11 @@ bool query_prefix_rows(sqlite3 *database, const std::vector<std::string> &prefix
     }
     for (const std::string &prefix : prefixes)
     {
-        sqlite3_stmt *raw_statement = nullptr;
-        if (sqlite3_prepare_v2(database, sql, -1, &raw_statement, nullptr) != SQLITE_OK)
+        auto statement = metasequoia::sqlite_prepare_statement(database, sql);
+        if (!statement)
         {
             return false;
         }
-        metasequoia::SqliteStatement statement(raw_statement);
         const std::string upper_bound = prefix_upper_bound(prefix);
         if (sqlite3_bind_text(statement.get(), 1, prefix.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
             sqlite3_bind_text(statement.get(), 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
