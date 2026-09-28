@@ -50,6 +50,8 @@ Segments split_segments(const std::string &segmentation);
 std::string join_segments(const Segments &segments, const std::string &delimiter = "'");
 std::string build_table_name(const Segments &segments);
 std::string build_sql_for_creating_word(const std::string &pinyin);
+std::string build_sql_for_checking_word(const std::string &key, const std::string &value);
+std::string build_sql_for_inserting_word(const std::string &key, const std::string &jp, const std::string &value);
 std::string segments_to_jianpin(const Segments &segments);
 std::string get_default_db_path();
 // A learning write holds the dictionary lock only for a short commit. Readers

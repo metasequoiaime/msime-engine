@@ -770,12 +770,12 @@ int QuanpinDictionary::create_word(std::string pinyin, std::string word)
         return ERROR_CODE;
     }
 
-    if (check_data(build_sql_for_checking_word(pinyin, jp, word)))
+    if (check_data(quanpin::build_sql_for_checking_word(pinyin, word)))
     {
         return OK;
     }
 
-    if (insert_data(build_sql_for_inserting_word(pinyin, jp, word)) != OK)
+    if (insert_data(quanpin::build_sql_for_inserting_word(pinyin, jp, word)) != OK)
     {
         return ERROR_CODE;
     }
@@ -797,11 +797,11 @@ int QuanpinDictionary::create_word_from_canonical_pinyin(std::string pinyin, std
     const std::string jp = quanpin::segments_to_jianpin(segments);
     // The caller supplied explicit canonical segmentation. Re-running the greedy correction
     // validator would erase those boundaries and reject valid readings such as qi'e'huan.
-    if (check_data(build_sql_for_checking_word(pinyin, jp, word)))
+    if (check_data(quanpin::build_sql_for_checking_word(pinyin, word)))
     {
         return OK;
     }
-    if (insert_data(build_sql_for_inserting_word(pinyin, jp, word)) != OK)
+    if (insert_data(quanpin::build_sql_for_inserting_word(pinyin, jp, word)) != OK)
     {
         return ERROR_CODE;
     }
@@ -1011,33 +1011,6 @@ int QuanpinDictionary::delete_data(const std::string &sql_str)
     Statement guard(stmt);
     const bool ok = sqlite3_step(stmt) == SQLITE_DONE;
     return ok ? OK : ERROR_CODE;
-}
-
-std::string QuanpinDictionary::build_sql_for_checking_word(const std::string &key, const std::string &jp,
-                                                           const std::string &value)
-{
-    const auto cuts = quanpin::cut_pinyin_by_mode(key, "correction");
-    if (cuts.empty())
-    {
-        return "";
-    }
-    const std::string table = quanpin::build_table_name(cuts.front());
-    return fmt::format("select 1 from {} where key = '{}' and value = '{}';", table,
-                       CommonUtils::escape_sql_literal(key), CommonUtils::escape_sql_literal(value));
-}
-
-std::string QuanpinDictionary::build_sql_for_inserting_word(const std::string &key, const std::string &jp,
-                                                            const std::string &value)
-{
-    const auto cuts = quanpin::cut_pinyin_by_mode(key, "correction");
-    if (cuts.empty())
-    {
-        return "";
-    }
-    const std::string table = quanpin::build_table_name(cuts.front());
-    return fmt::format("insert into {} (key, jp, value, weight) values ('{}', '{}', '{}', '{}');", table,
-                       CommonUtils::escape_sql_literal(key), CommonUtils::escape_sql_literal(jp),
-                       CommonUtils::escape_sql_literal(value), 10000);
 }
 
 std::string QuanpinDictionary::build_sql_for_updating_word(const std::string &word)
