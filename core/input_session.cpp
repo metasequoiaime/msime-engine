@@ -587,8 +587,7 @@ bool InputSession::apply_online_candidate(const OnlineQuery &query, std::string 
     if (!current.has_value() || !online_requests_.matches(*current, query) ||
         (source == CandidateSource::CloudSuggestion && !current->cloud_eligible) ||
         (source == CandidateSource::AiSuggestion && !current->ai_eligible) ||
-        std::any_of(candidates().begin(), candidates().end(),
-                    [&](const WordItem &item) { return item.word == candidate; }))
+        contains_candidate_word(candidates(), candidate))
     {
         return false;
     }
