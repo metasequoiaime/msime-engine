@@ -1,5 +1,6 @@
 #include "runtime_paths.h"
 #include "data_path.h"
+#include "../common/sqlite_database.h"
 #include "../contracts/assets/assets.h"
 #include "../user_dictionary/user_dictionary_journal.h"
 #include <algorithm>
@@ -38,18 +39,19 @@ bool roots_overlap(const std::filesystem::path &first, const std::filesystem::pa
 void copy_database(const std::filesystem::path &source, const std::filesystem::path &target)
 {
     // SQLite backup includes committed WAL content; copying a live .db alone would lose it.
-    sqlite3 *input = nullptr, *output = nullptr;
-    const bool opened =
-        sqlite3_open_v2(path_to_utf8(source).c_str(), &input, SQLITE_OPEN_READONLY, nullptr) == SQLITE_OK &&
-        sqlite3_open_v2(path_to_utf8(target).c_str(), &output, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr) ==
-            SQLITE_OK;
-    sqlite3_backup *backup = opened ? sqlite3_backup_init(output, "main", input, "main") : nullptr;
+    sqlite3 *input_raw = nullptr;
+    const int input_status = sqlite3_open_v2(path_to_utf8(source).c_str(), &input_raw, SQLITE_OPEN_READONLY, nullptr);
+    metasequoia::SqliteDatabase input(input_raw);
+    sqlite3 *output_raw = nullptr;
+    const int output_status = input_status == SQLITE_OK
+                                  ? sqlite3_open_v2(path_to_utf8(target).c_str(), &output_raw,
+                                                    SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr)
+                                  : SQLITE_ERROR;
+    metasequoia::SqliteDatabase output(output_raw);
+    const bool opened = input_status == SQLITE_OK && output_status == SQLITE_OK;
+    sqlite3_backup *backup = opened ? sqlite3_backup_init(output.get(), "main", input.get(), "main") : nullptr;
     const int copied = backup ? sqlite3_backup_step(backup, -1) : SQLITE_ERROR;
     const int finished = backup ? sqlite3_backup_finish(backup) : SQLITE_ERROR;
-    if (output)
-        sqlite3_close(output);
-    if (input)
-        sqlite3_close(input);
     if (copied != SQLITE_DONE || finished != SQLITE_OK)
         throw std::runtime_error("Unable to copy runtime dictionary: " + path_to_utf8(source));
 }
