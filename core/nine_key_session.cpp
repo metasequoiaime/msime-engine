@@ -284,9 +284,7 @@ void NineKeySession::refresh()
     //
     // 按来源分档，覆盖按键数相同时词典词条先行。整句输入不受影响：长输入里能吃掉全部按键的词条本来
     // 就没有，合成候选仍然排第一（96436426 出「我很好」，9664486 出「用户名」）。
-    const auto synthesised = [](CandidateSource source) {
-        return source == CandidateSource::Generated || source == CandidateSource::Fallback;
-    };
+    const auto synthesised = [](CandidateSource source) { return is_generated_or_fallback_source(source); };
     std::stable_sort(candidates_.begin(), candidates_.end(), [&synthesised](const auto &a, const auto &b) {
         if (a.pinyin.size() != b.pinyin.size())
             return a.pinyin.size() > b.pinyin.size();
