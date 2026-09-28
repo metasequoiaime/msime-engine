@@ -107,17 +107,6 @@ SeriesQueryResolution resolve_series_query(const std::string &raw_input, const q
     return result;
 }
 
-std::string escape_sql_text(std::string text)
-{
-    size_t pos = 0;
-    while ((pos = text.find('\'', pos)) != std::string::npos)
-    {
-        text.insert(pos, 1, '\'');
-        pos += 2;
-    }
-    return text;
-}
-
 } // namespace
 
 QuanpinDictionary::QuanpinDictionary(std::string db_path, metasequoia::RuntimePaths paths)
@@ -1192,8 +1181,8 @@ std::string QuanpinDictionary::build_sql_for_checking_word(const std::string &ke
         return "";
     }
     const std::string table = quanpin::build_table_name(cuts.front());
-    return fmt::format("select 1 from {} where key = '{}' and value = '{}';", table, escape_sql_text(key),
-                       escape_sql_text(value));
+    return fmt::format("select 1 from {} where key = '{}' and value = '{}';", table,
+                       CommonUtils::escape_sql_literal(key), CommonUtils::escape_sql_literal(value));
 }
 
 std::string QuanpinDictionary::build_sql_for_inserting_word(const std::string &key, const std::string &jp,
@@ -1206,7 +1195,8 @@ std::string QuanpinDictionary::build_sql_for_inserting_word(const std::string &k
     }
     const std::string table = quanpin::build_table_name(cuts.front());
     return fmt::format("insert into {} (key, jp, value, weight) values ('{}', '{}', '{}', '{}');", table,
-                       escape_sql_text(key), escape_sql_text(jp), escape_sql_text(value), 10000);
+                       CommonUtils::escape_sql_literal(key), CommonUtils::escape_sql_literal(jp),
+                       CommonUtils::escape_sql_literal(value), 10000);
 }
 
 std::string QuanpinDictionary::build_sql_for_updating_word(const std::string &word)
@@ -1240,7 +1230,7 @@ std::string QuanpinDictionary::build_sql_for_updating_word(std::string pinyin, c
     const std::string table = quanpin::build_table_name(segments);
     return fmt::format("update {0} set weight = ( select MAX(weight) + 1 from {0} AS sub where sub.key = '{1}') "
                        "where key = '{1}' and value = '{2}';",
-                       table, escape_sql_text(pinyin), escape_sql_text(word));
+                       table, CommonUtils::escape_sql_literal(pinyin), CommonUtils::escape_sql_literal(word));
 }
 
 std::string QuanpinDictionary::build_sql_for_deleting_word(std::string pinyin, const std::string &word)
@@ -1260,7 +1250,7 @@ std::string QuanpinDictionary::build_sql_for_deleting_word(std::string pinyin, c
     }
 
     return fmt::format("delete from {} where key = '{}' and value = '{}';", quanpin::build_table_name(cuts.front()),
-                       escape_sql_text(normalized), escape_sql_text(word));
+                       CommonUtils::escape_sql_literal(normalized), CommonUtils::escape_sql_literal(word));
 }
 
 bool QuanpinDictionary::do_validate(const std::string &key, const std::string &jp, const std::string &value)

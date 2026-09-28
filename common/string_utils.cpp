@@ -29,4 +29,15 @@ std::string remove_apostrophe_delimiters(const std::string &text)
     }
     return result;
 }
+
+std::string escape_sql_literal(std::string text)
+{
+    std::size_t position = 0;
+    while ((position = text.find('\'', position)) != std::string::npos)
+    {
+        text.insert(position, 1, '\'');
+        position += 2;
+    }
+    return text;
+}
 } // namespace CommonUtils
