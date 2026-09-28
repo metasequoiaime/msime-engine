@@ -34,6 +34,18 @@ inline void erase_candidates_by_source(std::vector<WordItem> &candidates, Candid
                      candidates.end());
 }
 
+inline void move_candidate_source_to_position(std::vector<WordItem> &candidates, CandidateSource source,
+                                              std::size_t position)
+{
+    const auto candidate = std::find_if(candidates.begin(), candidates.end(),
+                                        [source](const WordItem &item) { return item.source == source; });
+    if (candidate == candidates.end())
+        return;
+    WordItem moved = std::move(*candidate);
+    candidates.erase(candidate);
+    candidates.insert(candidates.begin() + std::min(position, candidates.size()), std::move(moved));
+}
+
 inline void append_unique_candidates(std::vector<WordItem> &target, std::vector<WordItem> extra)
 {
     std::unordered_set<std::string> seen_words;
