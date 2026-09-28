@@ -920,9 +920,7 @@ int QuanpinDictionary::insert_word_to_series_cache_key(const std::string &cache_
     // Keep at most one cloud/AI suggestion in the series cache for this key.
     if (source == CandidateSource::AiSuggestion || source == CandidateSource::CloudSuggestion)
     {
-        list.erase(
-            std::remove_if(list.begin(), list.end(), [source](const WordItem &item) { return item.source == source; }),
-            list.end());
+        erase_candidates_by_source(list, source);
     }
 
     if (!contains_candidate_word(list, word))

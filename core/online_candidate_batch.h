@@ -29,9 +29,7 @@ inline bool replace_online_candidate_batch(std::vector<WordItem> &list, const st
     // repeated result cannot reject an otherwise valid batch or consume one of its available seats.
     if (unique_words.size() > limit)
         return false;
-    list.erase(
-        std::remove_if(list.begin(), list.end(), [source](const WordItem &item) { return item.source == source; }),
-        list.end());
+    erase_candidates_by_source(list, source);
     size_t index = std::min<size_t>(source == CandidateSource::AiSuggestion ? 2 : 1, list.size());
     for (const auto &word : unique_words)
     {
@@ -45,9 +43,7 @@ inline bool replace_online_candidate_batch(std::vector<WordItem> &list, const st
         for (const auto &item : list)
             if (item.source == CandidateSource::AiSuggestion)
                 ai.push_back(item);
-        list.erase(std::remove_if(list.begin(), list.end(),
-                                  [](const WordItem &item) { return item.source == CandidateSource::AiSuggestion; }),
-                   list.end());
+        erase_candidates_by_source(list, CandidateSource::AiSuggestion);
         list.insert(list.begin() + std::min<size_t>(2, list.size()), ai.begin(), ai.end());
     }
     return true;

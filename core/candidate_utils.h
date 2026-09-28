@@ -27,6 +27,13 @@ inline std::size_t count_limited_initial_candidates(const std::vector<WordItem> 
     }));
 }
 
+inline void erase_candidates_by_source(std::vector<WordItem> &candidates, CandidateSource source)
+{
+    candidates.erase(std::remove_if(candidates.begin(), candidates.end(),
+                                    [source](const WordItem &item) { return item.source == source; }),
+                     candidates.end());
+}
+
 inline void append_unique_candidates(std::vector<WordItem> &target, std::vector<WordItem> extra)
 {
     std::unordered_set<std::string> seen_words;
