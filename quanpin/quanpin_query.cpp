@@ -360,18 +360,6 @@ int build_mixed_jianpin_scan_limit(int limit)
     return std::max(limit * 16, 128);
 }
 
-bool can_match_exact_key(const Segments &segments)
-{
-    if (segments.empty())
-    {
-        return false;
-    }
-
-    const auto &valid_pinyin = intact_pinyin_set();
-    return std::all_of(segments.begin(), segments.end(),
-                       [&](const std::string &segment) { return valid_pinyin.find(segment) != valid_pinyin.end(); });
-}
-
 class SqliteDb
 {
   public:
@@ -656,7 +644,7 @@ std::vector<KeyedQueryItem> query_single_cut_keyed(sqlite3 *db, const Segments &
     const auto exact_sql = "SELECT \"key\", \"value\", \"weight\" FROM \"" + table +
                            "\" WHERE \"key\" = ? ORDER BY \"weight\" DESC LIMIT ?";
     std::vector<KeyedQueryItem> rows;
-    if (can_match_exact_key(segments))
+    if (has_only_complete_pinyin_segments(segments))
     {
         rows = run_keyed_query(db, exact_sql, key, limit);
         if (!rows.empty())
@@ -715,7 +703,7 @@ std::vector<KeyedQueryItem> query_single_cut_keyed(sqlite3 *db, metasequoia::Sql
     const auto exact_sql = "SELECT \"key\", \"value\", \"weight\" FROM \"" + table +
                            "\" WHERE \"key\" = ? ORDER BY \"weight\" DESC LIMIT ?";
     std::vector<KeyedQueryItem> rows;
-    if (can_match_exact_key(segments))
+    if (has_only_complete_pinyin_segments(segments))
     {
         rows = run_keyed_query(db, statement_cache, exact_sql, key, limit);
         if (!rows.empty())

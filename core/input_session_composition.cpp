@@ -39,16 +39,9 @@ std::string normalize_canonical_pinyin_for_word(const std::string &pinyin, const
     }
 
     const auto segments = quanpin::split_segments(pinyin);
-    if (segments.empty() || segments.size() != HelpcodeUtils::count_han_chars(word))
+    if (!quanpin::has_expected_complete_pinyin_segments(segments, HelpcodeUtils::count_han_chars(word)))
     {
         return {};
-    }
-    for (const auto &segment : segments)
-    {
-        if (segment.empty() || !quanpin::is_complete_pinyin_input(segment))
-        {
-            return {};
-        }
     }
     return quanpin::join_segments(segments);
 }
