@@ -4,6 +4,7 @@
 
 #include <filesystem>
 #include <memory>
+#include <string>
 
 namespace metasequoia::local_modes
 {
@@ -17,6 +18,9 @@ namespace metasequoia::local_modes
 // last reference, so callers never retain a file handle unexpectedly.
 // Returns null when the database cannot be opened.
 std::shared_ptr<sqlite3> open_local_database(const std::filesystem::path &path);
+
+// Exclusive upper bound for a bytewise prefix range over normalized local-mode keys.
+std::string prefix_upper_bound(const std::string &prefix);
 
 // Drops the shared connections so dictionary files can be deleted or replaced.
 // Each connection closes once the last query using it returns.

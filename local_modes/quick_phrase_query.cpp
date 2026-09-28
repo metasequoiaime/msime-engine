@@ -59,8 +59,7 @@ QuickPhraseQueryResult query_quick_phrases(const std::string &prefix, const std:
         return query_failure("Quick phrase database could not be queried.");
     }
     Statement statement(raw_statement);
-    std::string upper_bound = prefix;
-    upper_bound.push_back(static_cast<char>(0x7f));
+    const std::string upper_bound = prefix_upper_bound(prefix);
     if (sqlite3_bind_text(statement.get(), 1, prefix.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
         sqlite3_bind_text(statement.get(), 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
         sqlite3_bind_int(statement.get(), 3, limit) != SQLITE_OK)
