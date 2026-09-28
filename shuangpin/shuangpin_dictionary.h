@@ -99,7 +99,7 @@ class ShuangpinDictionary
     const neural::SentenceModel *neural_desktop_model_ = nullptr;
     const neural::SentenceModel *neural_keyboard_model_ = nullptr;
     HelpcodeUtils::SharedKeymap helpcodes_;
-    std::unordered_map<std::string, sqlite3_stmt *> quanpin_statement_cache_;
+    metasequoia::SqliteStatementCache quanpin_statement_cache_;
     void reset_cache_if_database_changed();
 
     void generate_for_single_char(std::vector<WordItem> &candidate_list, std::string code);

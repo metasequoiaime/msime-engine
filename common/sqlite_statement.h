@@ -3,6 +3,8 @@
 #include <sqlite3.h>
 
 #include <memory>
+#include <string>
+#include <unordered_map>
 
 namespace metasequoia
 {
@@ -19,4 +21,5 @@ struct SqliteStatementCloser
 };
 
 using SqliteStatement = std::unique_ptr<sqlite3_stmt, SqliteStatementCloser>;
+using SqliteStatementCache = std::unordered_map<std::string, SqliteStatement>;
 } // namespace metasequoia

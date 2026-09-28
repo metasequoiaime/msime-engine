@@ -439,14 +439,14 @@ std::vector<QueryItem> run_query(sqlite3 *db, const std::string &sql, const std:
     return rows;
 }
 
-std::vector<QueryItem> run_query(sqlite3 *db, std::unordered_map<std::string, sqlite3_stmt *> &statement_cache,
+std::vector<QueryItem> run_query(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache,
                                  const std::string &sql, const std::string &value, int limit)
 {
     sqlite3_stmt *stmt = nullptr;
     const auto found = statement_cache.find(sql);
     if (found != statement_cache.end())
     {
-        stmt = found->second;
+        stmt = found->second.get();
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
     }
@@ -456,7 +456,7 @@ std::vector<QueryItem> run_query(sqlite3 *db, std::unordered_map<std::string, sq
         {
             return {};
         }
-        statement_cache.emplace(sql, stmt);
+        statement_cache.emplace(sql, metasequoia::SqliteStatement(stmt));
     }
 
     sqlite3_bind_text(stmt, 1, value.c_str(), -1, SQLITE_TRANSIENT);
@@ -498,7 +498,7 @@ std::vector<QueryItem> run_query(sqlite3 *db, const std::string &sql, const std:
     return rows;
 }
 
-std::vector<QueryItem> run_query(sqlite3 *db, std::unordered_map<std::string, sqlite3_stmt *> &statement_cache,
+std::vector<QueryItem> run_query(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache,
                                  const std::string &sql, const std::string &lower_bound, const std::string &upper_bound,
                                  int limit)
 {
@@ -506,7 +506,7 @@ std::vector<QueryItem> run_query(sqlite3 *db, std::unordered_map<std::string, sq
     const auto found = statement_cache.find(sql);
     if (found != statement_cache.end())
     {
-        stmt = found->second;
+        stmt = found->second.get();
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
     }
@@ -516,7 +516,7 @@ std::vector<QueryItem> run_query(sqlite3 *db, std::unordered_map<std::string, sq
         {
             return {};
         }
-        statement_cache.emplace(sql, stmt);
+        statement_cache.emplace(sql, metasequoia::SqliteStatement(stmt));
     }
 
     sqlite3_bind_text(stmt, 1, lower_bound.c_str(), -1, SQLITE_TRANSIENT);
@@ -562,15 +562,14 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, const std::string &sql,
     return rows;
 }
 
-std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db,
-                                            std::unordered_map<std::string, sqlite3_stmt *> &statement_cache,
+std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache,
                                             const std::string &sql, const std::string &value, int limit)
 {
     sqlite3_stmt *stmt = nullptr;
     const auto found = statement_cache.find(sql);
     if (found != statement_cache.end())
     {
-        stmt = found->second;
+        stmt = found->second.get();
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
     }
@@ -580,7 +579,7 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db,
         {
             return {};
         }
-        statement_cache.emplace(sql, stmt);
+        statement_cache.emplace(sql, metasequoia::SqliteStatement(stmt));
     }
 
     sqlite3_bind_text(stmt, 1, value.c_str(), -1, SQLITE_TRANSIENT);
@@ -631,8 +630,7 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, const std::string &sql,
     return rows;
 }
 
-std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db,
-                                            std::unordered_map<std::string, sqlite3_stmt *> &statement_cache,
+std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache,
                                             const std::string &sql, const std::string &lower_bound,
                                             const std::string &upper_bound, int limit)
 {
@@ -640,7 +638,7 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db,
     const auto found = statement_cache.find(sql);
     if (found != statement_cache.end())
     {
-        stmt = found->second;
+        stmt = found->second.get();
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
     }
@@ -650,7 +648,7 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db,
         {
             return {};
         }
-        statement_cache.emplace(sql, stmt);
+        statement_cache.emplace(sql, metasequoia::SqliteStatement(stmt));
     }
 
     sqlite3_bind_text(stmt, 1, lower_bound.c_str(), -1, SQLITE_TRANSIENT);
@@ -673,8 +671,7 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db,
     return rows;
 }
 
-std::vector<KeyedQueryItem> run_keyed_batch_query(sqlite3 *db,
-                                                  std::unordered_map<std::string, sqlite3_stmt *> &statement_cache,
+std::vector<KeyedQueryItem> run_keyed_batch_query(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache,
                                                   const std::string &table, const std::vector<std::string> &keys,
                                                   int limit)
 {
@@ -699,7 +696,7 @@ std::vector<KeyedQueryItem> run_keyed_batch_query(sqlite3 *db,
     const auto found = statement_cache.find(sql);
     if (found != statement_cache.end())
     {
-        stmt = found->second;
+        stmt = found->second.get();
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
     }
@@ -709,7 +706,7 @@ std::vector<KeyedQueryItem> run_keyed_batch_query(sqlite3 *db,
         {
             return {};
         }
-        statement_cache.emplace(sql, stmt);
+        statement_cache.emplace(sql, metasequoia::SqliteStatement(stmt));
     }
 
     for (size_t index = 0; index < keys.size(); ++index)
@@ -832,8 +829,7 @@ std::vector<KeyedQueryItem> query_single_cut_keyed(sqlite3 *db, const Segments &
     return run_keyed_query(db, jp_sql, jp, limit);
 }
 
-std::vector<KeyedQueryItem> query_single_cut_keyed(sqlite3 *db,
-                                                   std::unordered_map<std::string, sqlite3_stmt *> &statement_cache,
+std::vector<KeyedQueryItem> query_single_cut_keyed(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache,
                                                    const Segments &segments, int limit, QuerySource source)
 {
     const auto table = build_table_name_impl(segments);
@@ -897,7 +893,7 @@ std::vector<QueryItem> query_single_cut(sqlite3 *db, const Segments &segments, i
     return without_keys(query_single_cut_keyed(db, segments, limit, source));
 }
 
-std::vector<QueryItem> query_single_cut(sqlite3 *db, std::unordered_map<std::string, sqlite3_stmt *> &statement_cache,
+std::vector<QueryItem> query_single_cut(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache,
                                         const Segments &segments, int limit, QuerySource source)
 {
     return without_keys(query_single_cut_keyed(db, statement_cache, segments, limit, source));
@@ -1009,7 +1005,7 @@ std::string get_default_db_path()
     return metasequoia::path_to_utf8(shuangpin::get_data_file_path(metasequoia::assets::main_dictionary));
 }
 
-void warm_up(sqlite3 *db, std::unordered_map<std::string, sqlite3_stmt *> &statement_cache)
+void warm_up(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache)
 {
     (void)intact_pinyin_set();
     (void)prefix_pinyin_set();
@@ -1152,7 +1148,7 @@ std::vector<QueryItem> query_segments_flat(const Segments &segments, const std::
 }
 
 std::vector<QueryItem> query_segments_flat(const Segments &segments, sqlite3 *db,
-                                           std::unordered_map<std::string, sqlite3_stmt *> &statement_cache, int limit,
+                                           metasequoia::SqliteStatementCache &statement_cache, int limit,
                                            QuerySource source)
 {
     if (db == nullptr || segments.empty())
@@ -1206,8 +1202,8 @@ std::vector<KeyedQueryItem> query_segments_keyed_flat(const Segments &segments, 
 }
 
 std::vector<KeyedQueryItem> query_segments_keyed_flat(const Segments &segments, sqlite3 *db,
-                                                      std::unordered_map<std::string, sqlite3_stmt *> &statement_cache,
-                                                      int limit, QuerySource source)
+                                                      metasequoia::SqliteStatementCache &statement_cache, int limit,
+                                                      QuerySource source)
 {
     if (db == nullptr || segments.empty())
     {
@@ -1225,9 +1221,10 @@ std::vector<KeyedQueryItem> query_segments_keyed_flat(const Segments &segments, 
     return items;
 }
 
-std::vector<KeyedQueryItem> query_exact_segmentations_keyed_flat(
-    const std::vector<Segments> &segmentations, sqlite3 *db,
-    std::unordered_map<std::string, sqlite3_stmt *> &statement_cache, int limit)
+std::vector<KeyedQueryItem> query_exact_segmentations_keyed_flat(const std::vector<Segments> &segmentations,
+                                                                 sqlite3 *db,
+                                                                 metasequoia::SqliteStatementCache &statement_cache,
+                                                                 int limit)
 {
     if (db == nullptr || segmentations.empty() || limit <= 0)
     {
@@ -1263,7 +1260,7 @@ std::vector<KeyedQueryItem> query_exact_segmentations_keyed_flat(
 }
 
 std::vector<KeyedQueryItem> query_longer_phrases_keyed(const Segments &segments, sqlite3 *db,
-                                                       std::unordered_map<std::string, sqlite3_stmt *> &statement_cache,
+                                                       metasequoia::SqliteStatementCache &statement_cache,
                                                        std::size_t extra_syllables, int limit)
 {
     if (db == nullptr || segments.size() < 2 || extra_syllables == 0 || limit <= 0 ||
@@ -1302,7 +1299,7 @@ std::vector<KeyedQueryItem> query_longer_phrases_keyed(const Segments &segments,
     return result;
 }
 
-WordLatticeLookup make_lattice_db_lookup(sqlite3 *db, std::unordered_map<std::string, sqlite3_stmt *> &statement_cache,
+WordLatticeLookup make_lattice_db_lookup(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache,
                                          QuerySource source, int span_limit)
 {
     return [db, &statement_cache, source, span_limit](const Segments &span) {
