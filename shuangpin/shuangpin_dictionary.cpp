@@ -861,13 +861,7 @@ int ShuangpinDictionary::delete_by_pinyin_and_word(string pinyin, string word)
 
 ShuangpinDictionary::~ShuangpinDictionary()
 {
-    for (auto &[sql, stmt] : quanpin_statement_cache_)
-    {
-        if (stmt != nullptr)
-        {
-            sqlite3_finalize(stmt);
-        }
-    }
+    quanpin_statement_cache_.clear();
     quanpin_db_.reset();
 }
 

@@ -146,13 +146,7 @@ QuanpinDictionary::QuanpinDictionary(std::string db_path, metasequoia::RuntimePa
 
 QuanpinDictionary::~QuanpinDictionary()
 {
-    for (auto &[sql, stmt] : statement_cache_)
-    {
-        if (stmt != nullptr)
-        {
-            sqlite3_finalize(stmt);
-        }
-    }
+    statement_cache_.clear();
     db_.reset();
 }
 

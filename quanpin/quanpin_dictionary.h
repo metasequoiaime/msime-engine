@@ -141,7 +141,7 @@ class QuanpinDictionary
     metasequoia::PinyinDecoder decoder_;
     const neural::SentenceModel *neural_desktop_model_ = nullptr;
     const neural::SentenceModel *neural_keyboard_model_ = nullptr;
-    std::unordered_map<std::string, sqlite3_stmt *> statement_cache_;
+    metasequoia::SqliteStatementCache statement_cache_;
     std::string db_path_;
 
     std::string pinyin_sequence_;
