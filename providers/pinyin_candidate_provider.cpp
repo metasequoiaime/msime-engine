@@ -5,6 +5,15 @@
 
 namespace
 {
+template <typename QuanpinHandler, typename ShuangpinHandler>
+decltype(auto) route_pinyin_scheme(SchemeType scheme, QuanpinHandler quanpin_handler,
+                                   ShuangpinHandler shuangpin_handler)
+{
+    if (scheme == SchemeType::Shuangpin)
+        return shuangpin_handler();
+    return quanpin_handler();
+}
+
 template <typename HelpcodeQuery, typename QuanpinHandler, typename ShuangpinSeriesHandler,
           typename ShuangpinActiveHandler>
 int route_cached_candidate_request(SchemeType scheme, HelpcodeQuery helpcode_query, QuanpinHandler quanpin_handler,
@@ -74,46 +83,39 @@ void PinyinCandidateProvider::reset_cache()
 
 int PinyinCandidateProvider::create_word(SchemeType scheme, std::string pinyin, std::string word)
 {
-    if (scheme == SchemeType::Shuangpin)
-    {
-        return shuangpin_engine_.create_word(std::move(pinyin), std::move(word));
-    }
-    return quanpin_engine_.create_word(std::move(pinyin), std::move(word));
+    return route_pinyin_scheme(
+        scheme, [&] { return quanpin_engine_.create_word(std::move(pinyin), std::move(word)); },
+        [&] { return shuangpin_engine_.create_word(std::move(pinyin), std::move(word)); });
 }
 
 int PinyinCandidateProvider::update_weight_by_pinyin_and_word(SchemeType scheme, std::string pinyin, std::string word)
 {
-    if (scheme == SchemeType::Shuangpin)
-    {
-        return shuangpin_engine_.update_weight_by_pinyin_and_word(std::move(pinyin), std::move(word));
-    }
-    return quanpin_engine_.update_weight_by_pinyin_and_word(std::move(pinyin), std::move(word));
+    return route_pinyin_scheme(
+        scheme, [&] { return quanpin_engine_.update_weight_by_pinyin_and_word(std::move(pinyin), std::move(word)); },
+        [&] { return shuangpin_engine_.update_weight_by_pinyin_and_word(std::move(pinyin), std::move(word)); });
 }
 
 int PinyinCandidateProvider::delete_by_pinyin_and_word(SchemeType scheme, std::string pinyin, std::string word)
 {
-    if (scheme == SchemeType::Shuangpin)
-    {
-        return shuangpin_engine_.delete_by_pinyin_and_word(std::move(pinyin), std::move(word));
-    }
-    return quanpin_engine_.delete_by_pinyin_and_word(std::move(pinyin), std::move(word));
+    return route_pinyin_scheme(
+        scheme, [&] { return quanpin_engine_.delete_by_pinyin_and_word(std::move(pinyin), std::move(word)); },
+        [&] { return shuangpin_engine_.delete_by_pinyin_and_word(std::move(pinyin), std::move(word)); });
 }
 
 int PinyinCandidateProvider::cache_dynamic_candidate(SchemeType scheme, const std::string &pinyin,
                                                      const std::string &word, CandidateSource source)
 {
-    if (scheme == SchemeType::Shuangpin)
-    {
-        return shuangpin_engine_.insert_word_to_series_cache(pinyin, word, source);
-    }
-    return quanpin_engine_.insert_word_to_series_cache(pinyin, word, source);
+    return route_pinyin_scheme(
+        scheme, [&] { return quanpin_engine_.insert_word_to_series_cache(pinyin, word, source); },
+        [&] { return shuangpin_engine_.insert_word_to_series_cache(pinyin, word, source); });
 }
 
 std::optional<WordItem> PinyinCandidateProvider::find_candidate(SchemeType scheme, const std::string &key,
                                                                 const std::string &value)
 {
-    return scheme == SchemeType::Shuangpin ? shuangpin_engine_.find_candidate(key, value)
-                                           : quanpin_engine_.find_candidate(key, value);
+    return route_pinyin_scheme(
+        scheme, [&] { return quanpin_engine_.find_candidate(key, value); },
+        [&] { return shuangpin_engine_.find_candidate(key, value); });
 }
 
 std::optional<std::string> PinyinCandidateProvider::active_helpcode_for_request(const QueryRequest &request) const
