@@ -96,9 +96,8 @@ std::size_t index_of(const std::vector<WordItem> &candidates, const std::string 
 
 std::int64_t weight_of(const std::vector<WordItem> &candidates, const std::string &word, const std::string &context)
 {
-    const auto found = std::find_if(candidates.begin(), candidates.end(), [&](const WordItem &item) {
-        return item.word == word;
-    });
+    const auto found =
+        std::find_if(candidates.begin(), candidates.end(), [&](const WordItem &item) { return item.word == word; });
     if (found == candidates.end())
     {
         throw std::runtime_error(context + " did not return " + word + "; actual:" + describe(candidates));

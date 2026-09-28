@@ -69,6 +69,10 @@ jobs:
           python build_profile.py --profile mobile --source out/desktop/msime.db
           python build_profile.py --profile mobile --verify
 
+      - name: Fetch pinned neural sentence models
+        working-directory: .
+        run: python3 scripts/fetch_neural_model.py
+
       - name: Package and verify shared runtime assets
         working-directory: .
         run: |
