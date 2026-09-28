@@ -3,6 +3,7 @@
 #include "../../core/data_path.h"
 #include "../../core/query_request.h"
 #include "../../core/word_item.h"
+#include "../../shuangpin/shuangpin_query.h"
 #include "test_directory_cleanup.h"
 
 #include <sqlite3.h>
@@ -163,6 +164,7 @@ int run_test()
     prepare_fixture(data_directory);
 
     const metasequoia::RuntimePaths paths{data_directory, data_directory, data_directory, data_directory};
+    require(shuangpin::is_complete_input("yo"), "The complete Shuangpin syllable yo was rejected.");
     testManualDelimiterDisablesSingleHelpcode(paths);
     return 0;
 }
