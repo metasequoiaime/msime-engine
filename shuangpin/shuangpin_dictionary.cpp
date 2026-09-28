@@ -995,12 +995,13 @@ int ShuangpinDictionary::insert_word_to_cached_buffer_series(const std::string &
         return -1;
     }
 
-    auto list = _cached_buffer_series.get(pinyin).value_or(std::vector<WordItem>{});
-
-    insert_cached_candidate(list, pinyin, word, source);
-
-    _cached_buffer_series.insert(pinyin, list);
-    return 0;
+    return _cached_buffer_series.update_or_insert(pinyin,
+                                                  [&](auto &list) {
+                                                      insert_cached_candidate(list, pinyin, word, source);
+                                                      return true;
+                                                  })
+               ? OK
+               : ERROR_CODE;
 }
 
 int ShuangpinDictionary::insert_word_to_active_helpcode_cache(const std::string &pinyin, const std::string &word,
@@ -1095,11 +1096,10 @@ int ShuangpinDictionary::insert_word_to_cached_buffer_series(const std::string &
 {
     if (pinyin.empty())
         return -1;
-    auto list = _cached_buffer_series.get(pinyin).value_or(std::vector<WordItem>{});
-    if (!replace_online_candidate_batch(list, pinyin, words, source))
-        return -1;
-    _cached_buffer_series.insert(pinyin, list);
-    return 0;
+    return _cached_buffer_series.update_or_insert(
+               pinyin, [&](auto &list) { return replace_online_candidate_batch(list, pinyin, words, source); })
+               ? OK
+               : ERROR_CODE;
 }
 
 int ShuangpinDictionary::insert_word_to_active_helpcode_cache(const std::string &pinyin,
