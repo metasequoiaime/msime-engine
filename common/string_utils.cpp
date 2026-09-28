@@ -20,6 +20,11 @@ std::string wstring_to_string(const std::wstring &wstr)
     return result;
 }
 
+bool starts_with(std::string_view text, std::string_view prefix)
+{
+    return text.size() >= prefix.size() && text.compare(0, prefix.size(), prefix) == 0;
+}
+
 std::string::size_type count_utf8_chars(const std::string &text)
 {
     return utf8::distance(text.begin(), text.end());

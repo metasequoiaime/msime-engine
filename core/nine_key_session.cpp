@@ -2,6 +2,7 @@
 #include "../quanpin/quanpin_utils.h"
 #include "../user_dictionary/user_dictionary_journal.h"
 #include "../common/helpcode_utils.h"
+#include "../common/string_utils.h"
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
@@ -40,10 +41,6 @@ std::string encode(const std::string &pinyin)
         if (c >= 'a' && c <= 'z')
             result += keys[c - 'a'];
     return result;
-}
-bool starts(const std::string &text, const std::string &prefix)
-{
-    return text.compare(0, prefix.size(), prefix) == 0;
 }
 struct Spelling
 {
@@ -191,7 +188,7 @@ std::vector<WordItem> NineKeySession::english_candidates()
         for (auto &word : english_dictionary_->query_prefix(prefix, 5))
         {
             // 只有整串编码对得上的才算,否则展开之外的字母会混进来。
-            if (!starts(DigitsForWord(word.word), digits_) || !seen.insert(word.word).second)
+            if (!CommonUtils::starts_with(DigitsForWord(word.word), digits_) || !seen.insert(word.word).second)
                 continue;
             words.push_back(std::move(word));
         }
@@ -239,7 +236,7 @@ void NineKeySession::refresh()
     {
         const auto code = encode(syllable);
         if (!remaining.empty() && locked_length() + std::max(remaining.size(), code.size()) <= kDigitLimit &&
-            (starts(remaining, code) || starts(code, remaining)))
+            (CommonUtils::starts_with(remaining, code) || CommonUtils::starts_with(code, remaining)))
             spellings_.push_back(syllable);
     }
     std::stable_sort(spellings_.begin(), spellings_.end(), [&remaining](const auto &a, const auto &b) {
@@ -270,10 +267,10 @@ void NineKeySession::refresh()
                 continue;
             const auto matched = candidate.fuzzy ? candidate.pinyin : canonical;
             const auto code = encode(matched);
-            if (code.empty() || (!starts(code, digits_) && !starts(digits_, code)))
+            if (code.empty() || (!CommonUtils::starts_with(code, digits_) && !CommonUtils::starts_with(digits_, code)))
                 continue;
-            if (!locked_key.empty() && matched != locked_key && !starts(matched, locked_key + "'") &&
-                !starts(locked_key, matched + "'"))
+            if (!locked_key.empty() && matched != locked_key && !CommonUtils::starts_with(matched, locked_key + "'") &&
+                !CommonUtils::starts_with(locked_key, matched + "'"))
                 continue;
             candidate.pinyin = digits_.substr(0, std::min(code.size(), digits_.size()));
             candidate.canonical_pinyin = canonical;

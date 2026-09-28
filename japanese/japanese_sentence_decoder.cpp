@@ -1,5 +1,6 @@
 #include "../contracts/assets/assets.h"
 #include "japanese_sentence_decoder.h"
+#include "../common/string_utils.h"
 #include "../core/data_path.h"
 #include "../shuangpin/shuangpin_utils.h"
 #include <algorithm>
@@ -175,7 +176,7 @@ bool JapaneseSentenceDecoder::Load(const std::string &path)
         for (; group_end < token_count_; ++group_end)
         {
             const auto reading = Reading(TokenAt(group_end));
-            if (reading.size() < prefix_length || reading.compare(0, prefix_length, prefix) != 0)
+            if (!CommonUtils::starts_with(reading, prefix))
                 break;
             KeepBestToken(best, static_cast<std::uint32_t>(group_end), kShortPrefixCandidateCount);
         }
@@ -319,8 +320,7 @@ std::vector<JapaneseLemma> JapaneseSentenceDecoder::PrefixLemmas(const std::stri
     for (size_t index = LowerBoundReading(reading_prefix); index < token_count_; ++index)
     {
         const auto token_reading = Reading(TokenAt(index));
-        if (token_reading.size() < reading_prefix.size() ||
-            token_reading.compare(0, reading_prefix.size(), reading_prefix) != 0)
+        if (!CommonUtils::starts_with(token_reading, reading_prefix))
             break;
         matches.push_back(static_cast<std::uint32_t>(index));
     }
@@ -337,8 +337,7 @@ std::vector<JapaneseLemma> JapaneseSentenceDecoder::PrefixLemmasContinuing(const
     for (size_t index = LowerBoundReading(reading_prefix); index < token_count_; ++index)
     {
         const auto token_reading = Reading(TokenAt(index));
-        if (token_reading.size() <= reading_prefix.size() ||
-            token_reading.compare(0, reading_prefix.size(), reading_prefix) != 0)
+        if (!CommonUtils::starts_with(token_reading, reading_prefix) || token_reading.size() <= reading_prefix.size())
             break;
         const std::string_view remaining(token_reading.data() + reading_prefix.size(),
                                          token_reading.size() - reading_prefix.size());
