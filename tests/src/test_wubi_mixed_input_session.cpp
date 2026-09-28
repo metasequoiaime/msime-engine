@@ -74,8 +74,11 @@ std::filesystem::path prepare_resources(const std::filesystem::path &root)
             "INSERT INTO tbl_1_z VALUES('zi','z','子',10000);"
             "CREATE TABLE tbl_2_n(key TEXT,jp TEXT,value TEXT,weight INTEGER);"
             "INSERT INTO tbl_2_n VALUES('ni''hao','nh','你好',10000),('ni''hao','nh','拟好',9000);"
+            "CREATE TABLE tbl_1_t(key TEXT,jp TEXT,value TEXT,weight INTEGER);"
+            "INSERT INTO tbl_1_t VALUES('ta','t','他',10000);"
             "CREATE TABLE wubi86(key TEXT,value TEXT,weight INTEGER);"
-            "INSERT INTO wubi86 VALUES('wq','你好',10000),('wqaa','众人',9000);");
+            "INSERT INTO wubi86 VALUES('wq','你好',10000),('wqaa','众人',9000),"
+            "('taaa','笔',6000),('a','工',10000),('aaaa','工',5000),('aaab','苛',4000);");
     require(EnglishDictionary::ensure_schema(path_to_utf8(resources / assets::english_dictionary)),
             "English schema failed");
     return resources;
@@ -126,6 +129,34 @@ int main()
             InputSession mixed(SchemeType::Wubi, GetXiaoheShuangpinProfile(), paths_for(resources, root, next()));
             mixed.set_wubi_input_options(WubiInputOptions{true});
             require(type(mixed, "wq") == native, "Mixed input changed the candidates for a matched code.");
+        }
+
+        // A longer-code prefix is only a hint. Mixed input must still offer quanpin for a prefix
+        // that has no exact wubi row, while plain wubi keeps the hint visible.
+        {
+            InputSession plain(SchemeType::Wubi, GetXiaoheShuangpinProfile(), paths_for(resources, root, next()));
+            plain.set_wubi_input_options(WubiInputOptions{false});
+            const auto hints = type(plain, "ta");
+            require(std::find(hints.begin(), hints.end(), "笔") != hints.end(),
+                    "Plain wubi did not show the prefix hint for ta.");
+
+            InputSession mixed(SchemeType::Wubi, GetXiaoheShuangpinProfile(), paths_for(resources, root, next()));
+            mixed.set_wubi_input_options(WubiInputOptions{true});
+            const auto candidates = type(mixed, "ta");
+            require(std::find(candidates.begin(), candidates.end(), "他") != candidates.end(),
+                    "A wubi prefix hint blocked the pinyin fallback for ta.");
+            require(mixed.answered_by_pinyin_fallback(), "ta was not marked as a pinyin fallback.");
+        }
+
+        // A word with both a short and a full code appears once, under the exact code that was typed.
+        {
+            InputSession session(SchemeType::Wubi, GetXiaoheShuangpinProfile(), paths_for(resources, root, next()));
+            session.set_wubi_input_options(WubiInputOptions{false});
+            const auto candidates = type(session, "a");
+            require(std::count(candidates.begin(), candidates.end(), "工") == 1,
+                    "A word with a short and a full code was listed twice.");
+            require(session.candidates().front().word == "工" && session.candidates().front().pinyin == "a",
+                    "The deduplicated word did not keep the exact-code row.");
         }
 
         // z is not a wubi letter. Dropping it does not refuse a spelling, it silently becomes a
