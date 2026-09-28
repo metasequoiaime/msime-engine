@@ -221,31 +221,6 @@ std::string get_first_han_char(const std::string &words)
     return "";
 }
 
-namespace
-{
-std::string::size_type get_first_char_size(const std::string &words, size_t index)
-{
-    size_t cplen = 1;
-    if ((words[index] & 0xf8) == 0xf0)
-    {
-        cplen = 4;
-    }
-    else if ((words[index] & 0xf0) == 0xe0)
-    {
-        cplen = 3;
-    }
-    else if ((words[index] & 0xe0) == 0xc0)
-    {
-        cplen = 2;
-    }
-    if (cplen > words.size() - index)
-    {
-        cplen = 1;
-    }
-    return cplen;
-}
-} // namespace
-
 std::string get_last_han_char(const std::string &words)
 {
     auto it = words.begin();
@@ -269,7 +244,7 @@ std::string::size_type count_han_chars(const std::string &words)
     size_t cnt = 0;
     while (index < words.size())
     {
-        size_t cplen = get_first_char_size(words, index);
+        const size_t cplen = CommonUtils::utf8_code_point_length(std::string_view(words).substr(index));
         index += cplen;
         cnt += 1;
     }

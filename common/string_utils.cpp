@@ -66,14 +66,24 @@ std::string::size_type count_utf8_chars(const std::string &text)
     return utf8::distance(text.begin(), text.end());
 }
 
+std::size_t utf8_code_point_length(std::string_view text)
+{
+    if (text.empty())
+    {
+        return 0;
+    }
+    const unsigned char lead = static_cast<unsigned char>(text.front());
+    const std::size_t length = lead < 0x80 ? 1 : (lead >> 5) == 0x6 ? 2 : (lead >> 4) == 0xE ? 3 : 4;
+    return (std::min)(length, text.size());
+}
+
 std::vector<std::size_t> utf8_boundaries(const std::string &text)
 {
     std::vector<std::size_t> boundaries{0};
     std::size_t index = 0;
     while (index < text.size())
     {
-        const unsigned char lead = static_cast<unsigned char>(text[index]);
-        const std::size_t length = lead < 0x80 ? 1 : (lead >> 5) == 0x6 ? 2 : (lead >> 4) == 0xE ? 3 : 4;
+        const std::size_t length = utf8_code_point_length(std::string_view(text).substr(index));
         index = (std::min)(text.size(), index + length);
         boundaries.push_back(index);
     }

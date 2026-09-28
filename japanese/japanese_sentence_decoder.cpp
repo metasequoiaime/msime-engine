@@ -47,15 +47,6 @@ constexpr char kMagic[8] = {'M', 'S', 'J', 'P', 'D', 'T', '1', '\0'};
 constexpr std::int64_t kUnknownKanaCost = 12000;
 constexpr size_t kShortPrefixCandidateCount = 64;
 
-size_t FirstUtf8CodePointLength(std::string_view text)
-{
-    if (text.empty())
-        return 0;
-    const unsigned char lead = static_cast<unsigned char>(text.front());
-    const size_t length = lead < 0x80 ? 1 : (lead >> 5) == 0x6 ? 2 : (lead >> 4) == 0xE ? 3 : 4;
-    return (std::min)(length, text.size());
-}
-
 } // namespace
 
 namespace japanese
@@ -153,7 +144,7 @@ bool JapaneseSentenceDecoder::Load(const std::string &path)
     while (group_start < token_count_)
     {
         const auto first_reading = Reading(TokenAt(group_start));
-        const auto prefix_length = FirstUtf8CodePointLength(first_reading);
+        const auto prefix_length = CommonUtils::utf8_code_point_length(first_reading);
         if (prefix_length == 0)
             return false;
         const std::string prefix(first_reading.substr(0, prefix_length));

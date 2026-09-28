@@ -168,16 +168,7 @@ string ShuangpinUtil::pinyin_segmentation(string sp_str, const ShuangpinProfile 
  */
 string::size_type ShuangpinUtil::get_first_char_size(string words)
 {
-    size_t cplen = 1;
-    if ((words[0] & 0xf8) == 0xf0)
-        cplen = 4;
-    else if ((words[0] & 0xf0) == 0xe0)
-        cplen = 3;
-    else if ((words[0] & 0xe0) == 0xc0)
-        cplen = 2;
-    if (cplen > words.length())
-        cplen = 1;
-    return cplen;
+    return CommonUtils::utf8_code_point_length(words);
 }
 
 /**
