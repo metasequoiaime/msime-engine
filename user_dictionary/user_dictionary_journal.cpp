@@ -851,8 +851,7 @@ void apply_fixed_positions(
     {
         candidates.erase(std::remove_if(candidates.begin(), candidates.end(),
                                         [&](const WordItem &item) {
-                                            if (item.source != CandidateSource::CloudSuggestion &&
-                                                item.source != CandidateSource::AiSuggestion)
+                                            if (!is_online_candidate_source(item.source))
                                                 return false;
                                             dynamic_candidates.push_back(item);
                                             return true;
