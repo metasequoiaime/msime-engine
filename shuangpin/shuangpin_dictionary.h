@@ -58,7 +58,6 @@ class ShuangpinDictionary
                                    const std::string &series_cache_key = {});
     std::optional<WordItem> find_candidate(const std::string &key, const std::string &value);
     int handleVkCode(ImeKeyCode vk, ImeModifierMask modifiers_down, ImeCharacter wch = 0);
-    std::vector<WordItem> generate_for_creating_word(const std::string code);
     int create_word(std::string pinyin, std::string word);
     int create_word_from_quanpin(std::string pinyin, std::string word);
     // 一次到顶
@@ -66,11 +65,6 @@ class ShuangpinDictionary
     // 一次到顶
     int update_weight_by_pinyin_and_word(std::string pinyin, std::string word);
     int delete_by_pinyin_and_word(std::string pinyin, std::string word);
-
-    /*
-      Return: list of complete item data of database table
-    */
-    std::vector<WordItem> generate_tuple(const std::string code);
 
     std::string search_sentence_from_ime_engine(const std::string &user_pinyin);
 
