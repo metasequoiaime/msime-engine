@@ -6,7 +6,6 @@
 #include "../shuangpin/shuangpin_utils.h"
 #include "../japanese/romaji_converter.h"
 #include <algorithm>
-#include <cctype>
 
 namespace metasequoia
 {
@@ -176,7 +175,7 @@ std::string FoldQuanpinAutocorrectLetters(const std::string &text)
         {
             continue;
         }
-        const char lower = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+        const char lower = CommonUtils::lowercase_ascii_char(static_cast<unsigned char>(ch));
         folded.push_back(lower == 'v' ? 'u' : lower);
     }
     return folded;

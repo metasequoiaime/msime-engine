@@ -324,7 +324,7 @@ void ShuangpinDictionary::filter_with_single_helpcode(           //
     if (candidate_list.empty() || help_code.size() != 1)
         return;
     const bool prefer_last_helpcode = help_code[0] >= 'A' && help_code[0] <= 'Z';
-    const string normalized_help_code(1, static_cast<char>(std::tolower(static_cast<unsigned char>(help_code[0]))));
+    const string normalized_help_code(1, CommonUtils::lowercase_ascii_char(static_cast<unsigned char>(help_code[0])));
     vector<ShuangpinDictionary::WordItem> first_helpcode_matched_list;
     vector<ShuangpinDictionary::WordItem> last_helpcode_matched_list;
     vector<ShuangpinDictionary::WordItem> left_helpcode_matched_list; // 被筛完之后剩下的
