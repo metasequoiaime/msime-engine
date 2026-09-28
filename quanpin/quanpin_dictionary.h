@@ -45,6 +45,7 @@ class QuanpinDictionary
     // which were built under the previous answer.
     void set_sentence_alternatives(bool enabled);
     void set_sentence_association(const SentenceAssociationOptions &options);
+    // The context invalidates cached ordering only when neural reranking is active.
     void set_rescoring_context(const std::string &context);
 
     int create_word(std::string pinyin, std::string word);

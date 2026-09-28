@@ -98,7 +98,12 @@ void ShuangpinDictionary::set_rescoring_context(const std::string &context)
     if (rescoring_context_ == context)
         return;
     rescoring_context_ = context;
-    reset_cache();
+    // The committed context affects ordering only while a neural model is active; otherwise keep
+    // the dictionary cache warm across selections.
+    const bool rescoring_active = (sentence_association_.neural_keyboard && neural_keyboard_model_ != nullptr) ||
+                                  (sentence_association_.neural_desktop && neural_desktop_model_ != nullptr);
+    if (rescoring_active)
+        reset_cache();
 }
 
 /**
