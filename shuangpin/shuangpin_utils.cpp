@@ -10,8 +10,6 @@
 
 using namespace std;
 
-const string ShuangpinUtil::app_name = "metasequoiaime";
-
 string ShuangpinUtil::get_local_appdata_path()
 {
     return metasequoia::path_to_utf8(metasequoia::data_directory().parent_path());
@@ -259,11 +257,6 @@ namespace shuangpin
 std::string get_local_appdata_path()
 {
     return ShuangpinUtil::get_local_appdata_path();
-}
-
-std::string get_app_name()
-{
-    return ShuangpinUtil::app_name;
 }
 
 std::filesystem::path get_data_file_path(const std::filesystem::path &relative_path)
