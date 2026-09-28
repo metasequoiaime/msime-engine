@@ -1,10 +1,10 @@
 #include "engine.h"
+#include "../core/candidate_utils.h"
 
 #include "shuangpin_query.h"
 #include "shuangpin_utils.h"
 
 #include <optional>
-#include <unordered_set>
 #include <algorithm>
 
 namespace
@@ -247,12 +247,7 @@ std::vector<WordItem> ShuangpinEngine::append_fuzzy(std::vector<WordItem> exact,
         fuzzy = HelpcodeUtils::filter_candidates_with_double_helpcodes(fuzzy, helpcodes, helpcodes_.get());
     else if (helpcodes.size() == 1)
         fuzzy = HelpcodeUtils::reorder_candidates_with_single_helpcode(fuzzy, helpcodes, helpcodes_.get());
-    std::unordered_set<std::string> seen;
-    for (const auto &item : exact)
-        seen.insert(item.word);
-    for (auto &item : fuzzy)
-        if (seen.insert(item.word).second)
-            exact.push_back(std::move(item));
+    append_unique_candidates(exact, std::move(fuzzy));
     std::stable_sort(exact.begin(), exact.end(),
                      [](const auto &a, const auto &b) { return a.pinyin.size() > b.pinyin.size(); });
     return exact;
