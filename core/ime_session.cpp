@@ -1,4 +1,5 @@
 #include "ime_session.h"
+#include "candidate_utils.h"
 #include "../schemes/quanpin_scheme.h"
 #include "../schemes/shuangpin_scheme.h"
 #include "../schemes/wubi_scheme.h"
@@ -7,23 +8,9 @@
 #include "../shuangpin/shuangpin_query.h"
 #include <algorithm>
 #include <stdexcept>
-#include <unordered_set>
 
 namespace
 {
-void append_unique_candidates(std::vector<WordItem> &target, std::vector<WordItem> extra)
-{
-    std::unordered_set<std::string> seen_words;
-    seen_words.reserve(target.size() + extra.size());
-    for (const auto &item : target)
-        seen_words.insert(item.word);
-    for (auto &item : extra)
-    {
-        if (seen_words.insert(item.word).second)
-            target.push_back(std::move(item));
-    }
-}
-
 void ApplyShuangpinHelpcodeSegmentation(QueryRequest &request, const ShuangpinProfile &profile)
 {
     if (request.scheme != SchemeType::Shuangpin || !request.enable_shuangpin_helpcode ||
