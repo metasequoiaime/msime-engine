@@ -23,15 +23,6 @@ bool IsLowerAsciiWord(const std::string &value)
                                          [](unsigned char ch) { return CommonUtils::is_ascii_lowercase(ch); });
 }
 
-Statement prepare_statement(sqlite3 *database, const char *sql)
-{
-    sqlite3_stmt *raw = nullptr;
-    const int status = sqlite3_prepare_v2(database, sql, -1, &raw, nullptr);
-    Statement result(raw);
-    if (status != SQLITE_OK)
-        return {};
-    return result;
-}
 } // namespace
 
 EnglishDictionary::EnglishDictionary(std::string db_path, bool initialize_schema, std::string translations_path,
@@ -352,7 +343,7 @@ bool EnglishDictionary::ensure_query_statement()
         "WHERE word >= ?1 AND word < ?2 "
         "ORDER BY CASE WHEN word = ?1 THEN 0 ELSE 1 END, weight DESC, length(word), word, display "
         "LIMIT ?3";
-    auto query = prepare_statement(db_.get(), query_sql);
+    auto query = metasequoia::sqlite_prepare_statement(db_.get(), query_sql);
     if (!query)
     {
         close_database();
@@ -368,14 +359,16 @@ bool EnglishDictionary::ensure_gloss_statements()
         return true;
     if (!ensure_query_statement())
         return false;
-    auto en_zh = prepare_statement(db_.get(), "SELECT chinese_gloss FROM en_zh_glosses WHERE english=?1");
+    auto en_zh =
+        metasequoia::sqlite_prepare_statement(db_.get(), "SELECT chinese_gloss FROM en_zh_glosses WHERE english=?1");
     if (!en_zh)
     {
         close_database();
         return false;
     }
     en_zh_statement_ = std::move(en_zh);
-    auto zh_en = prepare_statement(db_.get(), "SELECT english_gloss FROM zh_en_glosses WHERE chinese=?1");
+    auto zh_en =
+        metasequoia::sqlite_prepare_statement(db_.get(), "SELECT english_gloss FROM zh_en_glosses WHERE chinese=?1");
     if (!zh_en)
     {
         close_database();
@@ -403,14 +396,16 @@ bool EnglishDictionary::ensure_cache_statements()
         }
         cache_db_ = std::move(opened);
     }
-    auto cache_en_zh = prepare_statement(cache_db_.get(), "SELECT chinese_gloss FROM en_zh_glosses WHERE english=?1");
+    auto cache_en_zh = metasequoia::sqlite_prepare_statement(
+        cache_db_.get(), "SELECT chinese_gloss FROM en_zh_glosses WHERE english=?1");
     if (!cache_en_zh)
     {
         close_cache();
         return false;
     }
     cache_en_zh_statement_ = std::move(cache_en_zh);
-    auto cache_zh_en = prepare_statement(cache_db_.get(), "SELECT english_gloss FROM zh_en_glosses WHERE chinese=?1");
+    auto cache_zh_en = metasequoia::sqlite_prepare_statement(
+        cache_db_.get(), "SELECT english_gloss FROM zh_en_glosses WHERE chinese=?1");
     if (!cache_zh_en)
     {
         close_cache();

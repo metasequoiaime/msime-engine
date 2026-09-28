@@ -251,10 +251,8 @@ bool JapaneseCandidateProvider::ensure_query_statement()
     constexpr const char *sql = "SELECT code, value, weight FROM japanese_lexicon "
                                 "WHERE code=?1 OR code=?2 OR code LIKE ?3 ESCAPE '#' OR code LIKE ?4 ESCAPE '#' "
                                 "ORDER BY weight DESC, rowid ASC LIMIT 64";
-    sqlite3_stmt *query_raw = nullptr;
-    const int status = sqlite3_prepare_v2(db_.get(), sql, -1, &query_raw, nullptr);
-    metasequoia::SqliteStatement query(query_raw);
-    if (status != SQLITE_OK)
+    auto query = metasequoia::sqlite_prepare_statement(db_.get(), sql);
+    if (!query)
     {
         close_database();
         return false;

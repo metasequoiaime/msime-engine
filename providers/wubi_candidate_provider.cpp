@@ -169,10 +169,8 @@ bool WubiCandidateProvider::ensure_query_statement()
     constexpr const char *query_sql = "SELECT \"key\", \"value\", \"weight\" FROM wubi86 "
                                       "WHERE \"key\" >= ?1 AND \"key\" < ?2 "
                                       "ORDER BY length(\"key\") ASC, \"weight\" DESC, rowid ASC LIMIT ?3";
-    sqlite3_stmt *query_raw = nullptr;
-    const int query_status = sqlite3_prepare_v2(db_.get(), query_sql, -1, &query_raw, nullptr);
-    metasequoia::SqliteStatement query(query_raw);
-    if (query_status != SQLITE_OK)
+    auto query = metasequoia::sqlite_prepare_statement(db_.get(), query_sql);
+    if (!query)
     {
         (void)0;
         close_database();
@@ -182,10 +180,8 @@ bool WubiCandidateProvider::ensure_query_statement()
     const std::string wildcard_sql = "SELECT \"key\", \"value\", \"weight\" FROM wubi86 WHERE \"key\" GLOB ?1 "
                                      "ORDER BY \"weight\" DESC, \"key\" ASC, rowid ASC LIMIT " +
                                      std::to_string(kMaxCandidates);
-    sqlite3_stmt *wildcard_raw = nullptr;
-    const int wildcard_status = sqlite3_prepare_v2(db_.get(), wildcard_sql.c_str(), -1, &wildcard_raw, nullptr);
-    metasequoia::SqliteStatement wildcard(wildcard_raw);
-    if (wildcard_status != SQLITE_OK)
+    auto wildcard = metasequoia::sqlite_prepare_statement(db_.get(), wildcard_sql);
+    if (!wildcard)
     {
         close_database();
         return false;
