@@ -240,8 +240,7 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generateSeries( //
             quanpin_segmentation.find('\'') != std::string::npos)
         {
             google_sentence = search_sentence_from_ime_engine(quanpin_segmentation);
-            const bool duplicate = std::any_of(candidate_list.begin(), candidate_list.end(),
-                                               [&](const WordItem &item) { return item.word == google_sentence; });
+            const bool duplicate = contains_candidate_word(candidate_list, google_sentence);
             if (!google_sentence.empty() && !duplicate)
             {
                 const auto at = static_cast<std::ptrdiff_t>(

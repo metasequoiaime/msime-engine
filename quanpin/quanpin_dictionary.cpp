@@ -401,9 +401,7 @@ std::vector<WordItem> QuanpinDictionary::query_series(const std::string &raw_inp
         }
         if (!google_sentence.empty())
         {
-            const auto duplicate = std::find_if(result.begin(), result.end(),
-                                                [&](const WordItem &item) { return item.word == google_sentence; });
-            if (duplicate == result.end())
+            if (!contains_candidate_word(result, google_sentence))
             {
                 // Whole-sentence fallbacks must carry their canonical quanpin
                 // reading so creating-word learning can persist them.
@@ -716,9 +714,7 @@ std::vector<WordItem> QuanpinDictionary::append_ime_fallback(const std::string &
         return result;
     }
 
-    const auto exists =
-        std::find_if(result.begin(), result.end(), [&](const WordItem &item) { return item.word == sentence; });
-    if (exists == result.end())
+    if (!contains_candidate_word(result, sentence))
     {
         // Keep the complete reading for the creating-word persistence path.
         result.emplace_back(segmentation.empty() ? raw_input : segmentation, sentence, 1, CandidateSource::Fallback,
@@ -750,9 +746,7 @@ void QuanpinDictionary::append_unique_words(std::vector<WordItem> &result, const
 {
     for (const auto &item : extra)
     {
-        const auto exists = std::find_if(result.begin(), result.end(),
-                                         [&](const WordItem &existing) { return existing.word == item.word; });
-        if (exists == result.end())
+        if (!contains_candidate_word(result, item.word))
         {
             result.push_back(item);
         }
