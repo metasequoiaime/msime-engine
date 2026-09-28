@@ -324,6 +324,7 @@ int run_test()
         write_file(helpcode_directory / "shouyou2_0_helpcode.txt", "你=ab\n拟=cd\n好=ef\n");
         write_file(helpcode_directory / "shouyouplus_helpcode.txt", "你=ab\n拟=cd\n好=ef\n");
         write_file(helpcode_directory / "xiaohe_helpcode.txt", "你=ab\n拟=cd\n好=ef\n高=kw\n");
+        write_file(helpcode_directory / "jiajia_helpcode.txt", "你=ab\n拟=cd\n好=ef\n高=kw\n");
 
         Database database(data_directory / "msime.db");
         database.execute("CREATE TABLE tbl_2_n(key TEXT, jp TEXT, value TEXT, weight INTEGER)");
@@ -935,8 +936,8 @@ int run_test()
                 "Switching without a composition did not update the active scheme.");
         session.switch_scheme(SchemeType::Quanpin);
 
-        const std::vector<std::string> supported_helpcode_schemas{"lantian", "ziranma", "shouyou2_0", "shouyouplus",
-                                                                  "xiaohe"};
+        const std::vector<std::string> supported_helpcode_schemas{"lantian",     "ziranma", "shouyou2_0",
+                                                                  "shouyouplus", "xiaohe",  "jiajia"};
         for (const std::string &schema : supported_helpcode_schemas)
         {
             require(metasequoia::InputSession::is_supported_helpcode_schema(schema) &&

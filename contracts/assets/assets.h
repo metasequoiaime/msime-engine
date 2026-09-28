@@ -19,6 +19,7 @@ inline constexpr char helpcode_ziranma[] = "helpcodes/zrm_helpcode_big_unique.tx
 inline constexpr char helpcode_shouyou2_0[] = "helpcodes/shouyou2_0_helpcode.txt";
 inline constexpr char helpcode_shouyouplus[] = "helpcodes/shouyouplus_helpcode.txt";
 inline constexpr char helpcode_xiaohe[] = "helpcodes/xiaohe_helpcode.txt";
+inline constexpr char helpcode_jiajia[] = "helpcodes/jiajia_helpcode.txt";
 inline constexpr char notice_13[] = "licenses/googlepinyinime-LICENSE";
 inline constexpr char notice_14[] = "licenses/helpcode-NOTICE.md";
 inline constexpr char notice_15[] = "licenses/dictionary-NOTICE.md";
@@ -28,11 +29,12 @@ inline constexpr char user_journal[] = "msime_user.db";
 inline constexpr char pinyin_user_dictionary[] = "user_dict.dat";
 inline constexpr char gloss_cache[] = "gloss_cache.db";
 struct Helpcode { std::string_view schema; const char *path; };
-inline constexpr std::array<Helpcode, 5> helpcodes = {{
+inline constexpr std::array<Helpcode, 6> helpcodes = {{
     {"lantian", helpcode_lantian},
     {"ziranma", helpcode_ziranma},
     {"shouyou2_0", helpcode_shouyou2_0},
     {"shouyouplus", helpcode_shouyouplus},
     {"xiaohe", helpcode_xiaohe},
+    {"jiajia", helpcode_jiajia},
 }};
 } // namespace metasequoia::assets

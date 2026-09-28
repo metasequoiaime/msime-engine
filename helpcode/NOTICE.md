@@ -11,6 +11,11 @@
 | `shouyou2_0_helpcode.txt` | `shouyou2_0` | 首右 2.0 辅助码，权利归方案作者 |
 | `shouyouplus_helpcode.txt` | `shouyouplus` | 首右 plus 辅助码，权利归方案作者 |
 | `xiaohe_helpcode.txt` | `xiaohe` | 小鹤形码，权利归小鹤方案作者 |
+| `jiajia_helpcode.txt` | `jiajia` | 加加辅助码，整理自拼音加加输入法公开安装包中的 `fzm.bin` 并按声母转换；方案数据及整理规则不等同于官方授权，详见下文。 |
+
+## jiajia 说明
+
+`jiajia_helpcode.txt` 是按拼音加加的公开辅助码规则整理的资源：按笔顺拆出前两个部件，各取读音首字母；独体字和部首字使用本字声母加起笔笔画。它包含从安装包 `fzm.bin` 对照的条目和按同一规则补齐的条目，不代表拼音加加官方码表或再分发授权。
 
 ## 下游影响
 

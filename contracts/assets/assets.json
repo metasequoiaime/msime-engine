@@ -144,6 +144,16 @@
       "schema": "xiaohe"
     },
     {
+      "id": "helpcode_jiajia",
+      "path": "helpcodes/jiajia_helpcode.txt",
+      "role": "resource",
+      "source": "helpcode/helpcodes/jiajia_helpcode.txt",
+      "profiles": [
+        "desktop"
+      ],
+      "schema": "jiajia"
+    },
+    {
       "id": "notice_13",
       "path": "licenses/googlepinyinime-LICENSE",
       "role": "notice",

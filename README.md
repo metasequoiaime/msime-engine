@@ -124,7 +124,7 @@ python build_assets.py --verify
 打包前校验词库格式和摘要，并要求词库来源提交与当前 Engine 提交一致。
 
 包内根目录包含四个词库文件、`dict_pinyin.dat`、`custom_translations.txt`、
-Mozc 授权文件和 `dictionary-manifest.json`；`helpcodes/` 包含五种运行时辅助码，
+Mozc 授权文件和 `dictionary-manifest.json`；`helpcodes/` 包含六种运行时辅助码，
 `licenses/` 保留 Engine、词库、辅助码和 Google 拼音的来源及许可声明。
 `engine-assets-manifest.json` 记录逐文件大小、SHA-256、来源路径、Engine 提交和
 Google 拼音子模块提交。辅助码的授权现状仍以随包的 `helpcode-NOTICE.md` 为准。
