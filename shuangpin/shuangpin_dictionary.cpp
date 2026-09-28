@@ -1225,14 +1225,7 @@ int ShuangpinDictionary::insert_word_to_cached_buffer_series(const std::string &
 
     if (source == CandidateSource::CloudSuggestion)
     {
-        const auto ai = std::find_if(list.begin(), list.end(),
-                                     [](const WordItem &item) { return item.source == CandidateSource::AiSuggestion; });
-        if (ai != list.end())
-        {
-            WordItem ai_item = std::move(*ai);
-            list.erase(ai);
-            list.insert(list.begin() + std::min<size_t>(2, list.size()), std::move(ai_item));
-        }
+        move_candidate_source_to_position(list, CandidateSource::AiSuggestion, 2);
     }
 
     _cached_buffer_series.insert(pinyin, list);

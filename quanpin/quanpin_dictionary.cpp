@@ -938,14 +938,7 @@ int QuanpinDictionary::insert_word_to_series_cache_key(const std::string &cache_
 
     if (source == CandidateSource::CloudSuggestion)
     {
-        const auto ai = std::find_if(list.begin(), list.end(),
-                                     [](const WordItem &item) { return item.source == CandidateSource::AiSuggestion; });
-        if (ai != list.end())
-        {
-            WordItem ai_item = std::move(*ai);
-            list.erase(ai);
-            list.insert(list.begin() + std::min<size_t>(2, list.size()), std::move(ai_item));
-        }
+        move_candidate_source_to_position(list, CandidateSource::AiSuggestion, 2);
     }
 
     series_cache_.insert(cache_key, list);
