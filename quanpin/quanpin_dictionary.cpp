@@ -954,32 +954,6 @@ std::vector<std::string> QuanpinDictionary::select_data(const std::string &sql_s
     return candidate_list;
 }
 
-std::vector<WordItem> QuanpinDictionary::select_complete_data(const std::string &sql_str)
-{
-    std::vector<WordItem> candidate_list;
-    if (db_ == nullptr)
-    {
-        return candidate_list;
-    }
-
-    sqlite3_stmt *stmt = nullptr;
-    if (sqlite3_prepare_v2(db_.get(), sql_str.c_str(), -1, &stmt, 0) != SQLITE_OK)
-    {
-        (void)0;
-        return candidate_list;
-    }
-    Statement guard(stmt);
-
-    while (sqlite3_step(stmt) == SQLITE_ROW)
-    {
-        candidate_list.emplace_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0))),
-                                    std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2))),
-                                    sqlite3_column_int64(stmt, 3), CandidateSource::Database,
-                                    std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0))));
-    }
-    return candidate_list;
-}
-
 int QuanpinDictionary::check_data(const std::string &sql_str)
 {
     return metasequoia::sqlite_query_has_row(db_.get(), sql_str);

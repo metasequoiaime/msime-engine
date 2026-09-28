@@ -707,7 +707,7 @@ std::string ShuangpinDictionary::get_quanpin_seg() const
 
 vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generate_for_creating_word(const string code)
 {
-    return select_complete_data(quanpin_db_.get(), build_quanpin_sql_for_creating_word(code));
+    return metasequoia::sqlite_query_word_items(quanpin_db_.get(), build_quanpin_sql_for_creating_word(code));
 }
 
 int ShuangpinDictionary::create_word(string pinyin, string word)
@@ -920,32 +920,6 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::query_initial_from_qu
         candidate_list.emplace_back(code, item.value, item.weight, CandidateSource::Database, item.key);
     }
     return candidate_list;
-}
-
-vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::select_complete_data(sqlite3 *target_db,
-                                                                                const std::string &sql_str)
-{
-    vector<ShuangpinDictionary::WordItem> candidateList;
-    if (target_db == nullptr)
-    {
-        return candidateList;
-    }
-    sqlite3_stmt *stmt = nullptr;
-    int exit = sqlite3_prepare_v2(target_db, sql_str.c_str(), -1, &stmt, 0);
-    if (exit != SQLITE_OK)
-    {
-        return candidateList;
-    }
-    Statement guard(stmt);
-    while (sqlite3_step(stmt) == SQLITE_ROW)
-    {
-        candidateList.emplace_back(                                               //
-            string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0))), // key
-            string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2))), // value
-            sqlite3_column_int64(stmt, 3), CandidateSource::Database,
-            string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0)))); // canonical key
-    }
-    return candidateList;
 }
 
 int ShuangpinDictionary::check_data(sqlite3 *target_db, const std::string &sql_str)
