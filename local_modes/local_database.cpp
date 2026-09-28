@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <mutex>
+#include <unordered_set>
 #include <vector>
 
 namespace metasequoia::local_modes
@@ -53,6 +54,32 @@ std::vector<CachedConnection> &cache()
     return connections;
 }
 } // namespace
+
+LocalQueryResult build_local_query_result(const std::string &pinyin, std::vector<LocalQueryEntry> entries, int limit,
+                                          CandidateSource source)
+{
+    if (limit <= 0)
+    {
+        return {};
+    }
+
+    std::unordered_set<std::string> seen;
+    entries.erase(std::remove_if(entries.begin(), entries.end(),
+                                 [&](const LocalQueryEntry &entry) { return !seen.insert(entry.text).second; }),
+                  entries.end());
+    std::stable_sort(entries.begin(), entries.end(), [](const LocalQueryEntry &left, const LocalQueryEntry &right) {
+        return left.sort_order < right.sort_order;
+    });
+
+    const std::size_t count = std::min(static_cast<std::size_t>(limit), entries.size());
+    LocalQueryResult result;
+    result.candidates.reserve(count);
+    for (std::size_t index = 0; index < count; ++index)
+    {
+        result.candidates.emplace_back(pinyin, entries[index].text, static_cast<std::int64_t>(count - index), source);
+    }
+    return result;
+}
 
 std::shared_ptr<sqlite3> open_local_database(const std::filesystem::path &path)
 {

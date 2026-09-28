@@ -273,6 +273,16 @@ int main()
         database.execute("INSERT INTO kaomoji VALUES('kind','','single prefix',50)");
     }
 
+    const auto ranked_local_candidates = metasequoia::local_modes::build_local_query_result(
+        "xiaolian", {{"😀", 20}, {"😄", 30}, {"😀", 10}}, 2, CandidateSource::Emoji);
+    require(ranked_local_candidates.candidates.size() == 2 && ranked_local_candidates.candidates[0].word == "😀" &&
+                ranked_local_candidates.candidates[1].word == "😄" &&
+                ranked_local_candidates.candidates[0].weight == 2 &&
+                ranked_local_candidates.candidates[1].weight == 1 &&
+                ranked_local_candidates.candidates[0].pinyin == "xiaolian" &&
+                ranked_local_candidates.candidates[0].source == CandidateSource::Emoji,
+            "Shared local candidate ranking did not preserve order, deduplication, or weights.");
+
     const auto emoji = metasequoia::local_modes::query_emoji("XIAOLIAN", SchemeType::Quanpin, others_database, 10);
     require(!emoji.diagnostic.has_value() && emoji.candidates.size() == 2 && emoji.candidates[0].word == "😀" &&
                 emoji.candidates[1].word == "😄" && emoji.candidates[0].pinyin == "xiaolian" &&

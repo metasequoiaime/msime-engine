@@ -1,5 +1,7 @@
 #pragma once
 
+#include "local_query_result.h"
+
 #include <sqlite3.h>
 
 #include <filesystem>
@@ -10,6 +12,17 @@
 
 namespace metasequoia::local_modes
 {
+struct LocalQueryEntry
+{
+    std::string text;
+    int sort_order = 0;
+};
+
+// Builds the ranked result shared by local modes whose dictionaries return a
+// display string and catalog sort order.
+LocalQueryResult build_local_query_result(const std::string &pinyin, std::vector<LocalQueryEntry> entries, int limit,
+                                          CandidateSource source);
+
 // Opens a read-only connection for a local-mode query (jianpin, quick phrases,
 // emoji, kaomoji). These queries run on every keystroke of their mode, and a
 // fresh connection re-parses the dictionary schema on its first prepare. For
