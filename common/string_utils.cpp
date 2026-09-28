@@ -1,5 +1,7 @@
 #include "string_utils.h"
 
+#include <algorithm>
+#include <cctype>
 #include <utf8.h>
 
 namespace CommonUtils
@@ -38,6 +40,20 @@ std::string escape_sql_literal(std::string text)
         text.insert(position, 1, '\'');
         position += 2;
     }
+    return text;
+}
+
+bool is_ascii_letters_or_apostrophe(const std::string &text)
+{
+    return !text.empty() && std::all_of(text.begin(), text.end(), [](unsigned char character) {
+        return (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') || character == '\'';
+    });
+}
+
+std::string lowercase_ascii(std::string text)
+{
+    std::transform(text.begin(), text.end(), text.begin(),
+                   [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
     return text;
 }
 } // namespace CommonUtils
