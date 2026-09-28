@@ -2,6 +2,7 @@
 #include "../contracts/dictionary/format.h"
 #include "quanpin_query.h"
 
+#include "../common/string_utils.h"
 #include "../common/sqlite_database.h"
 #include "../common/sqlite_statement.h"
 #include "quanpin_utils.h"
@@ -22,23 +23,6 @@ namespace
 {
 
 using Statement = metasequoia::SqliteStatement;
-
-std::vector<std::string> split(const std::string &text, char delimiter)
-{
-    std::vector<std::string> parts;
-    size_t start = 0;
-    while (true)
-    {
-        const size_t pos = text.find(delimiter, start);
-        if (pos == std::string::npos)
-        {
-            parts.push_back(text.substr(start));
-            return parts;
-        }
-        parts.push_back(text.substr(start, pos - start));
-        start = pos + 1;
-    }
-}
 
 constexpr size_t kCorrectionPathLimit = 32;
 
@@ -206,7 +190,7 @@ std::vector<Segments> cut_one_piece_with_corrections(const std::string &pinyin)
 std::vector<Segments> cut_pinyin_with_corrections(const std::string &pinyin)
 {
     std::vector<Segments> merged_paths = {Segments{}};
-    for (const auto &part : split(pinyin, '\''))
+    for (const auto &part : CommonUtils::split_by_delimiter(pinyin, '\''))
     {
         const auto part_paths = cut_one_piece_with_corrections(part);
         if (part_paths.empty())
@@ -324,7 +308,7 @@ std::string extract_initial_token(const std::string &segment)
 
 bool matches_mixed_segments(const std::string &key, const Segments &segments, QuerySource source)
 {
-    const auto key_segments = split(key, '\'');
+    const auto key_segments = CommonUtils::split_by_delimiter(key, '\'');
     if (key_segments.size() != segments.size())
     {
         return false;
@@ -914,7 +898,7 @@ Segments cut_pinyin_greedy(const std::string &pinyin, bool intact_only)
     }
 
     Segments merged;
-    for (const auto &part : split(pinyin, '\''))
+    for (const auto &part : CommonUtils::split_by_delimiter(pinyin, '\''))
     {
         auto cut = cut_one_piece_min_segments(part, intact_only);
         if (cut.empty())
@@ -973,7 +957,7 @@ Segments split_segments(const std::string &segmentation)
         return {};
     }
 
-    return split(segmentation, '\'');
+    return CommonUtils::split_by_delimiter(segmentation, '\'');
 }
 
 std::string join_segments(const Segments &segments, const std::string &delimiter)

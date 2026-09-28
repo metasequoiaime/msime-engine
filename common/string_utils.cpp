@@ -20,6 +20,23 @@ std::string wstring_to_string(const std::wstring &wstr)
     return result;
 }
 
+std::vector<std::string> split_by_delimiter(const std::string &text, char delimiter)
+{
+    std::vector<std::string> parts;
+    std::size_t start = 0;
+    while (true)
+    {
+        const std::size_t position = text.find(delimiter, start);
+        if (position == std::string::npos)
+        {
+            parts.push_back(text.substr(start));
+            return parts;
+        }
+        parts.push_back(text.substr(start, position - start));
+        start = position + 1;
+    }
+}
+
 std::string remove_apostrophe_delimiters(const std::string &text)
 {
     std::string result;

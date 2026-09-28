@@ -2,6 +2,7 @@
 
 #include "autocorrect_table.h"
 #include "../common/helpcode_utils.h"
+#include "../common/string_utils.h"
 #include <algorithm>
 #include <deque>
 #include <limits>
@@ -24,23 +25,6 @@ struct SparsePinyinFallbackRule
     const char *full;
     std::vector<SparsePinyinFallbackEntry> replacements;
 };
-
-std::vector<std::string> split(const std::string &text, char delimiter)
-{
-    std::vector<std::string> parts;
-    size_t start = 0;
-    while (true)
-    {
-        const size_t pos = text.find(delimiter, start);
-        if (pos == std::string::npos)
-        {
-            parts.push_back(text.substr(start));
-            return parts;
-        }
-        parts.push_back(text.substr(start, pos - start));
-        start = pos + 1;
-    }
-}
 
 bool is_complete_pinyin_part(const std::string &part)
 {
@@ -384,7 +368,7 @@ bool is_complete_pinyin_input(const std::string &pinyin)
         return is_complete_pinyin_part(pinyin);
     }
 
-    for (const auto &part : split(pinyin, '\''))
+    for (const auto &part : CommonUtils::split_by_delimiter(pinyin, '\''))
     {
         if (!is_complete_pinyin_part(part))
         {
