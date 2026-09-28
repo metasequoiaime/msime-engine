@@ -1,5 +1,8 @@
 #include "wubi_candidate_provider.h"
+#include "../contracts/assets/assets.h"
+#include "../core/data_path.h"
 #include "../quanpin/quanpin_query.h"
+#include "../user_dictionary/user_dictionary_journal.h"
 #include <spdlog/spdlog.h>
 #include <unordered_set>
 #include <utility>
@@ -20,8 +23,8 @@ std::string prefix_upper_bound(const std::string &prefix)
 }
 } // namespace
 
-WubiCandidateProvider::WubiCandidateProvider(std::string db_path)
-    : db_path_(db_path.empty() ? quanpin::get_default_db_path() : std::move(db_path))
+WubiCandidateProvider::WubiCandidateProvider(std::string db_path, metasequoia::RuntimePaths paths)
+    : db_path_(db_path.empty() ? quanpin::get_default_db_path() : std::move(db_path)), paths_(std::move(paths))
 {
 }
 
@@ -84,13 +87,24 @@ int WubiCandidateProvider::create_word(SchemeType, std::string, std::string)
     return kNoMutation;
 }
 
-int WubiCandidateProvider::update_weight_by_pinyin_and_word(SchemeType, std::string, std::string)
+int WubiCandidateProvider::update_weight_by_pinyin_and_word(SchemeType, std::string code, std::string word)
 {
+    if (!user_dictionary::bump_wubi_weight(db_path_, journal_db_path(), code, word))
+    {
+        return -1;
+    }
+    reset_cache();
     return kNoMutation;
 }
 
-int WubiCandidateProvider::delete_by_pinyin_and_word(SchemeType, std::string, std::string)
+int WubiCandidateProvider::delete_by_pinyin_and_word(SchemeType, std::string code, std::string word)
 {
+    if (!user_dictionary::delete_dictionary_candidate(db_path_, journal_db_path(),
+                                                      user_dictionary::DictionaryKind::Wubi, code, word))
+    {
+        return -1;
+    }
+    reset_cache();
     return kNoMutation;
 }
 
@@ -135,6 +149,11 @@ bool WubiCandidateProvider::ensure_query_statement()
         return false;
     }
     return true;
+}
+
+std::string WubiCandidateProvider::journal_db_path() const
+{
+    return metasequoia::path_to_utf8(paths_.user(metasequoia::assets::user_journal));
 }
 
 void WubiCandidateProvider::close_database()

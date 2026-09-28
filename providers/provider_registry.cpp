@@ -3,7 +3,7 @@
 
 ProviderRegistry::ProviderRegistry(const ShuangpinProfile &shuangpin_profile, metasequoia::RuntimePaths paths)
     : pinyin_provider_(shuangpin_profile, paths),
-      wubi_provider_(metasequoia::path_to_utf8(paths.dictionary(metasequoia::assets::main_dictionary))),
+      wubi_provider_(metasequoia::path_to_utf8(paths.dictionary(metasequoia::assets::main_dictionary)), paths),
       japanese_provider_(metasequoia::path_to_utf8(paths.dictionary(metasequoia::assets::main_dictionary)),
                          metasequoia::path_to_utf8(paths.resource(metasequoia::assets::japanese_model)))
 {
