@@ -356,8 +356,7 @@ std::vector<WordItem> QuanpinDictionary::query_series(const std::string &raw_inp
             {
                 partial_result.insert(partial_result.end(), std::make_move_iterator(longer.begin()),
                                       std::make_move_iterator(longer.end()));
-                std::stable_sort(partial_result.begin(), partial_result.end(),
-                                 [](const WordItem &lhs, const WordItem &rhs) { return lhs.weight > rhs.weight; });
+                sort_candidates_by_weight(partial_result);
             }
         }
         else
@@ -642,8 +641,7 @@ std::vector<WordItem> QuanpinDictionary::merge_alternative_segmentations(
 
     std::vector<WordItem> merged_full = primary_full;
     merged_full.insert(merged_full.end(), alternative_full.begin(), alternative_full.end());
-    std::stable_sort(merged_full.begin(), merged_full.end(),
-                     [](const WordItem &lhs, const WordItem &rhs) { return lhs.weight > rhs.weight; });
+    sort_candidates_by_weight(merged_full);
     std::unordered_set<std::string> seen_full_words;
     merged_full.erase(std::remove_if(merged_full.begin(), merged_full.end(),
                                      [&](const WordItem &item) { return !seen_full_words.insert(item.word).second; }),

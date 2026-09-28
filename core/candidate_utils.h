@@ -52,6 +52,12 @@ inline std::size_t count_limited_initial_candidates(const std::vector<WordItem> 
     }));
 }
 
+inline void sort_candidates_by_weight(std::vector<WordItem> &candidates)
+{
+    std::stable_sort(candidates.begin(), candidates.end(),
+                     [](const WordItem &lhs, const WordItem &rhs) { return lhs.weight > rhs.weight; });
+}
+
 inline void erase_candidates_by_source(std::vector<WordItem> &candidates, CandidateSource source)
 {
     candidates.erase(std::remove_if(candidates.begin(), candidates.end(),
