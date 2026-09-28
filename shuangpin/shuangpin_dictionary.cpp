@@ -1210,18 +1210,7 @@ int ShuangpinDictionary::insert_word_to_cached_buffer_series(const std::string &
         erase_candidates_by_source(list, source);
     }
 
-    if (!contains_candidate_word(list, word))
-    {
-        if (list.empty())
-        {
-            list.emplace_back(pinyin, word, 1, source);
-        }
-        else
-        {
-            const size_t index = source == CandidateSource::AiSuggestion ? std::min<size_t>(2, list.size()) : 1;
-            list.insert(list.begin() + index, WordItem(pinyin, word, 1, source));
-        }
-    }
+    insert_unique_candidate_by_source_priority(list, pinyin, word, source);
 
     if (source == CandidateSource::CloudSuggestion)
     {
@@ -1246,18 +1235,7 @@ int ShuangpinDictionary::insert_word_to_active_helpcode_cache(const std::string 
             {
                 erase_candidates_by_source(list, source);
             }
-            if (!contains_candidate_word(list, word))
-            {
-                if (list.size() >= 1)
-                {
-                    const size_t index = source == CandidateSource::AiSuggestion ? std::min<size_t>(2, list.size()) : 1;
-                    list.insert(list.begin() + index, WordItem(pinyin, word, 1, source));
-                }
-                else
-                {
-                    list.emplace_back(pinyin, word, 1, source);
-                }
-            }
+            insert_unique_candidate_by_source_priority(list, pinyin, word, source);
             cache.insert(cache_key, list);
             return true;
         }

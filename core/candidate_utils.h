@@ -34,6 +34,17 @@ inline void erase_candidates_by_source(std::vector<WordItem> &candidates, Candid
                      candidates.end());
 }
 
+inline void insert_unique_candidate_by_source_priority(std::vector<WordItem> &candidates, const std::string &pinyin,
+                                                       const std::string &word, CandidateSource source)
+{
+    if (contains_candidate_word(candidates, word))
+        return;
+    const std::size_t index = candidates.empty()                        ? 0
+                              : source == CandidateSource::AiSuggestion ? std::min<std::size_t>(2, candidates.size())
+                                                                        : 1;
+    candidates.insert(candidates.begin() + index, WordItem(pinyin, word, 1, source));
+}
+
 inline void move_candidate_source_to_position(std::vector<WordItem> &candidates, CandidateSource source,
                                               std::size_t position)
 {
