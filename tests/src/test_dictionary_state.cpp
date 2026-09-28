@@ -1,6 +1,7 @@
 #include <metasequoia/dictionary_state.h>
 #include <metasequoia/session.h>
 #include "../../core/data_path.h"
+#include "../../common/sqlite_data_version.h"
 #include "../../contracts/assets/assets.h"
 #include "../../english/english_dictionary.h"
 #include "../../user_dictionary/user_dictionary_journal.h"
@@ -51,6 +52,20 @@ void run(bool capacity)
         "CREATE TABLE wubi86(key TEXT,value TEXT,weight INTEGER);"
         "CREATE TABLE quick_parases(key TEXT,value TEXT,weight INTEGER);"
         "CREATE INDEX idx_quick_parases_key_weight ON quick_parases(key,weight DESC);");
+    {
+        const auto version_db = root / "version.db";
+        sql(version_db, "CREATE TABLE marker(value INTEGER);");
+        sqlite3 *reader = nullptr;
+        check(sqlite3_open(path_to_utf8(version_db).c_str(), &reader) == SQLITE_OK, "open version reader");
+        sqlite3_int64 version = -1;
+        check(!sqlite_data_version_changed(reader, version) && version >= 0,
+              "initial data version triggered a cache reset");
+        check(!sqlite_data_version_changed(reader, version), "unchanged data version triggered a cache reset");
+        sql(version_db, "INSERT INTO marker VALUES(1);");
+        check(sqlite_data_version_changed(reader, version), "external dictionary write was not detected");
+        check(!sqlite_data_version_changed(reader, version), "external write was detected more than once");
+        sqlite3_close(reader);
+    }
     check(EnglishDictionary::ensure_schema(path_to_utf8(resources / assets::english_dictionary)), "English schema");
     if (capacity)
     {

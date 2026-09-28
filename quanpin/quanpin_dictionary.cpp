@@ -5,6 +5,7 @@
 #include "../user_dictionary/user_dictionary_journal.h"
 
 #include "../common/helpcode_utils.h"
+#include "../common/sqlite_data_version.h"
 #include "../common/string_utils.h"
 #include "quanpin_query.h"
 #include "quanpin_utils.h"
@@ -925,26 +926,8 @@ void QuanpinDictionary::reset_cache()
 
 void QuanpinDictionary::reset_cache_if_database_changed()
 {
-    if (db_ == nullptr)
-    {
-        return;
-    }
-    sqlite3_stmt *statement = nullptr;
-    if (sqlite3_prepare_v2(db_.get(), "PRAGMA data_version", -1, &statement, nullptr) != SQLITE_OK)
-    {
-        return;
-    }
-    Statement guard(statement);
-    if (sqlite3_step(statement) != SQLITE_ROW)
-    {
-        return;
-    }
-    const sqlite3_int64 current_version = sqlite3_column_int64(statement, 0);
-    if (data_version_ >= 0 && current_version != data_version_)
-    {
+    if (metasequoia::sqlite_data_version_changed(db_.get(), data_version_))
         reset_cache();
-    }
-    data_version_ = current_version;
 }
 
 std::vector<std::string> QuanpinDictionary::select_data(const std::string &sql_str)
