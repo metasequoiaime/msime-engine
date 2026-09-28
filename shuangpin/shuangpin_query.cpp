@@ -292,7 +292,7 @@ std::string get_last_han_char(const std::string &words)
 
 std::string::size_type count_utf8_chars(const std::string &text)
 {
-    return ShuangpinUtil::count_utf8_chars(text);
+    return CommonUtils::count_utf8_chars(text);
 }
 
 std::string::size_type count_han_chars(const std::string &text)

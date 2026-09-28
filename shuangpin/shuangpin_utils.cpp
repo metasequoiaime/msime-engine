@@ -172,17 +172,6 @@ string::size_type ShuangpinUtil::get_first_char_size(string words)
 }
 
 /**
- * @brief Count UTF-8 chars
- *
- * @param str
- * @return string::size_type
- */
-string::size_type ShuangpinUtil::count_utf8_chars(const string &str)
-{
-    return CommonUtils::count_utf8_chars(str);
-}
-
-/**
  * @brief Extract preview without helpcodes
  *
  * @param candidate UTF-8 string
