@@ -707,11 +707,6 @@ int ShuangpinDictionary::delete_data(sqlite3 *target_db, const std::string &sql_
     return metasequoia::sqlite_execute_statement(target_db, sql_str) ? OK : ERROR_CODE;
 }
 
-int ShuangpinDictionary::update_weight_by_word(string word)
-{
-    return update_weight_by_pinyin_and_word(get_quanpin(), std::move(word));
-}
-
 int ShuangpinDictionary::update_weight_by_pinyin_and_word(string pinyin, string word)
 {
     const auto direct_cuts =

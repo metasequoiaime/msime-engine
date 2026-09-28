@@ -61,7 +61,6 @@ class ShuangpinDictionary
     int create_word(std::string pinyin, std::string word);
     int create_word_from_quanpin(std::string pinyin, std::string word);
     // 一次到顶
-    int update_weight_by_word(std::string word);
     // 一次到顶
     int update_weight_by_pinyin_and_word(std::string pinyin, std::string word);
     int delete_by_pinyin_and_word(std::string pinyin, std::string word);
