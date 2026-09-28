@@ -1,7 +1,6 @@
 #include "shuangpin_query.h"
 
 #include "../common/string_utils.h"
-#include "../common/helpcode_utils.h"
 #include "shuangpin_utils.h"
 #include <algorithm>
 
@@ -278,26 +277,6 @@ std::string apply_segmentation_cases(const std::string &segmented_input, const s
     }
 
     return result;
-}
-
-std::string get_first_han_char(const std::string &words)
-{
-    return HelpcodeUtils::get_first_han_char(words);
-}
-
-std::string get_last_han_char(const std::string &words)
-{
-    return HelpcodeUtils::get_last_han_char(words);
-}
-
-std::string::size_type count_utf8_chars(const std::string &text)
-{
-    return CommonUtils::count_utf8_chars(text);
-}
-
-std::string::size_type count_han_chars(const std::string &text)
-{
-    return HelpcodeUtils::count_han_chars(text);
 }
 
 } // namespace shuangpin
