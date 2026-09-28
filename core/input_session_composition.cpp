@@ -1,3 +1,4 @@
+#include "candidate_utils.h"
 #include "input_session.h"
 #include "../common/helpcode_utils.h"
 #include "../common/string_utils.h"
@@ -444,8 +445,7 @@ std::optional<std::string> InputSession::learn_sentence_candidate(const WordItem
         return std::nullopt;
     }
 
-    const bool online_candidate =
-        selected.source == CandidateSource::CloudSuggestion || selected.source == CandidateSource::AiSuggestion;
+    const bool online_candidate = is_online_candidate_source(selected.source);
     const std::string selected_canonical =
         selected.canonical_pinyin.empty() && online_candidate && is_all_complete_pure_pinyin()
             ? get_pinyin_segmentation()

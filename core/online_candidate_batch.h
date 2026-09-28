@@ -11,7 +11,7 @@ inline bool replace_online_candidate_batch(std::vector<WordItem> &list, const st
                                            const std::vector<std::string> &words, CandidateSource source)
 {
     const size_t limit = source == CandidateSource::AiSuggestion ? 10 : 1;
-    if ((source != CandidateSource::AiSuggestion && source != CandidateSource::CloudSuggestion) || words.empty())
+    if (!is_online_candidate_source(source) || words.empty())
         return false;
     std::vector<std::string> unique_words;
     unique_words.reserve((std::min)(words.size(), limit));
