@@ -35,6 +35,17 @@
 namespace neural
 {
 
+// Once the committed context is longer than the model window, keep the prefix stable while a
+// candidate grows. The model's cache is keyed by the context tokens, so moving the suffix by one
+// character on every keystroke would rebuild the whole prefix each time.
+inline constexpr std::size_t kRerankContextStep = 16;
+
+// Returns the context passed to a reranker, leaving room for the longest candidate in a model
+// window. Context and candidate lengths are Unicode character counts for this character-level
+// model. Contexts that fit are returned unchanged; longer contexts are reduced to a suffix whose
+// length changes in kRerankContextStep increments and always ends on a UTF-8 character boundary.
+std::string rerank_context(const std::string &context, std::size_t window, std::size_t longest_candidate);
+
 // A weight matrix kept in whatever precision the file stored it in. Quantized matrices are not
 // expanded on load: the per-output-row scale is a constant factor for the whole row, so it lifts
 // out of the dot product and multiplies the result once.

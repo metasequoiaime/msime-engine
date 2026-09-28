@@ -14,6 +14,42 @@ namespace neural
 namespace
 {
 
+std::size_t utf8_character_count(const std::string &text)
+{
+    std::size_t count = 0;
+    for (unsigned char byte : text)
+    {
+        if ((byte & 0xC0) != 0x80)
+        {
+            ++count;
+        }
+    }
+    return count;
+}
+
+std::string last_utf8_characters(const std::string &text, std::size_t count)
+{
+    if (count == 0)
+    {
+        return {};
+    }
+    std::size_t seen = 0;
+    std::size_t start = text.size();
+    for (std::size_t i = text.size(); i-- > 0;)
+    {
+        if ((static_cast<unsigned char>(text[i]) & 0xC0) == 0x80)
+        {
+            continue;
+        }
+        start = i;
+        if (++seen == count)
+        {
+            break;
+        }
+    }
+    return text.substr(start);
+}
+
 // The exact GELU, matching torch.nn.functional.gelu with its default settings. The tanh
 // approximation is a different function and the model was not trained with it.
 float erf_approx(float x)
@@ -333,6 +369,17 @@ std::size_t product(const std::vector<std::size_t> &shape)
 }
 
 } // namespace
+
+std::string rerank_context(const std::string &context, std::size_t window, std::size_t longest_candidate)
+{
+    const std::size_t room = longest_candidate >= window ? 0 : window - longest_candidate - 1;
+    const std::size_t keep = room / kRerankContextStep * kRerankContextStep;
+    if (utf8_character_count(context) <= room)
+    {
+        return context;
+    }
+    return last_utf8_characters(context, keep);
+}
 
 float Matrix::dot_row(const float *x, std::size_t row, std::size_t width) const
 {
@@ -927,17 +974,8 @@ std::vector<double> SentenceModel::score_sentences(const std::string &context,
         return std::vector<double>(texts.size(), 0.0);
     }
 
-    // The sequence each candidate is scored under is <bos> + context + candidate. Every candidate
-    // shares all of that but its own tail, so the shared part is split at its last token: that token
-    // leads each batch row, because the distribution it produces is what scores the candidate's
-    // first character. Only what precedes it goes in the cache, since only that stays fixed.
-    std::vector<std::uint32_t> full;
-    full.push_back(kBos);
-    for (std::uint32_t id : encode(context))
-    {
-        full.push_back(id);
-    }
-
+    // Every candidate shares the context but has its own tail. Truncate the context in steps so
+    // the prefix cache remains valid while a candidate grows one character at a time.
     std::vector<std::vector<std::uint32_t>> tails;
     tails.reserve(texts.size());
     std::size_t longest = 0;
@@ -953,6 +991,19 @@ std::vector<double> SentenceModel::score_sentences(const std::string &context,
         longest = std::max(longest, ids.size());
         tails.push_back(std::move(ids));
     }
+    const std::string trimmed_context = rerank_context(context, limit, longest);
+
+    // The sequence each candidate is scored under is <bos> + context + candidate. Every candidate
+    // shares all of that but its own tail, so the shared part is split at its last token: that token
+    // leads each batch row, because the distribution it produces is what scores the candidate's
+    // first character. Only what precedes it goes in the cache, since only that stays fixed.
+    std::vector<std::uint32_t> full;
+    full.push_back(kBos);
+    for (std::uint32_t id : encode(trimmed_context))
+    {
+        full.push_back(id);
+    }
+
     const std::size_t width = longest + 1; // the shared leading token, then the longest candidate
 
     const std::uint32_t last = full.back();
