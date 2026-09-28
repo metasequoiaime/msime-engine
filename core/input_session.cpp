@@ -857,7 +857,7 @@ KeyResult InputSession::handle_local_character(char character)
 
     const auto unsigned_character = static_cast<unsigned char>(character);
     const bool optional_plus = character == '+' && local_preedit_ == "U";
-    if (!optional_plus && std::isxdigit(unsigned_character) == 0)
+    if (!optional_plus && !CommonUtils::is_ascii_hex_digit(unsigned_character))
     {
         return {true, std::nullopt, std::nullopt};
     }

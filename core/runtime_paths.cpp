@@ -121,7 +121,7 @@ RuntimePaths prepare_runtime_paths(const std::filesystem::path &resources, const
 {
     if (content_id.empty() || content_id.size() > 128 ||
         !std::all_of(content_id.begin(), content_id.end(), [](unsigned char ch) {
-            return (ch >= '0' && ch <= '9') || CommonUtils::is_ascii_letter(ch) || ch == '-' || ch == '_';
+            return CommonUtils::is_ascii_digit(ch) || CommonUtils::is_ascii_letter(ch) || ch == '-' || ch == '_';
         }))
         throw std::invalid_argument("Invalid runtime content ID");
     RuntimePaths result{resources, user_data, cache, user_data / "dictionaries" / content_id};

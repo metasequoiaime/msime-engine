@@ -1,5 +1,6 @@
 #include "../../core/input_session.h"
 #include "../../common/helpcode_utils.h"
+#include "../../common/string_utils.h"
 #include "../../core/data_path.h"
 #include "../../user_dictionary/user_dictionary_journal.h"
 #include "test_directory_cleanup.h"
@@ -309,6 +310,16 @@ void run_caret_prefix_session_tests(const std::filesystem::path &data_directory)
 
 int run_test()
 {
+    require(CommonUtils::is_ascii_digit(static_cast<unsigned char>('0')) &&
+                CommonUtils::is_ascii_digit(static_cast<unsigned char>('9')) &&
+                !CommonUtils::is_ascii_digit(static_cast<unsigned char>('/')),
+            "ASCII digit predicate accepted a non-digit.");
+    require(CommonUtils::is_ascii_hex_digit(static_cast<unsigned char>('0')) &&
+                CommonUtils::is_ascii_hex_digit(static_cast<unsigned char>('f')) &&
+                CommonUtils::is_ascii_hex_digit(static_cast<unsigned char>('A')) &&
+                !CommonUtils::is_ascii_hex_digit(static_cast<unsigned char>('g')),
+            "ASCII hexadecimal predicate classified a character incorrectly.");
+
     const auto unique_suffix = std::to_string(std::chrono::high_resolution_clock::now().time_since_epoch().count());
     const std::filesystem::path data_directory =
         std::filesystem::temp_directory_path() / std::filesystem::u8path("metasequoia-session-词库-" + unique_suffix);

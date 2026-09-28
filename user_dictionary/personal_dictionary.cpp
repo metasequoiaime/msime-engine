@@ -49,7 +49,7 @@ PersonalDictionaryValidation validate_personal_dictionary_entry(PersonalDictiona
         break;
     case PersonalDictionaryKind::QuickPhrase:
         if (entry.key.size() > 32 || !std::all_of(entry.key.begin(), entry.key.end(), [&](unsigned char ch) {
-                return letters(ch) || (ch >= '0' && ch <= '9');
+                return letters(ch) || CommonUtils::is_ascii_digit(ch);
             }))
             return invalid("Quick-phrase codes contain one to 32 letters or digits");
         break;
