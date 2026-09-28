@@ -872,6 +872,15 @@ std::vector<KeyedQueryItem> query_single_cut_keyed(sqlite3 *db, metasequoia::Sql
     return run_keyed_query(db, statement_cache, jp_sql, jp, limit);
 }
 
+std::vector<QueryItem> sort_and_limit_query_items(std::vector<QueryItem> items, int limit)
+{
+    std::sort(items.begin(), items.end(),
+              [](const QueryItem &lhs, const QueryItem &rhs) { return lhs.second > rhs.second; });
+    if (static_cast<int>(items.size()) > limit)
+        items.resize(static_cast<size_t>(limit));
+    return items;
+}
+
 std::vector<QueryItem> query_single_cut(sqlite3 *db, const Segments &segments, int limit, QuerySource source)
 {
     return without_keys(query_single_cut_keyed(db, segments, limit, source));
@@ -1094,14 +1103,7 @@ std::vector<QueryItem> query_words_flat(const std::string &pinyin, const std::st
         }
     }
 
-    std::sort(items.begin(), items.end(),
-              [](const QueryItem &lhs, const QueryItem &rhs) { return lhs.second > rhs.second; });
-
-    if (static_cast<int>(items.size()) > limit)
-    {
-        items.resize(static_cast<size_t>(limit));
-    }
-    return items;
+    return sort_and_limit_query_items(std::move(items), limit);
 }
 
 std::vector<QueryItem> query_segments_flat(const Segments &segments, const std::string &db_path, int limit,
@@ -1121,14 +1123,7 @@ std::vector<QueryItem> query_segments_flat(const Segments &segments, const std::
         }
     }
 
-    std::sort(items.begin(), items.end(),
-              [](const QueryItem &lhs, const QueryItem &rhs) { return lhs.second > rhs.second; });
-
-    if (static_cast<int>(items.size()) > limit)
-    {
-        items.resize(static_cast<size_t>(limit));
-    }
-    return items;
+    return sort_and_limit_query_items(std::move(items), limit);
 }
 
 std::vector<QueryItem> query_segments_flat(const Segments &segments, sqlite3 *db,
@@ -1150,14 +1145,7 @@ std::vector<QueryItem> query_segments_flat(const Segments &segments, sqlite3 *db
         }
     }
 
-    std::sort(items.begin(), items.end(),
-              [](const QueryItem &lhs, const QueryItem &rhs) { return lhs.second > rhs.second; });
-
-    if (static_cast<int>(items.size()) > limit)
-    {
-        items.resize(static_cast<size_t>(limit));
-    }
-    return items;
+    return sort_and_limit_query_items(std::move(items), limit);
 }
 
 std::vector<KeyedQueryItem> query_segments_keyed_flat(const Segments &segments, const std::string &db_path, int limit,
