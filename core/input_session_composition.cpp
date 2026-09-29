@@ -562,8 +562,7 @@ InputSession::SelectionTransition InputSession::advance_composition_after_select
                 std::string cased_rest = base.raw_input_with_cases.substr(rest_start, rest_end - rest_start);
                 remove_consumed_leading_separators(normalized_rest, cased_rest);
                 engine_.replace_shuangpin_raw_input(normalized_rest, cased_rest);
-                online_requests_.invalidate();
-                update_mixed_candidates();
+                refresh_after_sequence_change();
             }
         }
         else
@@ -588,8 +587,7 @@ InputSession::SelectionTransition InputSession::advance_composition_after_select
                 std::string cased_rest = rest_pinyin_sequence_with_cases;
                 remove_consumed_leading_separators(normalized_rest, cased_rest);
                 engine_.replace_shuangpin_raw_input(normalized_rest, cased_rest);
-                online_requests_.invalidate();
-                update_mixed_candidates();
+                refresh_after_sequence_change();
             }
         }
 
@@ -620,8 +618,7 @@ InputSession::SelectionTransition InputSession::advance_composition_after_select
         std::string rest_raw_input_with_cases = raw_input_with_cases_without_helpcodes.substr(consumed_raw_length);
         remove_consumed_leading_separators(rest_raw_input, rest_raw_input_with_cases);
         engine_.replace_active_raw_input(rest_raw_input, rest_raw_input_with_cases);
-        online_requests_.invalidate();
-        update_mixed_candidates();
+        refresh_after_sequence_change();
         transition.current_segmentation = get_pinyin_segmentation();
         transition.current_segmentation_with_cases = get_pinyin_segmentation_with_cases();
         return transition;
@@ -796,6 +793,11 @@ void InputSession::apply_pending_sequence()
 
     engine_.replace_active_raw_input(raw_input, raw_input_with_cases);
     clear_pending_sequence();
+    refresh_after_sequence_change();
+}
+
+void InputSession::refresh_after_sequence_change()
+{
     online_requests_.invalidate();
     update_mixed_candidates();
 }
