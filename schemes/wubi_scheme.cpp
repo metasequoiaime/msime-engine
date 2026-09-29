@@ -105,9 +105,7 @@ QueryRequest WubiScheme::build_request() const
 {
     QueryRequest request = input_scheme::make_query_request(type(), raw_input_, raw_input_, key_strokes_);
     request.normalized_input = raw_input_;
-    request.raw_segmentation = raw_input_;
-    request.normalized_segmentation = raw_input_;
-    request.segmentation = raw_input_;
+    input_scheme::set_segmentation_fields(request, raw_input_, raw_input_);
     request.wubi_z_wildcard = z_wildcard_ && raw_input_.find('z') != std::string::npos;
     request.valid = !raw_input_.empty();
     return request;
