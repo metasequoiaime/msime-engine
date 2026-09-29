@@ -65,7 +65,6 @@ class InputSession
     // Compatibility default for subsequently created sessions.
     static bool select_helpcode_schema(const std::string &schema);
     bool set_frequency_adjustment(FrequencyAdjustmentOptions options);
-    const FrequencyAdjustmentOptions &frequency_adjustment() const;
     void set_local_mode_options(LocalModeOptions options);
     const LocalModeOptions &local_mode_options() const;
     bool set_english_input_options(EnglishInputOptions options);

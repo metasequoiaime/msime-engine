@@ -442,11 +442,6 @@ bool InputSession::set_frequency_adjustment(FrequencyAdjustmentOptions options)
     return true;
 }
 
-const FrequencyAdjustmentOptions &InputSession::frequency_adjustment() const
-{
-    return frequency_adjustment_;
-}
-
 void InputSession::set_local_mode_options(LocalModeOptions options)
 {
     local_mode_options_ = options;
