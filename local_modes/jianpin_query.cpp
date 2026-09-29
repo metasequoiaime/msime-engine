@@ -22,21 +22,8 @@ using Statement = metasequoia::SqliteStatement;
 
 std::string normalize_code(const std::string &code)
 {
-    std::string normalized;
-    normalized.reserve(code.size());
-    for (unsigned char character : code)
-    {
-        if (CommonUtils::is_ascii_uppercase(character))
-        {
-            character = static_cast<unsigned char>(character - 'A' + 'a');
-        }
-        if (!CommonUtils::is_ascii_lowercase(character))
-        {
-            return {};
-        }
-        normalized.push_back(static_cast<char>(character));
-    }
-    return normalized;
+    const std::string normalized = CommonUtils::lowercase_ascii(code);
+    return CommonUtils::is_ascii_lowercase_string(normalized) ? normalized : std::string{};
 }
 
 std::string decode_shuangpin_initial(char code, const ShuangpinProfile &profile)
