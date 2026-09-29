@@ -104,8 +104,7 @@ KeyResult InputSession::set_candidate_position(std::size_t index, int position)
     if (context.empty() || key.empty())
         return {};
     const auto journal = path_to_utf8(paths_.user(assets::user_journal));
-    const bool ok = position == 0 ? user_dictionary::clear_fixed_position(journal, context, key, selected.word)
-                                  : user_dictionary::set_fixed_position(journal, context, key, selected.word, position);
+    const bool ok = user_dictionary::set_or_clear_fixed_position(journal, context, key, selected.word, position);
     if (!ok)
         return {true, std::nullopt, "Unable to persist candidate position."};
     return {true, std::nullopt, refresh_after_candidate_change()};

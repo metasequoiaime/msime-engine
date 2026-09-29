@@ -437,10 +437,8 @@ KeyResult NineKeySession::set_position(std::size_t index, int position)
         return {};
     const auto &item = candidates_[index];
     const auto journal = path_to_utf8(paths_.user(assets::user_journal));
-    const bool saved = position == 0 ? user_dictionary::clear_fixed_position(journal, ranking_context(),
-                                                                             item.canonical_pinyin, item.word)
-                                     : user_dictionary::set_fixed_position(journal, ranking_context(),
-                                                                           item.canonical_pinyin, item.word, position);
+    const bool saved = user_dictionary::set_or_clear_fixed_position(journal, ranking_context(), item.canonical_pinyin,
+                                                                    item.word, position);
     if (!saved)
         return {true, {}, "Unable to persist nine-key candidate position."};
     refresh();
