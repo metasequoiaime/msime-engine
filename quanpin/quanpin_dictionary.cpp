@@ -697,15 +697,11 @@ int QuanpinDictionary::create_word(std::string pinyin, std::string word)
         return ERROR_CODE;
     }
 
-    if (metasequoia::sqlite_query_has_row(db_.get(), quanpin::build_sql_for_checking_word(pinyin, word)))
-    {
-        return OK;
-    }
-
-    if (!metasequoia::sqlite_execute_statement(db_.get(), quanpin::build_sql_for_inserting_word(pinyin, jp, word)))
-    {
+    const auto insert_result = quanpin::insert_word_if_missing(db_.get(), pinyin, jp, word);
+    if (insert_result == quanpin::WordInsertResult::Failed)
         return ERROR_CODE;
-    }
+    if (insert_result == quanpin::WordInsertResult::Existing)
+        return OK;
     (void)user_dictionary::record_user_insert(metasequoia::path_to_utf8(paths_.user(metasequoia::assets::user_journal)),
                                               user_dictionary::DictionaryKind::Pinyin, pinyin, word, 10000);
     reset_cache();
@@ -724,14 +720,11 @@ int QuanpinDictionary::create_word_from_canonical_pinyin(std::string pinyin, std
     const std::string jp = quanpin::segments_to_jianpin(segments);
     // The caller supplied explicit canonical segmentation. Re-running the greedy correction
     // validator would erase those boundaries and reject valid readings such as qi'e'huan.
-    if (metasequoia::sqlite_query_has_row(db_.get(), quanpin::build_sql_for_checking_word(pinyin, word)))
-    {
-        return OK;
-    }
-    if (!metasequoia::sqlite_execute_statement(db_.get(), quanpin::build_sql_for_inserting_word(pinyin, jp, word)))
-    {
+    const auto insert_result = quanpin::insert_word_if_missing(db_.get(), pinyin, jp, word);
+    if (insert_result == quanpin::WordInsertResult::Failed)
         return ERROR_CODE;
-    }
+    if (insert_result == quanpin::WordInsertResult::Existing)
+        return OK;
     (void)user_dictionary::record_user_insert(metasequoia::path_to_utf8(paths_.user(metasequoia::assets::user_journal)),
                                               user_dictionary::DictionaryKind::Pinyin, pinyin, word, 10000);
     reset_cache();
