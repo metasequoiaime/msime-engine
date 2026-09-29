@@ -161,8 +161,6 @@ class ShuangpinDictionary
     int insert_word_to_active_helpcode_cache(const std::string &pinyin, const std::string &word, CandidateSource source,
                                              const std::string &double_helpcodes = {});
 
-    std::string get_quanpin() const;
-
     void reset_state();
     void reset_cache();
     void set_helpcode_keymap(HelpcodeUtils::SharedKeymap table)

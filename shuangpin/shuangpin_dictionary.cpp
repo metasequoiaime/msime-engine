@@ -656,13 +656,6 @@ int ShuangpinDictionary::handleVkCode(ImeKeyCode vk, ImeModifierMask modifiers_d
     return 0;
 }
 
-std::string ShuangpinDictionary::get_quanpin() const
-{
-
-    string quanpin_str = ShuangpinUtil::convert_seg_shuangpin_to_seg_complete_pinyin(_pinyin_segmentation, profile_);
-    return CommonUtils::remove_apostrophe_delimiters(quanpin_str);
-}
-
 int ShuangpinDictionary::create_word(string pinyin, string word)
 {
     return create_word_from_quanpin(shuangpin::normalize_input_with_delimiters(pinyin, profile_), std::move(word));
