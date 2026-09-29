@@ -102,13 +102,18 @@ void ImeSession::set_quanpin_autocorrect_types(unsigned autocorrect_types)
     quanpin_autocorrect_types_ = autocorrect_types;
 }
 
+void ImeSession::replace_raw_input(const std::string &raw_input, const std::string &raw_input_with_cases)
+{
+    scheme_->set_raw_input(raw_input, raw_input_with_cases);
+    refresh_candidates();
+}
+
 void ImeSession::replace_raw_input_for_scheme(SchemeType expected, const std::string &raw_input,
                                               const std::string &raw_input_with_cases)
 {
     if (scheme_->type() != expected)
         return;
-    scheme_->set_raw_input(raw_input, raw_input_with_cases);
-    refresh_candidates();
+    replace_raw_input(raw_input, raw_input_with_cases);
 }
 
 void ImeSession::replace_shuangpin_raw_input(const std::string &raw_input, const std::string &raw_input_with_cases)
@@ -138,8 +143,7 @@ void ImeSession::replace_wubi_raw_input(const std::string &raw_input, const std:
     // answer. Without this, moving the caret through a mixed composition silently drops everything
     // past the fourth letter. refresh_candidates puts the query-derived value back.
     wubi_scheme_->set_extended_length_allowed(wubi_options_.mixed_pinyin);
-    wubi_scheme_->set_raw_input(raw_input, raw_input_with_cases);
-    refresh_candidates();
+    replace_raw_input(raw_input, raw_input_with_cases);
 }
 
 void ImeSession::reset()
@@ -201,8 +205,7 @@ void ImeSession::replace_active_raw_input(const std::string &raw_input, const st
         // Host-driven replacements use the configured mixed-pinyin limit rather than the previous query result.
         wubi_scheme_->set_extended_length_allowed(wubi_options_.mixed_pinyin);
     }
-    scheme_->set_raw_input(raw_input, raw_input_with_cases);
-    refresh_candidates();
+    replace_raw_input(raw_input, raw_input_with_cases);
 }
 
 std::vector<WordItem> ImeSession::query_raw_candidates(const std::string &raw_input,
