@@ -1,4 +1,5 @@
 #pragma once
+#include "../common/string_utils.h"
 #include "../core/fuzzy_pinyin_options.h"
 #include "quanpin_utils.h"
 #include <algorithm>
@@ -35,7 +36,8 @@ inline std::vector<std::string> fuzzy_syllables(const std::string &syllable, met
     if (!options.rules || !legal.count(syllable))
         return {syllable};
     std::string initial;
-    if (syllable.rfind("zh", 0) == 0 || syllable.rfind("ch", 0) == 0 || syllable.rfind("sh", 0) == 0)
+    if (CommonUtils::starts_with(syllable, "zh") || CommonUtils::starts_with(syllable, "ch") ||
+        CommonUtils::starts_with(syllable, "sh"))
         initial = syllable.substr(0, 2);
     else if (std::string("bpmfdtnlgkhjqxrzcsyw").find(syllable[0]) != std::string::npos)
         initial = syllable.substr(0, 1);
