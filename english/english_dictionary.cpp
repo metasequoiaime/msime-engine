@@ -124,22 +124,6 @@ std::string EnglishDictionary::query_chinese_gloss(const std::string &english)
     return ensure_cache_statements() ? QueryGloss(cache_en_zh_statement_.get(), english) : std::string{};
 }
 
-std::string EnglishDictionary::query_english_gloss(const std::string &chinese)
-{
-    const auto custom = custom_zh_en_.find(chinese);
-    if (custom != custom_zh_en_.end())
-        return custom->second;
-    if (chinese.empty())
-        return {};
-    if (ensure_gloss_statements())
-    {
-        auto gloss = QueryGloss(zh_en_statement_.get(), chinese);
-        if (!gloss.empty())
-            return gloss;
-    }
-    return ensure_cache_statements() ? QueryGloss(cache_zh_en_statement_.get(), chinese) : std::string{};
-}
-
 bool EnglishDictionary::cache_gloss(bool chinese_to_english, const std::string &key, const std::string &gloss)
 {
     if (gloss_cache_path_.empty() || !upsert_gloss(gloss_cache_path_, chinese_to_english, key, gloss))
