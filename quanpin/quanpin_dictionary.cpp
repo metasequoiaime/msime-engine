@@ -52,10 +52,15 @@ quanpin::Segments normalize_umlaut_aliases(quanpin::Segments segments)
     return segments;
 }
 
+const std::string &effective_segmentation(const std::string &raw_input, const std::string &segmentation)
+{
+    return segmentation.empty() ? raw_input : segmentation;
+}
+
 std::string series_cache_key(const std::string &raw_input, const std::string &segmentation)
 {
     const char *prefix = raw_input.find('\'') == std::string::npos ? "A:" : "M:";
-    return prefix + (segmentation.empty() ? raw_input : segmentation);
+    return prefix + effective_segmentation(raw_input, segmentation);
 }
 
 // Folds letters for autocorrect comparisons: lowercases and strips manual delimiters. v and u
@@ -334,7 +339,7 @@ std::vector<WordItem> QuanpinDictionary::query_series(const std::string &raw_inp
         if (sentence_association_.google)
         {
             const std::string normalized =
-                CommonUtils::remove_apostrophe_delimiters(segmentation.empty() ? raw_input : segmentation);
+                CommonUtils::remove_apostrophe_delimiters(effective_segmentation(raw_input, segmentation));
             google_sentence = decoder_.sentence(normalized);
         }
         if (!google_sentence.empty())
@@ -345,7 +350,7 @@ std::vector<WordItem> QuanpinDictionary::query_series(const std::string &raw_inp
                 // reading so creating-word learning can persist them.
                 const auto at =
                     static_cast<std::ptrdiff_t>(quanpin::whole_sentence_insert_position(result, segments.size()));
-                WordItem sentence(segmentation.empty() ? raw_input : segmentation, google_sentence, 1,
+                WordItem sentence(effective_segmentation(raw_input, segmentation), google_sentence, 1,
                                   CandidateSource::Fallback, segmentation);
                 sentence.sentence_association = true;
                 result.insert(result.begin() + at, std::move(sentence));
@@ -368,7 +373,7 @@ std::vector<WordItem> QuanpinDictionary::query_series(const std::string &raw_inp
                                               quanpin::make_lattice_db_lookup(db_.get(), statement_cache_,
                                                                               quanpin::QuerySource::Quanpin,
                                                                               options.span_limit),
-                                              segmentation.empty() ? raw_input : segmentation, options, google_sentence,
+                                              effective_segmentation(raw_input, segmentation), options, google_sentence,
                                               sentence_association_.google ? &sentences : nullptr, rerankers);
         }
         // A sentence neither source produced on its own, assembled from one source's frame and the
@@ -378,7 +383,7 @@ std::vector<WordItem> QuanpinDictionary::query_series(const std::string &raw_inp
         {
             const auto at =
                 static_cast<std::ptrdiff_t>(quanpin::whole_sentence_insert_position(result, segments.size()));
-            WordItem sentence(segmentation.empty() ? raw_input : segmentation, sentences.best_hybrid,
+            WordItem sentence(effective_segmentation(raw_input, segmentation), sentences.best_hybrid,
                               static_cast<std::int64_t>(*sentences.best_hybrid_score * 1000.0),
                               CandidateSource::Generated, segmentation);
             sentence.sentence_association = true;
@@ -427,7 +432,7 @@ std::vector<WordItem> QuanpinDictionary::query_single_path(const std::string &ra
                                                            const std::string &segmentation,
                                                            const quanpin::Segments &segments)
 {
-    const std::string cache_key = segmentation.empty() ? raw_input : segmentation;
+    const std::string cache_key = effective_segmentation(raw_input, segmentation);
     if (auto cached = cache_.get(cache_key))
     {
         return cached.value();
@@ -605,7 +610,7 @@ std::vector<WordItem> QuanpinDictionary::append_ime_fallback(const std::string &
     if (!sentence_association_.google)
         return result;
     const std::string normalized =
-        CommonUtils::remove_apostrophe_delimiters(segmentation.empty() ? raw_input : segmentation);
+        CommonUtils::remove_apostrophe_delimiters(effective_segmentation(raw_input, segmentation));
     const std::string sentence = decoder_.sentence(normalized);
     if (sentence.empty())
     {
@@ -615,7 +620,7 @@ std::vector<WordItem> QuanpinDictionary::append_ime_fallback(const std::string &
     if (!contains_candidate_word(result, sentence))
     {
         // Keep the complete reading for the creating-word persistence path.
-        result.emplace_back(segmentation.empty() ? raw_input : segmentation, sentence, 1, CandidateSource::Fallback,
+        result.emplace_back(effective_segmentation(raw_input, segmentation), sentence, 1, CandidateSource::Fallback,
                             segmentation);
         result.back().sentence_association = true;
     }
