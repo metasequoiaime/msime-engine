@@ -269,6 +269,7 @@ class InputSession
     void apply_pending_sequence();
 
     KeyResult commit(std::size_t index);
+    bool try_enter_local_mode(char character, bool shift_only);
     KeyResult handle_local_character(char character);
     KeyResult insert_at_caret(char character);
     KeyResult edit_at_caret(Command command);
