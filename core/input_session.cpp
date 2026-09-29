@@ -73,6 +73,70 @@ InputSession::InputSession(SchemeType scheme_type, const ShuangpinProfile &shuan
     engine_.set_shuangpin_helpcode_enabled(shuangpin_helpcode_enabled_);
 }
 
+bool InputSession::try_enter_local_mode(char character, bool shift_only)
+{
+    if (!shift_only || local_input_mode_ != LocalInputMode::None || has_composition() ||
+        (scheme() != SchemeType::Quanpin && scheme() != SchemeType::Shuangpin))
+    {
+        return false;
+    }
+
+    LocalInputMode mode = LocalInputMode::None;
+    bool enabled = false;
+    switch (character)
+    {
+    case 'U':
+        mode = LocalInputMode::Unicode;
+        enabled = local_mode_options_.unicode;
+        break;
+    case 'T':
+        mode = LocalInputMode::DateTime;
+        enabled = local_mode_options_.date_time;
+        break;
+    case 'K':
+        mode = LocalInputMode::QuickPhrase;
+        enabled = local_mode_options_.quick_phrase;
+        break;
+    case 'E':
+        mode = LocalInputMode::Emoji;
+        enabled = local_mode_options_.emoji;
+        break;
+    case 'M':
+        mode = LocalInputMode::Kaomoji;
+        enabled = local_mode_options_.kaomoji;
+        break;
+    case 'J':
+        mode = LocalInputMode::SuperJianpin;
+        enabled = local_mode_options_.super_jianpin;
+        break;
+    case 'Y':
+        mode = LocalInputMode::TemporaryEnglish;
+        enabled = local_mode_options_.temporary_english;
+        break;
+    case 'R':
+        mode = LocalInputMode::TemporaryJapanese;
+        enabled = local_mode_options_.temporary_japanese;
+        break;
+    default:
+        return false;
+    }
+
+    if (!enabled)
+    {
+        return false;
+    }
+
+    if (mode == LocalInputMode::TemporaryJapanese)
+    {
+        temporary_original_scheme_ = scheme();
+        engine_.switch_scheme(SchemeType::JapaneseRomaji);
+    }
+    local_input_mode_ = mode;
+    local_preedit_.assign(1, character);
+    local_candidates_.clear();
+    return true;
+}
+
 KeyResult InputSession::handle_character(char character, bool shift_only)
 {
     if (caret_position() < editing_text().size())
@@ -94,70 +158,8 @@ KeyResult InputSession::handle_character(char character, bool shift_only)
         return handle_local_character(character);
     }
 
-    if (shift_only && character == 'U' && local_mode_options_.unicode && !has_composition() &&
-        (scheme() == SchemeType::Quanpin || scheme() == SchemeType::Shuangpin))
+    if (try_enter_local_mode(character, shift_only))
     {
-        local_input_mode_ = LocalInputMode::Unicode;
-        local_preedit_ = "U";
-        local_candidates_.clear();
-        return {true, std::nullopt, std::nullopt};
-    }
-    if (shift_only && character == 'T' && local_mode_options_.date_time && !has_composition() &&
-        (scheme() == SchemeType::Quanpin || scheme() == SchemeType::Shuangpin))
-    {
-        local_input_mode_ = LocalInputMode::DateTime;
-        local_preedit_ = "T";
-        local_candidates_.clear();
-        return {true, std::nullopt, std::nullopt};
-    }
-    if (shift_only && character == 'K' && local_mode_options_.quick_phrase && !has_composition() &&
-        (scheme() == SchemeType::Quanpin || scheme() == SchemeType::Shuangpin))
-    {
-        local_input_mode_ = LocalInputMode::QuickPhrase;
-        local_preedit_ = "K";
-        local_candidates_.clear();
-        return {true, std::nullopt, std::nullopt};
-    }
-    if (shift_only && character == 'E' && local_mode_options_.emoji && !has_composition() &&
-        (scheme() == SchemeType::Quanpin || scheme() == SchemeType::Shuangpin))
-    {
-        local_input_mode_ = LocalInputMode::Emoji;
-        local_preedit_ = "E";
-        local_candidates_.clear();
-        return {true, std::nullopt, std::nullopt};
-    }
-    if (shift_only && character == 'M' && local_mode_options_.kaomoji && !has_composition() &&
-        (scheme() == SchemeType::Quanpin || scheme() == SchemeType::Shuangpin))
-    {
-        local_input_mode_ = LocalInputMode::Kaomoji;
-        local_preedit_ = "M";
-        local_candidates_.clear();
-        return {true, std::nullopt, std::nullopt};
-    }
-    if (shift_only && character == 'J' && local_mode_options_.super_jianpin && !has_composition() &&
-        (scheme() == SchemeType::Quanpin || scheme() == SchemeType::Shuangpin))
-    {
-        local_input_mode_ = LocalInputMode::SuperJianpin;
-        local_preedit_ = "J";
-        local_candidates_.clear();
-        return {true, std::nullopt, std::nullopt};
-    }
-    if (shift_only && character == 'Y' && local_mode_options_.temporary_english && !has_composition() &&
-        (scheme() == SchemeType::Quanpin || scheme() == SchemeType::Shuangpin))
-    {
-        local_input_mode_ = LocalInputMode::TemporaryEnglish;
-        local_preedit_ = "Y";
-        local_candidates_.clear();
-        return {true, std::nullopt, std::nullopt};
-    }
-    if (shift_only && character == 'R' && local_mode_options_.temporary_japanese && !has_composition() &&
-        (scheme() == SchemeType::Quanpin || scheme() == SchemeType::Shuangpin))
-    {
-        temporary_original_scheme_ = scheme();
-        engine_.switch_scheme(SchemeType::JapaneseRomaji);
-        local_input_mode_ = LocalInputMode::TemporaryJapanese;
-        local_preedit_ = "R";
-        local_candidates_.clear();
         return {true, std::nullopt, std::nullopt};
     }
 
