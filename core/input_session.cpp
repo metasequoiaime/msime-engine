@@ -67,14 +67,17 @@ InputSession::InputSession(SchemeType scheme_type, unsigned quanpin_autocorrect_
       chinese_punctuation_enabled_(chinese_punctuation_enabled),
       candidate_learning_enabled_(candidate_learning_enabled), shuangpin_profile_(GetXiaoheShuangpinProfile())
 {
-    engine_.set_quanpin_autocorrect_types(quanpin_autocorrect_types_);
-    engine_.set_quanpin_helpcode_enabled(quanpin_helpcode_enabled_);
-    engine_.set_shuangpin_helpcode_enabled(shuangpin_helpcode_enabled_);
+    apply_engine_input_options();
 }
 
 InputSession::InputSession(SchemeType scheme_type, const ShuangpinProfile &shuangpin_profile, RuntimePaths paths)
     : paths_(std::move(paths)), candidate_queries_(paths_, shuangpin_profile),
       engine_(scheme_type, shuangpin_profile, paths_), shuangpin_profile_(shuangpin_profile)
+{
+    apply_engine_input_options();
+}
+
+void InputSession::apply_engine_input_options()
 {
     engine_.set_quanpin_autocorrect_types(quanpin_autocorrect_types_);
     engine_.set_quanpin_helpcode_enabled(quanpin_helpcode_enabled_);
