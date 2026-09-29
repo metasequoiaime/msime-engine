@@ -49,21 +49,23 @@ ImeSession::ImeSession(SchemeType scheme_type, const ShuangpinProfile &shuangpin
 void ImeSession::bind_wubi_scheme()
 {
     wubi_scheme_ = dynamic_cast<WubiScheme *>(scheme_.get());
-    if (wubi_scheme_ != nullptr)
+    apply_wubi_options();
+}
+
+void ImeSession::apply_wubi_options()
+{
+    if (wubi_scheme_ == nullptr)
     {
-        wubi_scheme_->set_mixed_pinyin_allowed(wubi_options_.mixed_pinyin);
-        wubi_scheme_->set_z_wildcard(wubi_options_.z_wildcard);
+        return;
     }
+    wubi_scheme_->set_mixed_pinyin_allowed(wubi_options_.mixed_pinyin);
+    wubi_scheme_->set_z_wildcard(wubi_options_.z_wildcard);
 }
 
 void ImeSession::set_wubi_input_options(metasequoia::WubiInputOptions options)
 {
     wubi_options_ = options;
-    if (wubi_scheme_ != nullptr)
-    {
-        wubi_scheme_->set_mixed_pinyin_allowed(wubi_options_.mixed_pinyin);
-        wubi_scheme_->set_z_wildcard(wubi_options_.z_wildcard);
-    }
+    apply_wubi_options();
 }
 
 void ImeSession::handle_key(ImeKeyCode vk, ImeModifierMask modifiers_down, ImeCharacter wch)
