@@ -15,19 +15,6 @@ namespace neural
 namespace
 {
 
-std::size_t utf8_character_count(const std::string &text)
-{
-    std::size_t count = 0;
-    for (unsigned char byte : text)
-    {
-        if ((byte & 0xC0) != 0x80)
-        {
-            ++count;
-        }
-    }
-    return count;
-}
-
 // The exact GELU, matching torch.nn.functional.gelu with its default settings. The tanh
 // approximation is a different function and the model was not trained with it.
 float erf_approx(float x)
@@ -352,7 +339,7 @@ std::string rerank_context(const std::string &context, std::size_t window, std::
 {
     const std::size_t room = longest_candidate >= window ? 0 : window - longest_candidate - 1;
     const std::size_t keep = room / kRerankContextStep * kRerankContextStep;
-    if (utf8_character_count(context) <= room)
+    if (CommonUtils::count_utf8_chars(context) <= room)
     {
         return context;
     }
