@@ -720,7 +720,7 @@ Segments cut_pinyin_greedy(const std::string &pinyin, bool intact_only)
         return {};
     }
 
-    if (pinyin.find('\'') == std::string::npos)
+    if (!CommonUtils::contains_apostrophe_delimiter(pinyin))
     {
         return cut_one_piece_min_segments(pinyin, intact_only);
     }

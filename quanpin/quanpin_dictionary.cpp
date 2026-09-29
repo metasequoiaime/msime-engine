@@ -59,7 +59,7 @@ const std::string &effective_segmentation(const std::string &raw_input, const st
 
 std::string series_cache_key(const std::string &raw_input, const std::string &segmentation)
 {
-    const char *prefix = raw_input.find('\'') == std::string::npos ? "A:" : "M:";
+    const char *prefix = CommonUtils::contains_apostrophe_delimiter(raw_input) ? "M:" : "A:";
     return prefix + effective_segmentation(raw_input, segmentation);
 }
 
@@ -86,7 +86,7 @@ SeriesQueryResolution resolve_series_query(const std::string &raw_input, const q
     // so a guarded input never pays for the BFS. Both guards express "the user did
     // not mistype" and either one disables the rewrite entirely.
     result.corrected_input =
-        autocorrect_types != 0 && !segments.empty() && raw_input.find('\'') == std::string::npos &&
+        autocorrect_types != 0 && !segments.empty() && !CommonUtils::contains_apostrophe_delimiter(raw_input) &&
         !quanpin::has_only_complete_pinyin_segments(segments) &&
         !quanpin::looks_like_syllable_with_jianpin_tail(raw_input) &&
         !(result.corrected_segments = quanpin::autocorrect_cut(raw_input, autocorrect_types)).empty();
@@ -221,7 +221,8 @@ std::vector<WordItem> QuanpinDictionary::query_exact(const std::string &raw_inpu
         }
     }
 
-    if (raw_input.find('\'') == std::string::npos && segments.size() <= kMaxSyllablesForMultipleSegmentations &&
+    if (!CommonUtils::contains_apostrophe_delimiter(raw_input) &&
+        segments.size() <= kMaxSyllablesForMultipleSegmentations &&
         quanpin::has_only_complete_pinyin_segments(segments))
     {
         const auto complete_paths = quanpin::enumerate_complete_segmentations(quanpin::build_syllable_graph(raw_input),

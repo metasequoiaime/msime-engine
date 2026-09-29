@@ -1,5 +1,6 @@
 #include "engine.h"
 #include "../core/candidate_utils.h"
+#include "../common/string_utils.h"
 
 #include "shuangpin_query.h"
 #include "shuangpin_utils.h"
@@ -16,11 +17,6 @@ struct HelpcodeQuery
     std::string base_segmentation;
     std::string help_codes;
 };
-
-bool has_manual_delimiters(const std::string &raw_input)
-{
-    return raw_input.find('\'') != std::string::npos;
-}
 
 bool segmented_parts_are_all_two_chars(const std::string &segmentation)
 {
@@ -95,7 +91,8 @@ std::optional<HelpcodeQuery> build_single_helpcode_query(const std::string &raw_
     query.base_raw_input = shuangpin::trim_trailing_letters_preserve_delimiters(raw_input, 1);
     query.base_pure_input = shuangpin::remove_manual_delimiters(query.base_raw_input);
     query.base_segmentation = shuangpin::segment_input(query.base_raw_input, profile);
-    if (has_manual_delimiters(raw_input) && !segmented_parts_are_all_two_chars(query.base_segmentation))
+    if (CommonUtils::contains_apostrophe_delimiter(raw_input) &&
+        !segmented_parts_are_all_two_chars(query.base_segmentation))
     {
         return std::nullopt;
     }

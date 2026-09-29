@@ -23,6 +23,7 @@ std::string last_utf8_characters(std::string_view text, std::size_t count);
 std::size_t utf8_code_point_length(std::string_view text);
 std::vector<std::size_t> utf8_boundaries(const std::string &text);
 std::vector<std::string> split_by_delimiter(const std::string &text, char delimiter);
+bool contains_apostrophe_delimiter(std::string_view text);
 std::string remove_apostrophe_delimiters(const std::string &text);
 std::string escape_sql_literal(std::string text);
 bool is_ascii_letters_or_apostrophe(const std::string &text);

@@ -232,7 +232,7 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generateSeries( //
         // displaced the exact word, turning 筚路蓝缕 into 笔录蓝绿.
         std::string google_sentence;
         if (sentence_association_.google && quanpin_segments.size() >= 3 &&
-            quanpin_segmentation.find('\'') != std::string::npos)
+            CommonUtils::contains_apostrophe_delimiter(quanpin_segmentation))
         {
             google_sentence = decoder_.sentence(quanpin_segmentation);
             const bool duplicate = contains_candidate_word(candidate_list, google_sentence);

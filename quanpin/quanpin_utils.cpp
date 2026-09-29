@@ -150,7 +150,7 @@ bool looks_like_syllable_with_jianpin_tail(const std::string &pinyin)
 {
     // Manual delimiters express user-intent boundaries and never enter the
     // correction path, so there is nothing for this guard to protect.
-    if (pinyin.empty() || pinyin.find('\'') != std::string::npos)
+    if (pinyin.empty() || CommonUtils::contains_apostrophe_delimiter(pinyin))
     {
         return false;
     }
@@ -193,7 +193,7 @@ SyllableGraph build_syllable_graph(const std::string &pinyin)
     SyllableGraph graph;
     graph.input_length = pinyin.size();
     graph.edges.resize(pinyin.size() + 1);
-    if (pinyin.empty() || pinyin.find('\'') != std::string::npos)
+    if (pinyin.empty() || CommonUtils::contains_apostrophe_delimiter(pinyin))
     {
         return graph;
     }
@@ -347,7 +347,7 @@ bool is_complete_pinyin_input(const std::string &pinyin)
         return false;
     }
 
-    if (pinyin.find('\'') == std::string::npos)
+    if (!CommonUtils::contains_apostrophe_delimiter(pinyin))
     {
         return is_complete_pinyin_part(pinyin);
     }
@@ -507,7 +507,7 @@ AutocorrectCut autocorrect_cut_detail(const std::string &pinyin, const unsigned 
     // at least one corrected edge. Manual delimiters express user intent and
     // are never rewritten.
     if (autocorrect_types == 0 || pinyin.empty() || pinyin.size() > kMaxAutocorrectInputLength ||
-        pinyin.find('\'') != std::string::npos)
+        CommonUtils::contains_apostrophe_delimiter(pinyin))
     {
         return {};
     }
