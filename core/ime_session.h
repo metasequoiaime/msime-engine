@@ -78,6 +78,9 @@ class ImeSession
 
   private:
     void apply_request_options(QueryRequest &request) const;
+    std::vector<WordItem> query_quanpin_fallback_candidates(const std::string &raw_input,
+                                                            const std::string &raw_input_with_cases,
+                                                            const std::vector<KeyStroke> &key_strokes);
     void refresh_candidates();
     void bind_wubi_scheme();
     void apply_wubi_options();

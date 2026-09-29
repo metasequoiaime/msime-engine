@@ -225,15 +225,8 @@ std::vector<WordItem> ImeSession::query_raw_candidates(const std::string &raw_in
     std::vector<WordItem> candidates = provider_registry_.resolve(request.scheme).query(request);
     if (scheme_->type() != SchemeType::Wubi || !wubi_options_.mixed_pinyin)
         return candidates;
-    QuanpinScheme pinyin;
-    pinyin.set_raw_input(raw_input, raw_input_with_cases);
-    QueryRequest pinyin_request = pinyin.build_request();
-    apply_request_options(pinyin_request);
-    pinyin_request.key_strokes = request.key_strokes;
-    if (!pinyin_request.valid)
-        return candidates;
-    auto pinyin_candidates = provider_registry_.resolve(SchemeType::Quanpin).query(pinyin_request);
-    append_unique_candidates(candidates, std::move(pinyin_candidates));
+    append_unique_candidates(candidates,
+                             query_quanpin_fallback_candidates(raw_input, raw_input_with_cases, request.key_strokes));
     return candidates;
 }
 
@@ -306,15 +299,23 @@ void ImeSession::refresh_candidates()
     if (!wubi_options_.mixed_pinyin)
         return;
 
+    append_unique_candidates(state_.candidates, query_quanpin_fallback_candidates(state_.request.raw_input,
+                                                                                  state_.request.raw_input_with_cases,
+                                                                                  state_.request.key_strokes));
+}
+
+std::vector<WordItem> ImeSession::query_quanpin_fallback_candidates(const std::string &raw_input,
+                                                                    const std::string &raw_input_with_cases,
+                                                                    const std::vector<KeyStroke> &key_strokes)
+{
     QuanpinScheme pinyin;
-    pinyin.set_raw_input(state_.request.raw_input, state_.request.raw_input_with_cases);
+    pinyin.set_raw_input(raw_input, raw_input_with_cases);
     QueryRequest pinyin_request = pinyin.build_request();
     apply_request_options(pinyin_request);
-    pinyin_request.key_strokes = state_.request.key_strokes;
+    pinyin_request.key_strokes = key_strokes;
     if (!pinyin_request.valid)
-        return;
-    std::vector<WordItem> pinyin_candidates = provider_registry_.resolve(pinyin_request.scheme).query(pinyin_request);
-    append_unique_candidates(state_.candidates, std::move(pinyin_candidates));
+        return {};
+    return provider_registry_.resolve(SchemeType::Quanpin).query(pinyin_request);
 }
 
 void ImeSession::apply_request_options(QueryRequest &request) const
