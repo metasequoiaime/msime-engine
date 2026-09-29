@@ -53,7 +53,7 @@ bool local_mode_enabled(LocalInputMode mode, const LocalModeOptions &options)
 
 std::string online_identity(const QueryRequest &request)
 {
-    const std::string &input = request.raw_input_with_cases.empty() ? request.raw_input : request.raw_input_with_cases;
+    const std::string &input = query_request_raw_input_with_cases(request);
     return std::to_string(static_cast<int>(request.scheme)) + ":" + input;
 }
 

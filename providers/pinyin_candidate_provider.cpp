@@ -118,8 +118,7 @@ std::optional<std::string> PinyinCandidateProvider::active_helpcode_for_request(
     if (request.scheme != SchemeType::Shuangpin || !request.enable_shuangpin_helpcode)
         return std::nullopt;
 
-    const std::string &raw_input_with_cases =
-        request.raw_input_with_cases.empty() ? request.raw_input : request.raw_input_with_cases;
+    const std::string &raw_input_with_cases = query_request_raw_input_with_cases(request);
     const std::string pure_input = shuangpin::remove_manual_delimiters(request.raw_input);
     const std::string pure_input_with_cases = shuangpin::remove_manual_delimiters(raw_input_with_cases);
     if (ShuangpinUtil::IsFullHelpMode(pure_input_with_cases, shuangpin_profile_))

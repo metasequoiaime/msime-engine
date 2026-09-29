@@ -41,3 +41,10 @@ struct QueryRequest
     bool wubi_z_wildcard = false;
     bool valid = false;
 };
+
+// Requests produced by schemes without case-preserving input leave this field empty. Consumers
+// that need the user's original spelling use the raw input as the fallback.
+inline const std::string &query_request_raw_input_with_cases(const QueryRequest &request)
+{
+    return request.raw_input_with_cases.empty() ? request.raw_input : request.raw_input_with_cases;
+}
