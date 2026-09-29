@@ -797,8 +797,7 @@ KeyResult InputSession::handle_local_character(char character)
         {
             return {};
         }
-        local_preedit_.push_back(character);
-        return {true, std::nullopt, update_local_candidates()};
+        return append_local_character(character);
     }
     if (local_input_mode_ == LocalInputMode::TemporaryJapanese)
     {
@@ -821,8 +820,7 @@ KeyResult InputSession::handle_local_character(char character)
         {
             return {true, std::nullopt, std::nullopt};
         }
-        local_preedit_.push_back(character);
-        return {true, std::nullopt, update_local_candidates()};
+        return append_local_character(character);
     }
     if (local_input_mode_ == LocalInputMode::Emoji || local_input_mode_ == LocalInputMode::Kaomoji)
     {
@@ -831,8 +829,7 @@ KeyResult InputSession::handle_local_character(char character)
         {
             return {true, std::nullopt, std::nullopt};
         }
-        local_preedit_.push_back(character);
-        return {true, std::nullopt, update_local_candidates()};
+        return append_local_character(character);
     }
     if (local_input_mode_ == LocalInputMode::QuickPhrase)
     {
@@ -840,8 +837,7 @@ KeyResult InputSession::handle_local_character(char character)
         {
             return {true, std::nullopt, std::nullopt};
         }
-        local_preedit_.push_back(character);
-        return {true, std::nullopt, update_local_candidates()};
+        return append_local_character(character);
     }
     if (local_input_mode_ == LocalInputMode::DateTime)
     {
@@ -849,8 +845,7 @@ KeyResult InputSession::handle_local_character(char character)
         {
             return {true, std::nullopt, std::nullopt};
         }
-        local_preedit_.push_back(character);
-        return {true, std::nullopt, update_local_candidates()};
+        return append_local_character(character);
     }
     if (local_input_mode_ != LocalInputMode::Unicode)
     {
@@ -863,6 +858,11 @@ KeyResult InputSession::handle_local_character(char character)
     {
         return {true, std::nullopt, std::nullopt};
     }
+    return append_local_character(character);
+}
+
+KeyResult InputSession::append_local_character(char character)
+{
     local_preedit_.push_back(character);
     return {true, std::nullopt, update_local_candidates()};
 }
