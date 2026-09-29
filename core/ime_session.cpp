@@ -6,6 +6,7 @@
 #include "../schemes/japanese_romaji_scheme.h"
 #include "../quanpin/quanpin_utils.h"
 #include "../shuangpin/shuangpin_query.h"
+#include "../schemes/input_scheme_utils.h"
 #include <algorithm>
 #include <stdexcept>
 
@@ -31,10 +32,9 @@ void ApplyShuangpinHelpcodeSegmentation(QueryRequest &request, const ShuangpinPr
     const std::string help_codes =
         effective_input_with_cases.substr(effective_input_with_cases.size() - helpcode_length);
 
-    request.raw_segmentation =
-        shuangpin::apply_segmentation_cases(base_segmentation, base_raw_input_with_cases) + "'" + help_codes;
-    request.normalized_segmentation = shuangpin::to_quanpin_segmentation(base_segmentation, profile) + "'" + help_codes;
-    request.segmentation = request.normalized_segmentation;
+    input_scheme::set_segmentation_fields(
+        request, shuangpin::apply_segmentation_cases(base_segmentation, base_raw_input_with_cases) + "'" + help_codes,
+        shuangpin::to_quanpin_segmentation(base_segmentation, profile) + "'" + help_codes);
 }
 } // namespace
 
