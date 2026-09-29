@@ -364,10 +364,11 @@ CachedDatabase &default_database_cache()
 // operation is still running on; the file is released once the last user is done.
 std::shared_ptr<sqlite3> open_shared_database(const std::string &path)
 {
-    Db opened = open_database(path, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
-    if (!opened || !ensure_schema(opened.get()))
+    auto database = metasequoia::sqlite_open_shared_database(
+        path, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, 5000);
+    if (!database || !ensure_schema(database.get()))
         return {};
-    return std::shared_ptr<sqlite3>(opened.release(), metasequoia::SqliteDatabaseCloser{});
+    return database;
 }
 
 std::shared_ptr<sqlite3> acquire_database(const std::string &path)

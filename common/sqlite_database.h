@@ -27,4 +27,13 @@ inline SqliteDatabase sqlite_open_database(const std::string &path, int flags)
         return {};
     return SqliteDatabase(raw);
 }
+
+inline std::shared_ptr<sqlite3> sqlite_open_shared_database(const std::string &path, int flags, int busy_timeout_ms)
+{
+    auto database = sqlite_open_database(path, flags);
+    if (!database)
+        return {};
+    (void)sqlite3_busy_timeout(database.get(), busy_timeout_ms);
+    return std::shared_ptr<sqlite3>(database.release(), SqliteDatabaseCloser{});
+}
 } // namespace metasequoia
