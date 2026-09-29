@@ -141,9 +141,7 @@ void QuanpinDictionary::set_sentence_alternatives(bool enabled)
 
 void QuanpinDictionary::set_sentence_association(const SentenceAssociationOptions &options)
 {
-    if (!sentence_association_.update_if_changed(options))
-        return;
-    reset_cache();
+    (void)update_sentence_association_options(sentence_association_, options, [this] { reset_cache(); });
 }
 
 void QuanpinDictionary::set_rescoring_context(const std::string &context)

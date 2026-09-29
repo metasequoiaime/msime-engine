@@ -46,6 +46,16 @@ struct SentenceAssociationOptions
 };
 
 template <typename ResetCache>
+bool update_sentence_association_options(SentenceAssociationOptions &stored_options,
+                                         const SentenceAssociationOptions &options, ResetCache &&reset_cache)
+{
+    if (!stored_options.update_if_changed(options))
+        return false;
+    std::forward<ResetCache>(reset_cache)();
+    return true;
+}
+
+template <typename ResetCache>
 bool update_rescoring_context(std::string &stored_context, const std::string &context,
                               const SentenceAssociationOptions &options, bool desktop_model_available,
                               bool keyboard_model_available, ResetCache &&reset_cache)
