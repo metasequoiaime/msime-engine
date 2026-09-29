@@ -72,11 +72,6 @@ class ShuangpinDictionary
     // The context invalidates cached ordering only when neural reranking is active.
     void set_rescoring_context(const std::string &context);
 
-    const ShuangpinProfile &profile() const
-    {
-        return profile_;
-    }
-
   private:
     const ShuangpinProfile profile_;
     std::string quanpin_db_path_;
