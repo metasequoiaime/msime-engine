@@ -104,7 +104,6 @@ class ShuangpinDictionary
     std::vector<WordItem> query_initial_from_quanpin_database(const std::string &code, int limit);
     std::string normalize_shuangpin_to_quanpin_segmentation(const std::string &pinyin) const;
     std::string normalize_shuangpin_to_quanpin_input(const std::string &pinyin) const;
-    std::string build_quanpin_sql_for_updating_word(std::string pinyin, const std::string &word) const;
 
   private:
     // Lock

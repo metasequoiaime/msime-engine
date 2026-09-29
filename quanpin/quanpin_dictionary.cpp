@@ -756,7 +756,7 @@ int QuanpinDictionary::update_weight_by_pinyin_and_word(std::string pinyin, std:
     if (segments.size() > han_count)
         segments.resize(han_count);
     const std::string normalized = quanpin::join_segments(segments);
-    if (!metasequoia::sqlite_execute_statement(db_.get(), build_sql_for_updating_word(normalized, word)))
+    if (!metasequoia::sqlite_execute_statement(db_.get(), quanpin::build_sql_for_updating_word(normalized, word)))
     {
         return ERROR_CODE;
     }
@@ -835,32 +835,6 @@ void QuanpinDictionary::reset_cache()
     cache_.clear();
     series_cache_.clear();
     segmentation_cache_.clear();
-}
-
-std::string QuanpinDictionary::build_sql_for_updating_word(std::string pinyin, const std::string &word)
-{
-    pinyin = CommonUtils::remove_apostrophe_delimiters(pinyin);
-    const auto cuts = quanpin::cut_pinyin_by_mode(pinyin, "correction");
-    if (cuts.empty())
-    {
-        return "";
-    }
-
-    size_t han_cnt = HelpcodeUtils::count_han_chars(word);
-    auto segments = cuts.front();
-    if (segments.size() > han_cnt)
-    {
-        segments.resize(han_cnt);
-    }
-
-    pinyin = quanpin::join_segments(segments);
-    const std::string jp = quanpin::segments_to_jianpin(segments);
-    if (!quanpin::has_valid_word_pinyin(pinyin, jp, word))
-    {
-        return "";
-    }
-
-    return quanpin::build_sql_for_updating_word(segments, pinyin, word);
 }
 
 std::vector<WordItem> QuanpinDictionary::fuzzy_candidates(const std::string &segmentation,

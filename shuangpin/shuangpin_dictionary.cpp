@@ -718,7 +718,7 @@ int ShuangpinDictionary::update_weight_by_pinyin_and_word(string pinyin, string 
         segments.resize(han_count);
     const std::string normalized = quanpin::join_segments(segments);
     if (!metasequoia::sqlite_execute_statement(quanpin_db_.get(),
-                                               build_quanpin_sql_for_updating_word(normalized, word)))
+                                               quanpin::build_sql_for_updating_word(normalized, word, true)))
     {
         return ERROR_CODE;
     }
@@ -826,34 +826,6 @@ std::string ShuangpinDictionary::normalize_shuangpin_to_quanpin_segmentation(con
 std::string ShuangpinDictionary::normalize_shuangpin_to_quanpin_input(const std::string &pinyin) const
 {
     return CommonUtils::remove_apostrophe_delimiters(normalize_shuangpin_to_quanpin_segmentation(pinyin));
-}
-
-std::string ShuangpinDictionary::build_quanpin_sql_for_updating_word(std::string pinyin, const std::string &word) const
-{
-    // The caller has already normalized the key to canonical Quanpin. Running
-    // it through the active Shuangpin profile again can split a valid key into
-    // unrelated syllables before building the UPDATE statement.
-    const auto cuts = quanpin::cut_pinyin_by_mode(CommonUtils::remove_apostrophe_delimiters(pinyin), "correction");
-    if (cuts.empty())
-    {
-        return "";
-    }
-
-    size_t han_cnt = HelpcodeUtils::count_han_chars(word);
-    auto segments = cuts.front();
-    if (segments.size() > han_cnt)
-    {
-        segments.resize(han_cnt);
-    }
-
-    pinyin = quanpin::join_segments(segments);
-    const std::string jp = quanpin::segments_to_jianpin(segments);
-    if (!quanpin::has_valid_word_pinyin(pinyin, jp, word, true))
-    {
-        return "";
-    }
-
-    return quanpin::build_sql_for_updating_word(segments, pinyin, word);
 }
 
 void ShuangpinDictionary::reset_state()
