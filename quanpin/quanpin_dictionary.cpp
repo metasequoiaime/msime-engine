@@ -347,7 +347,7 @@ std::vector<WordItem> QuanpinDictionary::query_series(const std::string &raw_inp
         {
             const std::string normalized =
                 CommonUtils::remove_apostrophe_delimiters(segmentation.empty() ? raw_input : segmentation);
-            google_sentence = search_sentence_from_ime_engine(normalized);
+            google_sentence = decoder_.sentence(normalized);
         }
         if (!google_sentence.empty())
         {
@@ -623,7 +623,7 @@ std::vector<WordItem> QuanpinDictionary::append_ime_fallback(const std::string &
         return result;
     const std::string normalized =
         CommonUtils::remove_apostrophe_delimiters(segmentation.empty() ? raw_input : segmentation);
-    const std::string sentence = search_sentence_from_ime_engine(normalized);
+    const std::string sentence = decoder_.sentence(normalized);
     if (sentence.empty())
     {
         return result;
@@ -821,11 +821,6 @@ int QuanpinDictionary::insert_word_to_series_cache_key(const std::string &cache_
                                           })
                ? OK
                : ERROR_CODE;
-}
-
-std::string QuanpinDictionary::search_sentence_from_ime_engine(const std::string &user_pinyin)
-{
-    return decoder_.sentence(user_pinyin);
 }
 
 void QuanpinDictionary::reset_state()
