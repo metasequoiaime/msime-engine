@@ -72,15 +72,8 @@ void ShuangpinDictionary::set_sentence_association(const SentenceAssociationOpti
 
 void ShuangpinDictionary::set_rescoring_context(const std::string &context)
 {
-    if (rescoring_context_ == context)
-        return;
-    rescoring_context_ = context;
-    // The committed context affects ordering only while a neural model is active; otherwise keep
-    // the dictionary cache warm across selections.
-    const bool rescoring_active = sentence_association_.neural_reranking_enabled(neural_desktop_model_ != nullptr,
-                                                                                 neural_keyboard_model_ != nullptr);
-    if (rescoring_active)
-        reset_cache();
+    (void)update_rescoring_context(rescoring_context_, context, sentence_association_, neural_desktop_model_ != nullptr,
+                                   neural_keyboard_model_ != nullptr, [this] { reset_cache(); });
 }
 
 /**

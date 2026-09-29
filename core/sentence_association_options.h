@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <utility>
+
 // 整句联想的开关。现有词格和 Google 来源默认保持启用；神经来源由宿主显式开启。
 //
 // 整句候选最多四行：词格首选、Google 解码器，以及两个神经模型的首选各一条。
@@ -41,3 +44,16 @@ struct SentenceAssociationOptions
         return true;
     }
 };
+
+template <typename ResetCache>
+bool update_rescoring_context(std::string &stored_context, const std::string &context,
+                              const SentenceAssociationOptions &options, bool desktop_model_available,
+                              bool keyboard_model_available, ResetCache &&reset_cache)
+{
+    if (stored_context == context)
+        return false;
+    stored_context = context;
+    if (options.neural_reranking_enabled(desktop_model_available, keyboard_model_available))
+        std::forward<ResetCache>(reset_cache)();
+    return true;
+}
