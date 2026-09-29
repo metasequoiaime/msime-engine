@@ -259,6 +259,7 @@ class InputSession
     bool wubi_candidates_are_native() const;
     static bool is_wubi_native_candidate(const WordItem &item);
     std::size_t wubi_native_candidate_count() const;
+    bool wubi_four_code_is_eligible() const;
     // The candidates on offer behave like pinyin: quanpin, shuangpin, or a wubi code the
     // table could not answer. Committing one of these commits a spelling out of a longer
     // one, so the rest of the composition has to survive the selection.

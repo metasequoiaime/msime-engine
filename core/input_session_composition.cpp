@@ -738,16 +738,18 @@ bool InputSession::answered_by_pinyin_fallback() const
 
 bool InputSession::wubi_unique_four_code() const
 {
-    return is_wubi() && local_input_mode_ == LocalInputMode::None && !dedicated_english_mode_ &&
-           request().raw_input.find('z') == std::string::npos && wubi_four_code_is_complete() &&
-           wubi_native_candidate_count() == 1;
+    return wubi_four_code_is_eligible() && wubi_native_candidate_count() == 1;
 }
 
 bool InputSession::wubi_four_code_is_complete() const
 {
+    return wubi_four_code_is_eligible() && wubi_native_candidate_count() > 0;
+}
+
+bool InputSession::wubi_four_code_is_eligible() const
+{
     return is_wubi() && local_input_mode_ == LocalInputMode::None && !dedicated_english_mode_ &&
-           request().raw_input.find('z') == std::string::npos && request().normalized_input.size() == 4 &&
-           wubi_native_candidate_count() > 0;
+           request().raw_input.find('z') == std::string::npos && request().normalized_input.size() == 4;
 }
 
 bool InputSession::wubi_candidates_are_native() const
