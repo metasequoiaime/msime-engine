@@ -875,12 +875,6 @@ std::string build_sql_for_updating_word(const Segments &segments, const std::str
            "';";
 }
 
-std::string build_sql_for_deleting_word(const Segments &segments, const std::string &key, const std::string &value)
-{
-    return "delete from " + build_table_name(segments) + " where key = '" + CommonUtils::escape_sql_literal(key) +
-           "' and value = '" + CommonUtils::escape_sql_literal(value) + "';";
-}
-
 std::string segments_to_jianpin(const Segments &segments)
 {
     return segments_to_jianpin_impl(segments);
