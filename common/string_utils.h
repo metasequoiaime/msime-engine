@@ -18,6 +18,7 @@ bool is_ascii_lowercase_string(std::string_view text);
 char lowercase_ascii_char(unsigned char character);
 char uppercase_ascii_char(unsigned char character);
 std::string::size_type count_utf8_chars(const std::string &text);
+std::string last_utf8_characters(std::string_view text, std::size_t count);
 std::size_t utf8_code_point_length(std::string_view text);
 std::vector<std::size_t> utf8_boundaries(const std::string &text);
 std::vector<std::string> split_by_delimiter(const std::string &text, char delimiter);
