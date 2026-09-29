@@ -7,22 +7,10 @@
 
 #include <sqlite3.h>
 
-#include <algorithm>
 #include <memory>
 
 namespace metasequoia::local_modes
 {
-namespace
-{
-bool valid_prefix(const std::string &prefix)
-{
-    return !prefix.empty() && std::all_of(prefix.begin(), prefix.end(), [](unsigned char character) {
-        return CommonUtils::is_ascii_lowercase(character);
-    });
-}
-
-} // namespace
-
 QuickPhraseQueryResult query_quick_phrases(const std::string &prefix, int limit)
 {
     return query_quick_phrases(prefix, data_file_path(metasequoia::assets::main_dictionary), limit);
@@ -31,7 +19,7 @@ QuickPhraseQueryResult query_quick_phrases(const std::string &prefix, int limit)
 QuickPhraseQueryResult query_quick_phrases(const std::string &prefix, const std::filesystem::path &database_path,
                                            int limit)
 {
-    if (!valid_prefix(prefix) || limit <= 0)
+    if (!CommonUtils::is_ascii_lowercase_string(prefix) || limit <= 0)
     {
         return {};
     }

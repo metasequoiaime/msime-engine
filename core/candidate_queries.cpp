@@ -128,9 +128,7 @@ std::vector<WordItem> CandidateQueries::mixed(std::vector<WordItem> candidates, 
     };
 
     std::vector<WordItem> english_candidates;
-    const bool lower_ascii_prefix = std::all_of(prefix.begin(), prefix.end(), [](unsigned char character) {
-        return CommonUtils::is_ascii_lowercase(character);
-    });
+    const bool lower_ascii_prefix = CommonUtils::is_ascii_lowercase_string(prefix);
     if (english_options.mixed_candidates && prefix.size() >= english_options.minimum_prefix && lower_ascii_prefix)
     {
         english_candidates = collect_unique(english_dictionary().query_prefix(prefix, 5));
