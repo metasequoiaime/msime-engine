@@ -398,6 +398,23 @@ void InputSession::set_quanpin_helpcode_enabled(bool enabled)
     set_helpcode_enabled(SchemeType::Quanpin, enabled);
 }
 
+void InputSession::set_helpcode_enabled(bool enabled)
+{
+    const bool changed = quanpin_helpcode_enabled_ != enabled || shuangpin_helpcode_enabled_ != enabled;
+    if (!changed)
+    {
+        return;
+    }
+
+    quanpin_helpcode_enabled_ = enabled;
+    shuangpin_helpcode_enabled_ = enabled;
+    engine_.set_quanpin_helpcode_enabled(enabled);
+    engine_.set_shuangpin_helpcode_enabled(enabled);
+    // Both scheme flags affect the same current query. Refresh once after applying them together.
+    recompute_candidates();
+    online_requests_.invalidate();
+}
+
 void InputSession::set_helpcode_enabled(SchemeType scheme_type, bool enabled)
 {
     bool *setting = nullptr;

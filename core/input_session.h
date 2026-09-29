@@ -60,6 +60,7 @@ class InputSession
     void enable_fixed_positions();
     void set_shuangpin_helpcode_enabled(bool enabled);
     void set_quanpin_helpcode_enabled(bool enabled);
+    void set_helpcode_enabled(bool enabled);
     static bool is_supported_helpcode_schema(const std::string &schema);
     bool set_helpcode_schema(const std::string &schema);
     // Compatibility default for subsequently created sessions.
