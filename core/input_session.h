@@ -265,6 +265,7 @@ class InputSession
     bool candidates_follow_pinyin() const;
     bool is_japanese() const;
     static bool online_source_is_eligible(const OnlineQuery &query, CandidateSource source);
+    void set_helpcode_enabled(SchemeType scheme_type, bool enabled);
     void clear_pending_sequence();
     void apply_pending_sequence();
 
