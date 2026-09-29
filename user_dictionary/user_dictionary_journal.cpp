@@ -1443,18 +1443,10 @@ PersonalDictionaryPage personal_dictionary_entries(const RuntimePaths &paths, st
                            : std::string{};
             };
             const auto kind = text(0);
-            PersonalDictionaryKind entry_kind;
-            if (kind == "pinyin")
-                entry_kind = PersonalDictionaryKind::Pinyin;
-            else if (kind == "wubi")
-                entry_kind = PersonalDictionaryKind::Wubi;
-            else if (kind == "quick")
-                entry_kind = PersonalDictionaryKind::QuickPhrase;
-            else if (kind == "english")
-                entry_kind = PersonalDictionaryKind::English;
-            else
+            const auto entry_kind = personal_dictionary_kind_from_name(kind);
+            if (!entry_kind)
                 continue;
-            result.entries.push_back({entry_kind, text(1), text(2), sqlite3_column_int64(rows.get(), 3)});
+            result.entries.push_back({*entry_kind, text(1), text(2), sqlite3_column_int64(rows.get(), 3)});
         }
         if (step != SQLITE_DONE && !result.has_more)
         {

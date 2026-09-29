@@ -58,15 +58,10 @@ const char *name(PersonalDictionaryKind kind)
 }
 PersonalDictionaryKind kind(const std::string &value)
 {
-    if (value == "pinyin")
-        return PersonalDictionaryKind::Pinyin;
-    if (value == "wubi")
-        return PersonalDictionaryKind::Wubi;
-    if (value == "english")
-        return PersonalDictionaryKind::English;
-    if (value == "quick")
-        return PersonalDictionaryKind::QuickPhrase;
-    throw std::runtime_error("Invalid dictionary kind");
+    const auto result = personal_dictionary_kind_from_name(value);
+    if (!result)
+        throw std::runtime_error("Invalid dictionary kind");
+    return *result;
 }
 void bounded_text(const std::string &value, std::size_t maximum, bool empty = false)
 {
