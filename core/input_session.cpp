@@ -612,11 +612,8 @@ bool InputSession::apply_online_candidate(const OnlineQuery &query, std::string 
     {
         return false;
     }
-    if (engine_.apply_dynamic_candidate(candidate, source) != 0)
-    {
+    if (!finish_online_candidate_update(engine_.apply_dynamic_candidate(candidate, source)))
         return false;
-    }
-    update_mixed_candidates();
     return std::any_of(candidates().begin(), candidates().end(),
                        [&](const WordItem &item) { return item.word == candidate && item.source == source; });
 }
@@ -1176,7 +1173,12 @@ bool InputSession::apply_online_candidates(const OnlineQuery &query, const std::
         return false;
     if (!online_query_matches(query, source))
         return false;
-    if (engine_.apply_dynamic_candidates(words, source) != 0)
+    return finish_online_candidate_update(engine_.apply_dynamic_candidates(words, source));
+}
+
+bool InputSession::finish_online_candidate_update(int result)
+{
+    if (result != 0)
         return false;
     update_mixed_candidates();
     return true;

@@ -287,6 +287,7 @@ class InputSession
     void update_mixed_candidates();
     std::optional<std::string> refresh_after_candidate_change();
     bool online_query_matches(const OnlineQuery &query, CandidateSource source) const;
+    bool finish_online_candidate_update(int result);
     std::size_t quantized_prefix_end() const;
     void refresh_prefix_candidates();
     void apply_candidate_positions(std::vector<WordItem> &items);
