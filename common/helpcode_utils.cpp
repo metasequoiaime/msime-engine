@@ -35,7 +35,7 @@ constexpr char kUtf8Bom[] = "\xEF\xBB\xBF";
 
 void strip_line(std::string &line, bool first_line)
 {
-    if (first_line && line.rfind(kUtf8Bom, 0) == 0)
+    if (first_line && CommonUtils::starts_with(line, kUtf8Bom))
         line.erase(0, 3);
     if (!line.empty() && line.back() == '\r')
         line.pop_back();
