@@ -32,6 +32,14 @@ inline void set_raw_input(std::string &target, std::vector<KeyStroke> &key_strok
     key_strokes.clear();
 }
 
+inline void set_segmentation_fields(QueryRequest &request, const std::string &raw_segmentation,
+                                    const std::string &normalized_segmentation)
+{
+    request.raw_segmentation = raw_segmentation;
+    request.normalized_segmentation = normalized_segmentation;
+    request.segmentation = request.normalized_segmentation;
+}
+
 inline void handle_key(ImeKeyCode vk, ImeModifierMask modifiers_down, ImeCharacter wch, std::string &raw_input,
                        std::vector<KeyStroke> &key_strokes, bool accept_special_key = false, char special_key = '\0')
 {

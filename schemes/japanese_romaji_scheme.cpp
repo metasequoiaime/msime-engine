@@ -86,9 +86,8 @@ QueryRequest JapaneseRomajiScheme::build_request() const
         input_scheme::make_query_request(type(), CommonUtils::lowercase_ascii(raw_input_), raw_input_, key_strokes_);
     request.normalized_input = request.raw_input;
     const auto converted = japanese::ConvertRomaji(request.raw_input);
-    request.raw_segmentation = request.raw_input_with_cases;
-    request.normalized_segmentation = converted.hiragana + converted.pending;
-    request.segmentation = request.normalized_segmentation;
+    input_scheme::set_segmentation_fields(request, request.raw_input_with_cases,
+                                          converted.hiragana + converted.pending);
     request.valid = !request.raw_input.empty();
     return request;
 }

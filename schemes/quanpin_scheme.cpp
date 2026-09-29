@@ -57,19 +57,19 @@ QueryRequest QuanpinScheme::build_request() const
         cased_source = cased_source.substr(0, cased_source.size() - helpcode_length);
     }
 
-    request.raw_segmentation = shuangpin::apply_segmentation_cases(request.normalized_segmentation, cased_source);
+    std::string raw_segmentation = shuangpin::apply_segmentation_cases(request.normalized_segmentation, cased_source);
     if (!cased_source.empty() && cased_source.back() == '\'' &&
-        (request.raw_segmentation.empty() || request.raw_segmentation.back() != '\''))
+        (raw_segmentation.empty() || raw_segmentation.back() != '\''))
     {
-        request.raw_segmentation.push_back('\'');
+        raw_segmentation.push_back('\'');
     }
     if (helpcode_length > 0)
     {
-        request.raw_segmentation += "'";
-        request.raw_segmentation +=
+        raw_segmentation += "'";
+        raw_segmentation +=
             request.raw_input_with_cases.substr(request.raw_input_with_cases.size() - helpcode_length, helpcode_length);
     }
-    request.segmentation = request.normalized_segmentation;
+    input_scheme::set_segmentation_fields(request, raw_segmentation, request.normalized_segmentation);
 
     request.valid = !request.normalized_input.empty();
     return request;

@@ -50,9 +50,9 @@ QueryRequest ShuangpinScheme::build_request() const
     }
 
     const std::string raw_segmentation = shuangpin::segment_input(request.raw_input, profile_);
-    request.raw_segmentation = shuangpin::apply_segmentation_cases(raw_segmentation, request.raw_input_with_cases);
-    request.normalized_segmentation = shuangpin::to_quanpin_segmentation(raw_segmentation, profile_);
-    request.segmentation = request.normalized_segmentation;
+    input_scheme::set_segmentation_fields(
+        request, shuangpin::apply_segmentation_cases(raw_segmentation, request.raw_input_with_cases),
+        shuangpin::to_quanpin_segmentation(raw_segmentation, profile_));
     request.normalized_input = shuangpin::normalize_input(request.raw_input, profile_);
     return request;
 }
