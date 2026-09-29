@@ -51,18 +51,10 @@ std::string text(sqlite3_stmt *s, int index)
 }
 const char *name(PersonalDictionaryKind kind)
 {
-    switch (kind)
-    {
-    case PersonalDictionaryKind::Pinyin:
-        return "pinyin";
-    case PersonalDictionaryKind::Wubi:
-        return "wubi";
-    case PersonalDictionaryKind::English:
-        return "english";
-    case PersonalDictionaryKind::QuickPhrase:
-        return "quick";
-    }
-    throw std::runtime_error("Invalid dictionary kind");
+    const char *result = personal_dictionary_kind_name(kind);
+    if (result == nullptr)
+        throw std::runtime_error("Invalid dictionary kind");
+    return result;
 }
 PersonalDictionaryKind kind(const std::string &value)
 {

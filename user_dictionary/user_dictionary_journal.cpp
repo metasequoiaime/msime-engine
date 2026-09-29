@@ -1242,20 +1242,10 @@ namespace metasequoia
 {
 namespace
 {
-user_dictionary::DictionaryKind journal_kind(PersonalDictionaryKind kind)
+const char *personal_kind_name_for_journal(PersonalDictionaryKind kind)
 {
-    switch (kind)
-    {
-    case PersonalDictionaryKind::Pinyin:
-        return user_dictionary::DictionaryKind::Pinyin;
-    case PersonalDictionaryKind::Wubi:
-        return user_dictionary::DictionaryKind::Wubi;
-    case PersonalDictionaryKind::QuickPhrase:
-        return user_dictionary::DictionaryKind::QuickPhrase;
-    case PersonalDictionaryKind::English:
-        return user_dictionary::DictionaryKind::English;
-    }
-    return user_dictionary::DictionaryKind::Pinyin;
+    const char *result = personal_dictionary_kind_name(kind);
+    return result == nullptr ? personal_dictionary_kind_name(PersonalDictionaryKind::Pinyin) : result;
 }
 bool apply_personal_edit(sqlite3 *db, const PersonalDictionaryEntry &entry, bool remove)
 {
@@ -1284,7 +1274,7 @@ bool apply_personal_edit(sqlite3 *db, const PersonalDictionaryEntry &entry, bool
             "personal_journal.user_dictionary_operations(dictionary,key,value,operation,weight,display,user_inserted)"
             " VALUES(?1,?2,?3,?4,?5,?6,1) ON CONFLICT(dictionary,key,value) DO UPDATE SET operation=excluded.operation,"
             " weight=excluded.weight,display=excluded.display,user_inserted=1,updated_at=unixepoch()");
-    return journal && bind_text(journal.get(), 1, kind_name(journal_kind(entry.kind))) &&
+    return journal && bind_text(journal.get(), 1, personal_kind_name_for_journal(entry.kind)) &&
            bind_text(journal.get(), 2, entry.key) && bind_text(journal.get(), 3, entry.value) &&
            bind_text(journal.get(), 4, operation) &&
            sqlite3_bind_int64(journal.get(), 5, remove ? 0 : entry.weight) == SQLITE_OK &&
@@ -1381,7 +1371,7 @@ PersonalDictionaryEditResult edit_personal_dictionary(const RuntimePaths &paths,
             auto match = prepare(db.get(), "SELECT 1 FROM personal_journal.user_dictionary_operations"
                                            " WHERE dictionary=?1 AND key=?2 AND value=?3 AND weight=?4 AND "
                                            "operation='upsert' AND user_inserted=1");
-            if (!match || !bind_text(match.get(), 1, kind_name(journal_kind(old_entry->kind))) ||
+            if (!match || !bind_text(match.get(), 1, personal_kind_name_for_journal(old_entry->kind)) ||
                 !bind_text(match.get(), 2, old_entry->key) || !bind_text(match.get(), 3, old_entry->value) ||
                 sqlite3_bind_int64(match.get(), 4, old_entry->weight) != SQLITE_OK ||
                 sqlite3_step(match.get()) != SQLITE_ROW)
