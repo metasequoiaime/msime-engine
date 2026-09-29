@@ -875,6 +875,25 @@ std::string build_sql_for_updating_word(const Segments &segments, const std::str
            "';";
 }
 
+std::string build_sql_for_updating_word(std::string pinyin, const std::string &word, bool allow_shuangpin_fallback)
+{
+    pinyin = CommonUtils::remove_apostrophe_delimiters(pinyin);
+    const auto cuts = cut_pinyin_by_mode(pinyin, "correction");
+    if (cuts.empty())
+        return {};
+
+    auto segments = cuts.front();
+    const std::size_t han_count = HelpcodeUtils::count_han_chars(word);
+    if (segments.size() > han_count)
+        segments.resize(han_count);
+
+    pinyin = join_segments(segments);
+    const std::string jp = segments_to_jianpin(segments);
+    if (!has_valid_word_pinyin(pinyin, jp, word, allow_shuangpin_fallback))
+        return {};
+    return build_sql_for_updating_word(segments, pinyin, word);
+}
+
 std::string segments_to_jianpin(const Segments &segments)
 {
     return segments_to_jianpin_impl(segments);
