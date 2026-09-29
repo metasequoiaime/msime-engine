@@ -49,7 +49,7 @@ std::vector<WordItem> EnglishDictionary::query_prefix(const std::string &prefix,
         return {};
     }
 
-    const std::string upper_bound = prefix + "{";
+    const std::string upper_bound = CommonUtils::ascii_prefix_upper_bound(prefix);
     const int sqlite_limit =
         static_cast<int>((std::min)(limit, static_cast<size_t>((std::numeric_limits<int>::max)())));
 
