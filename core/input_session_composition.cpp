@@ -320,7 +320,7 @@ const std::string &InputSession::get_pure_pinyin_sequence() const
 
 const std::string &InputSession::get_pinyin_segmentation() const
 {
-    return request().normalized_segmentation.empty() ? request().segmentation : request().normalized_segmentation;
+    return query_request_normalized_segmentation(request());
 }
 
 std::string InputSession::get_pinyin_segmentation_with_cases() const
@@ -347,8 +347,7 @@ std::string InputSession::get_pinyin_segmentation_with_cases() const
     {
         return BuildQuanpinAutocorrectDisplay(request());
     }
-    std::string preedit =
-        request().normalized_segmentation.empty() ? request().segmentation : request().normalized_segmentation;
+    std::string preedit = query_request_normalized_segmentation(request());
     if (!request().raw_input_with_cases.empty() && request().raw_input_with_cases.back() == '\'' &&
         (preedit.empty() || preedit.back() != '\''))
     {
@@ -384,8 +383,7 @@ bool InputSession::is_all_complete_pure_pinyin() const
         }
         return shuangpin::is_complete_input(base.raw_input, shuangpin_profile_);
     }
-    const auto &segmentation =
-        request().normalized_segmentation.empty() ? request().segmentation : request().normalized_segmentation;
+    const auto &segmentation = query_request_normalized_segmentation(request());
     return !segmentation.empty() && quanpin::is_complete_pinyin_input(segmentation);
 }
 
@@ -596,8 +594,7 @@ InputSession::SelectionTransition InputSession::advance_composition_after_select
     }
 
     transition.full_pure_pinyin = request().normalized_input;
-    const std::string current_segmentation =
-        request().normalized_segmentation.empty() ? request().segmentation : request().normalized_segmentation;
+    const std::string current_segmentation = query_request_normalized_segmentation(request());
     const std::string current_segmentation_with_cases = get_pinyin_segmentation_with_cases();
     const std::string selected_pure_pinyin = CommonUtils::remove_apostrophe_delimiters(selected_pinyin);
     const std::string raw_input_without_helpcodes =
