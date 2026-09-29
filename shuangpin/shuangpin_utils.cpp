@@ -224,8 +224,10 @@ bool ShuangpinUtil::IsFullHelpMode(std::string pinyin, const ShuangpinProfile &p
     auto pure_pinyin = pinyin.substr(0, len - 2);
     if (is_all_complete_pinyin(pure_pinyin, pinyin_segmentation(pure_pinyin, profile)))
     {
-        const bool first_helpcode_is_upper = pinyin[len - 2] >= 'A' && pinyin[len - 2] <= 'Z';
-        const bool second_helpcode_is_upper = pinyin[len - 1] >= 'A' && pinyin[len - 1] <= 'Z';
+        const bool first_helpcode_is_upper =
+            CommonUtils::is_ascii_uppercase(static_cast<unsigned char>(pinyin[len - 2]));
+        const bool second_helpcode_is_upper =
+            CommonUtils::is_ascii_uppercase(static_cast<unsigned char>(pinyin[len - 1]));
         if (first_helpcode_is_upper || second_helpcode_is_upper)
         {
             return true;
@@ -241,7 +243,7 @@ std::string ShuangpinUtil::GetFullHelpCodes(std::string pinyin)
         return "";
     }
 
-    const bool reverse = pinyin[pinyin.size() - 2] >= 'A' && pinyin[pinyin.size() - 2] <= 'Z';
+    const bool reverse = CommonUtils::is_ascii_uppercase(static_cast<unsigned char>(pinyin[pinyin.size() - 2]));
     std::string help_codes = pinyin.substr(pinyin.size() - 2, 2);
     help_codes = CommonUtils::lowercase_ascii(help_codes);
     if (reverse)
