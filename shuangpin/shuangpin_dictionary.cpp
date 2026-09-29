@@ -69,9 +69,8 @@ ShuangpinDictionary::ShuangpinDictionary(const ShuangpinProfile &profile, metase
 
 void ShuangpinDictionary::set_sentence_association(const SentenceAssociationOptions &options)
 {
-    if (sentence_association_ == options)
+    if (!sentence_association_.update_if_changed(options))
         return;
-    sentence_association_ = options;
     reset_cache();
 }
 

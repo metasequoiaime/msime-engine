@@ -32,4 +32,12 @@ struct SentenceAssociationOptions
     {
         return !(*this == other);
     }
+
+    bool update_if_changed(const SentenceAssociationOptions &other)
+    {
+        if (*this == other)
+            return false;
+        *this = other;
+        return true;
+    }
 };

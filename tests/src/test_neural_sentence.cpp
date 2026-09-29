@@ -75,6 +75,12 @@ int main(int argc, char **argv)
         std::cerr << "sentence association equality is inconsistent\n";
         return 1;
     }
+    auto updated = defaults;
+    if (updated.update_if_changed(defaults) || !updated.update_if_changed(neural_only) || updated != neural_only)
+    {
+        std::cerr << "sentence association update did not report changes correctly\n";
+        return 1;
+    }
     if (argc > 1)
     {
         auto model = neural::SentenceModel::load_file(argv[1]);
