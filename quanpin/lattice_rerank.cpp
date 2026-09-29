@@ -53,4 +53,17 @@ LatticeReranker make_neural_reranker(const neural::SentenceModel *model, const s
     };
 }
 
+std::vector<SourcedLatticeReranker> make_neural_rerankers(const SentenceAssociationOptions &association,
+                                                          const neural::SentenceModel *keyboard_model,
+                                                          const neural::SentenceModel *desktop_model,
+                                                          const std::string &context)
+{
+    std::vector<SourcedLatticeReranker> rerankers;
+    if (association.neural_keyboard && keyboard_model != nullptr)
+        rerankers.push_back({make_neural_reranker(keyboard_model, context), CandidateSource::NeuralKeyboard});
+    if (association.neural_desktop && desktop_model != nullptr)
+        rerankers.push_back({make_neural_reranker(desktop_model, context), CandidateSource::NeuralDesktop});
+    return rerankers;
+}
+
 } // namespace quanpin

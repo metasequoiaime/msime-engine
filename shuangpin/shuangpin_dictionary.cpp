@@ -251,13 +251,8 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generateSeries( //
                 candidate_list.insert(candidate_list.begin() + at, std::move(sentence));
             }
         }
-        std::vector<quanpin::SourcedLatticeReranker> rerankers;
-        if (sentence_association_.neural_keyboard && neural_keyboard_model_ != nullptr)
-            rerankers.push_back({quanpin::make_neural_reranker(neural_keyboard_model_, rescoring_context_),
-                                 CandidateSource::NeuralKeyboard});
-        if (sentence_association_.neural_desktop && neural_desktop_model_ != nullptr)
-            rerankers.push_back({quanpin::make_neural_reranker(neural_desktop_model_, rescoring_context_),
-                                 CandidateSource::NeuralDesktop});
+        const auto rerankers = quanpin::make_neural_rerankers(sentence_association_, neural_keyboard_model_,
+                                                              neural_desktop_model_, rescoring_context_);
         const bool need_lattice = sentence_association_.word_lattice || !rerankers.empty();
         auto lattice_options = quanpin::make_sentence_lattice_options(paths_, sentence_alternatives_);
         lattice_options.nbest =
