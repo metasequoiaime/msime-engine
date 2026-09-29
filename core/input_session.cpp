@@ -189,7 +189,9 @@ KeyResult InputSession::handle_character(char character, bool shift_only)
             ? ImeKey::Apostrophe
             : (microsoft_final
                    ? ImeKey::Semicolon
-                   : (japanese_long_vowel ? ImeKey::Minus : static_cast<ImeKeyCode>(std::toupper(unsigned_character))));
+                   : (japanese_long_vowel
+                          ? ImeKey::Minus
+                          : static_cast<ImeKeyCode>(CommonUtils::uppercase_ascii_char(unsigned_character))));
     engine_.handle_key(key_code, 0, static_cast<ImeCharacter>(unsigned_character));
     update_mixed_candidates();
     const bool handled = preedit() != previous_preedit;
