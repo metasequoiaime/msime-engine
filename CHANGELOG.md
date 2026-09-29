@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.28.0](https://github.com/metasequoiaime/msime-engine/compare/v0.27.2...v0.28.0) (2026-09-29)
+
+
+### Features
+
+* **engine:** support simultaneous wubi and pinyin candidates ([#210](https://github.com/metasequoiaime/msime-engine/issues/210)) ([b27031e](https://github.com/metasequoiaime/msime-engine/commit/b27031eef952fa599883d66641d32ec97c504107))
+* **helpcode:** add jiajia schema ([#202](https://github.com/metasequoiaime/msime-engine/issues/202)) ([a718f74](https://github.com/metasequoiaime/msime-engine/commit/a718f74d2555f45854f1c85a08476e0a14d41226))
+* **helpcode:** support custom schema discovery ([#201](https://github.com/metasequoiaime/msime-engine/issues/201)) ([a1d7edb](https://github.com/metasequoiaime/msime-engine/commit/a1d7edb88e72c681e67e045ed25bee784799264a))
+* **input:** decode candidates by caret prefix ([#197](https://github.com/metasequoiaime/msime-engine/issues/197)) ([bc46f27](https://github.com/metasequoiaime/msime-engine/commit/bc46f2762de3b9712c1d225a804972d7eed34b40))
+* **input:** mark sentence association candidates ([#187](https://github.com/metasequoiaime/msime-engine/issues/187)) ([01358ff](https://github.com/metasequoiaime/msime-engine/commit/01358ff20d848db6fbc7ed65c994c7f5333c2adb))
+* **neural:** add sentence association reranking ([#203](https://github.com/metasequoiaime/msime-engine/issues/203)) ([9856905](https://github.com/metasequoiaime/msime-engine/commit/9856905299c09a226e190f31d504171070789da2))
+
+
+### Bug Fixes
+
+* **ci:** fetch pinned neural models before packaging ([#209](https://github.com/metasequoiaime/msime-engine/issues/209)) ([caf38bd](https://github.com/metasequoiaime/msime-engine/commit/caf38bd4bc2d90ab34cb5695a1bf57c2e384af40))
+* **dictionary:** isolate journal connections per thread ([#188](https://github.com/metasequoiaime/msime-engine/issues/188)) ([a9b9f09](https://github.com/metasequoiaime/msime-engine/commit/a9b9f092219505166c927843762b650d1e0e501d))
+* **dictionary:** wait for concurrent write commits ([#185](https://github.com/metasequoiaime/msime-engine/issues/185)) ([66d63a2](https://github.com/metasequoiaime/msime-engine/commit/66d63a293831802e35b33decd570f867dd2a69bc))
+* **input:** deduplicate online candidates before quota ([#208](https://github.com/metasequoiaime/msime-engine/issues/208)) ([c430acb](https://github.com/metasequoiaime/msime-engine/commit/c430acb7d55a4f2bcd2b572ee0fae3025637d09f))
+* **input:** learn selected sentence candidates ([#193](https://github.com/metasequoiaime/msime-engine/issues/193)) ([88608bd](https://github.com/metasequoiaime/msime-engine/commit/88608bd2c9fbcd6c302ac3014122a27c5b70a08d))
+* **input:** persist segmented online candidates ([#196](https://github.com/metasequoiaime/msime-engine/issues/196)) ([2f606cb](https://github.com/metasequoiaime/msime-engine/commit/2f606cb2ab195573e12f386d12697a50305e4672))
+* **input:** preserve manual segmentation in cloud queries ([#189](https://github.com/metasequoiaime/msime-engine/issues/189)) ([b049eac](https://github.com/metasequoiaime/msime-engine/commit/b049eac3555fa1ef2f7546fe788f8dd442189298))
+* **quanpin:** normalize umlaut spelling aliases ([#195](https://github.com/metasequoiaime/msime-engine/issues/195)) ([6f3370f](https://github.com/metasequoiaime/msime-engine/commit/6f3370fdcf902d2cf9d9d8fc5c5b30ddfcf7b663))
+* **quanpin:** preserve tuned alternative ranking ([#190](https://github.com/metasequoiaime/msime-engine/issues/190)) ([3daaf16](https://github.com/metasequoiaime/msime-engine/commit/3daaf1643bc8815515e8595ab5f2980663fcc67d))
+* **shuangpin:** accept yo as a complete syllable ([#191](https://github.com/metasequoiaime/msime-engine/issues/191)) ([d810978](https://github.com/metasequoiaime/msime-engine/commit/d8109780b2efce3b3631976a1929d5466f432bfd))
+* **shuangpin:** isolate ordered double-helpcode caches ([#194](https://github.com/metasequoiaime/msime-engine/issues/194)) ([3fc6d23](https://github.com/metasequoiaime/msime-engine/commit/3fc6d231e84ac7b8fde84251df7e6ecf968c812f))
+* **shuangpin:** update canonical multi-syllable weights ([#192](https://github.com/metasequoiaime/msime-engine/issues/192)) ([0d2d6bc](https://github.com/metasequoiaime/msime-engine/commit/0d2d6bc433ce0d1cd1b343326c421694545e3cbf))
+* **wubi:** allow mixed pinyin past prefix hints ([#198](https://github.com/metasequoiaime/msime-engine/issues/198)) ([3a6d749](https://github.com/metasequoiaime/msime-engine/commit/3a6d749cefbba806de99778c0c3665c44e11ee60))
+* **wubi:** connect candidate learning and mixed fallback ([#199](https://github.com/metasequoiaime/msime-engine/issues/199)) ([68f901c](https://github.com/metasequoiaime/msime-engine/commit/68f901cc727a964e4f44ffe834b8f37d5690f707))
+
+
+### Performance Improvements
+
+* **input:** skip unchanged autocorrect updates ([#186](https://github.com/metasequoiaime/msime-engine/issues/186)) ([b1d5d5e](https://github.com/metasequoiaime/msime-engine/commit/b1d5d5e09929eebad4970115e829a32dee046f3f))
+* **local-modes:** reuse shipped dictionary connections ([#183](https://github.com/metasequoiaime/msime-engine/issues/183)) ([c0eb65d](https://github.com/metasequoiaime/msime-engine/commit/c0eb65ddb8a9b275d19bcf79992df4fd4125d6c1))
+* **neural:** preserve dictionary cache without reranking ([#204](https://github.com/metasequoiaime/msime-engine/issues/204)) ([af0b2aa](https://github.com/metasequoiaime/msime-engine/commit/af0b2aa72daf7a59bdcc0310798c7511ae57f7ec))
+* **neural:** stabilize long reranker contexts ([#207](https://github.com/metasequoiaime/msime-engine/issues/207)) ([78ca062](https://github.com/metasequoiaime/msime-engine/commit/78ca062dffb040e6083710fe24923cbd9324df78))
+
 ## [0.27.2](https://github.com/metasequoiaime/MSIME-Engine/compare/v0.27.1...v0.27.2) (2026-09-20)
 
 
