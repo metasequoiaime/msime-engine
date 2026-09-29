@@ -151,15 +151,11 @@ std::vector<WordItem> CandidateQueries::mixed(std::vector<WordItem> candidates, 
     }
 
     std::size_t priority_slot = std::min<std::size_t>(1, candidates.size());
-    const auto has_source = [&](CandidateSource source) {
-        return std::any_of(candidates.begin(), candidates.end(),
-                           [source](const WordItem &candidate) { return candidate.source == source; });
-    };
-    if (has_source(CandidateSource::CloudSuggestion))
+    if (contains_candidate_source(candidates, CandidateSource::CloudSuggestion))
     {
         priority_slot = std::min<std::size_t>(2, candidates.size());
     }
-    if (has_source(CandidateSource::AiSuggestion))
+    if (contains_candidate_source(candidates, CandidateSource::AiSuggestion))
     {
         priority_slot = std::min<std::size_t>(3, candidates.size());
     }
