@@ -675,11 +675,12 @@ int ShuangpinDictionary::create_word_from_quanpin(string pinyin, string word)
     {
         return ERROR_CODE;
     }
-    if (check_data(quanpin_db_.get(), quanpin::build_sql_for_checking_word(pinyin, word)))
+    if (metasequoia::sqlite_query_has_row(quanpin_db_.get(), quanpin::build_sql_for_checking_word(pinyin, word)))
     {
         return OK;
     }
-    if (insert_data(quanpin_db_.get(), quanpin::build_sql_for_inserting_word(pinyin, jp, word)) != OK)
+    if (!metasequoia::sqlite_execute_statement(quanpin_db_.get(),
+                                               quanpin::build_sql_for_inserting_word(pinyin, jp, word)))
     {
         return ERROR_CODE;
     }
@@ -688,11 +689,6 @@ int ShuangpinDictionary::create_word_from_quanpin(string pinyin, string word)
     /* 插入新词之后要清理缓存 */
     reset_cache();
     return OK;
-}
-
-int ShuangpinDictionary::update_data(sqlite3 *target_db, const std::string &sql_str)
-{
-    return metasequoia::sqlite_execute_statement(target_db, sql_str) ? OK : ERROR_CODE;
 }
 
 int ShuangpinDictionary::update_weight_by_pinyin_and_word(string pinyin, string word)
@@ -717,7 +713,8 @@ int ShuangpinDictionary::update_weight_by_pinyin_and_word(string pinyin, string 
     if (segments.size() > han_count)
         segments.resize(han_count);
     const std::string normalized = quanpin::join_segments(segments);
-    if (update_data(quanpin_db_.get(), build_quanpin_sql_for_updating_word(normalized, word)) != OK)
+    if (!metasequoia::sqlite_execute_statement(quanpin_db_.get(),
+                                               build_quanpin_sql_for_updating_word(normalized, word)))
     {
         return ERROR_CODE;
     }
@@ -810,16 +807,6 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::query_initial_from_qu
     const auto rows = quanpin::query_initial(quanpin_db_.get(), initial, limit);
 
     return make_database_candidates(code, rows);
-}
-
-int ShuangpinDictionary::check_data(sqlite3 *target_db, const std::string &sql_str)
-{
-    return metasequoia::sqlite_query_has_row(target_db, sql_str);
-}
-
-int ShuangpinDictionary::insert_data(sqlite3 *target_db, const std::string &sql_str)
-{
-    return metasequoia::sqlite_execute_statement(target_db, sql_str) ? OK : ERROR_CODE;
 }
 
 std::string ShuangpinDictionary::normalize_shuangpin_to_quanpin_segmentation(const std::string &pinyin) const

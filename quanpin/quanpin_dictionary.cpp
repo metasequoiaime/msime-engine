@@ -703,12 +703,12 @@ int QuanpinDictionary::create_word(std::string pinyin, std::string word)
         return ERROR_CODE;
     }
 
-    if (check_data(quanpin::build_sql_for_checking_word(pinyin, word)))
+    if (metasequoia::sqlite_query_has_row(db_.get(), quanpin::build_sql_for_checking_word(pinyin, word)))
     {
         return OK;
     }
 
-    if (insert_data(quanpin::build_sql_for_inserting_word(pinyin, jp, word)) != OK)
+    if (!metasequoia::sqlite_execute_statement(db_.get(), quanpin::build_sql_for_inserting_word(pinyin, jp, word)))
     {
         return ERROR_CODE;
     }
@@ -730,11 +730,11 @@ int QuanpinDictionary::create_word_from_canonical_pinyin(std::string pinyin, std
     const std::string jp = quanpin::segments_to_jianpin(segments);
     // The caller supplied explicit canonical segmentation. Re-running the greedy correction
     // validator would erase those boundaries and reject valid readings such as qi'e'huan.
-    if (check_data(quanpin::build_sql_for_checking_word(pinyin, word)))
+    if (metasequoia::sqlite_query_has_row(db_.get(), quanpin::build_sql_for_checking_word(pinyin, word)))
     {
         return OK;
     }
-    if (insert_data(quanpin::build_sql_for_inserting_word(pinyin, jp, word)) != OK)
+    if (!metasequoia::sqlite_execute_statement(db_.get(), quanpin::build_sql_for_inserting_word(pinyin, jp, word)))
     {
         return ERROR_CODE;
     }
@@ -756,7 +756,7 @@ int QuanpinDictionary::update_weight_by_pinyin_and_word(std::string pinyin, std:
     if (segments.size() > han_count)
         segments.resize(han_count);
     const std::string normalized = quanpin::join_segments(segments);
-    if (update_data(build_sql_for_updating_word(normalized, word)) != OK)
+    if (!metasequoia::sqlite_execute_statement(db_.get(), build_sql_for_updating_word(normalized, word)))
     {
         return ERROR_CODE;
     }
@@ -841,21 +841,6 @@ void QuanpinDictionary::reset_cache_if_database_changed()
 {
     if (metasequoia::sqlite_data_version_changed(db_.get(), data_version_))
         reset_cache();
-}
-
-int QuanpinDictionary::check_data(const std::string &sql_str)
-{
-    return metasequoia::sqlite_query_has_row(db_.get(), sql_str);
-}
-
-int QuanpinDictionary::insert_data(const std::string &sql_str)
-{
-    return metasequoia::sqlite_execute_statement(db_.get(), sql_str) ? OK : ERROR_CODE;
-}
-
-int QuanpinDictionary::update_data(const std::string &sql_str)
-{
-    return metasequoia::sqlite_execute_statement(db_.get(), sql_str) ? OK : ERROR_CODE;
 }
 
 std::string QuanpinDictionary::build_sql_for_updating_word(std::string pinyin, const std::string &word)
