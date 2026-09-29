@@ -18,6 +18,11 @@ struct SentenceAssociationOptions
     bool neural_keyboard = false;        // 用快速档的神经模型重排词格整句
     bool show_next_on_duplicate = false; // 某来源首选被去重时，显示该来源下一条不同结果
 
+    bool neural_reranking_enabled(bool desktop_model_available, bool keyboard_model_available) const
+    {
+        return (neural_desktop && desktop_model_available) || (neural_keyboard && keyboard_model_available);
+    }
+
     bool operator==(const SentenceAssociationOptions &other) const
     {
         return word_lattice == other.word_lattice && google == other.google && neural_desktop == other.neural_desktop &&

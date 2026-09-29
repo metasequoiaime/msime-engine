@@ -82,8 +82,8 @@ void ShuangpinDictionary::set_rescoring_context(const std::string &context)
     rescoring_context_ = context;
     // The committed context affects ordering only while a neural model is active; otherwise keep
     // the dictionary cache warm across selections.
-    const bool rescoring_active = (sentence_association_.neural_keyboard && neural_keyboard_model_ != nullptr) ||
-                                  (sentence_association_.neural_desktop && neural_desktop_model_ != nullptr);
+    const bool rescoring_active = sentence_association_.neural_reranking_enabled(neural_desktop_model_ != nullptr,
+                                                                                 neural_keyboard_model_ != nullptr);
     if (rescoring_active)
         reset_cache();
 }
@@ -166,8 +166,8 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generateSeries( //
     else
     {
         const std::string effective_cache_key = cache_key.empty() ? pinyin_sequence : cache_key;
-        const bool neural_enabled = (sentence_association_.neural_keyboard && neural_keyboard_model_ != nullptr) ||
-                                    (sentence_association_.neural_desktop && neural_desktop_model_ != nullptr);
+        const bool neural_enabled = sentence_association_.neural_reranking_enabled(neural_desktop_model_ != nullptr,
+                                                                                   neural_keyboard_model_ != nullptr);
         // 先看一下缓存里有没有
         if (!neural_enabled && _cached_buffer_series.contains(effective_cache_key))
         {
