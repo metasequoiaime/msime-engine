@@ -251,11 +251,6 @@ std::string::size_type count_han_chars(const std::string &words)
     return cnt;
 }
 
-std::string::size_type count_utf8_chars(const std::string &text)
-{
-    return CommonUtils::count_utf8_chars(text);
-}
-
 std::string compute_helpcodes(const std::string &words, bool uppercase_all, const Keymap *configured_keymap)
 {
     std::string helpcodes;
