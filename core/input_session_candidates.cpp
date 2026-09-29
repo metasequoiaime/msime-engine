@@ -54,7 +54,7 @@ void InputSession::apply_candidate_positions(std::vector<WordItem> &items)
         std::vector<WordItem> wubi_items;
         std::vector<WordItem> pinyin_items;
         for (auto &item : items)
-            (is_wubi_native_candidate(item) ? wubi_items : pinyin_items).push_back(std::move(item));
+            (is_wubi_candidate(item) ? wubi_items : pinyin_items).push_back(std::move(item));
         const bool include_missing = engine_.get_request().raw_input.size() == 1;
         if (!wubi_items.empty())
             user_dictionary::apply_fixed_positions(
