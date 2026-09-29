@@ -71,6 +71,8 @@ bool set_fixed_position(const std::string &user_db_path, const std::string &cont
                         const std::string &value, int position);
 bool clear_fixed_position(const std::string &user_db_path, const std::string &context_key, const std::string &entry_key,
                           const std::string &value);
+bool set_or_clear_fixed_position(const std::string &user_db_path, const std::string &context_key,
+                                 const std::string &entry_key, const std::string &value, int position);
 bool is_fixed(const std::string &user_db_path, const std::string &context_key, const std::string &entry_key,
               const std::string &value);
 // Cloud/AI suggestions are normally hoisted back to their fixed slots (cloud at

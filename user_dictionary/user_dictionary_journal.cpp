@@ -813,6 +813,13 @@ bool clear_fixed_position(const std::string &user_db_path, const std::string &co
            bind_text(stmt.get(), 3, value) && sqlite3_step(stmt.get()) == SQLITE_DONE;
 }
 
+bool set_or_clear_fixed_position(const std::string &user_db_path, const std::string &context_key,
+                                 const std::string &entry_key, const std::string &value, int position)
+{
+    return position == 0 ? clear_fixed_position(user_db_path, context_key, entry_key, value)
+                         : set_fixed_position(user_db_path, context_key, entry_key, value, position);
+}
+
 bool is_fixed(const std::string &user_db_path, const std::string &context_key, const std::string &entry_key,
               const std::string &value)
 {
