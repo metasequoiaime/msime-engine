@@ -86,7 +86,6 @@ class ShuangpinDictionary
     const neural::SentenceModel *neural_keyboard_model_ = nullptr;
     HelpcodeUtils::SharedKeymap helpcodes_;
     metasequoia::SqliteStatementCache quanpin_statement_cache_;
-    void reset_cache_if_database_changed();
 
     void generate_for_single_char(std::vector<WordItem> &candidate_list, std::string code);
     void filter_with_single_helpcode(                //

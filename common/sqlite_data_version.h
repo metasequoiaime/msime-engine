@@ -25,4 +25,11 @@ inline bool sqlite_data_version_changed(sqlite3 *database, sqlite3_int64 &last_v
     last_version = current_version;
     return changed;
 }
+
+template <typename Reset>
+inline void reset_if_sqlite_data_version_changed(sqlite3 *database, sqlite3_int64 &last_version, Reset reset)
+{
+    if (sqlite_data_version_changed(database, last_version))
+        reset();
+}
 } // namespace metasequoia

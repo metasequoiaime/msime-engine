@@ -63,7 +63,7 @@ ShuangpinDictionary::ShuangpinDictionary(const ShuangpinProfile &profile, metase
         // Off the typing path, for the reason QuanpinDictionary's constructor gives.
         quanpin::NgramTable::shared(paths_.dictionary(quanpin::kBigramFileName));
         quanpin::NgramTable::shared(paths_.dictionary(quanpin::kTrigramFileName));
-        reset_cache_if_database_changed();
+        metasequoia::reset_if_sqlite_data_version_changed(quanpin_db_.get(), data_version_, [this] { reset_cache(); });
     }
 }
 
@@ -118,7 +118,8 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generate( //
         // Check cache first
         if (_cached_buffer.contains(effective_cache_key))
         {
-            reset_cache_if_database_changed();
+            metasequoia::reset_if_sqlite_data_version_changed(quanpin_db_.get(), data_version_,
+                                                              [this] { reset_cache(); });
             if (const auto cached = _cached_buffer.get(effective_cache_key))
             {
                 return cached.value();
@@ -171,7 +172,8 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generateSeries( //
         // 先看一下缓存里有没有
         if (!neural_enabled && _cached_buffer_series.contains(effective_cache_key))
         {
-            reset_cache_if_database_changed();
+            metasequoia::reset_if_sqlite_data_version_changed(quanpin_db_.get(), data_version_,
+                                                              [this] { reset_cache(); });
             if (const auto cached = _cached_buffer_series.get(effective_cache_key))
             {
                 return cached.value();
@@ -416,7 +418,8 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generate_with_helpcod
         auto &single_helpcode_cache = reversed_single_helpcode ? _cached_buffer_sgl_reversed : _cached_buffer_sgl;
         if (single_helpcode_cache.contains(pinyin_sequence))
         {
-            reset_cache_if_database_changed();
+            metasequoia::reset_if_sqlite_data_version_changed(quanpin_db_.get(), data_version_,
+                                                              [this] { reset_cache(); });
             if (const auto refreshed = single_helpcode_cache.get(pinyin_sequence))
             {
                 return refreshed.value();
@@ -428,7 +431,8 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generate_with_helpcod
         const auto cache_key = double_helpcode_cache_key(pinyin_sequence, help_codes);
         if (_cached_buffer_dbl.contains(cache_key))
         {
-            reset_cache_if_database_changed();
+            metasequoia::reset_if_sqlite_data_version_changed(quanpin_db_.get(), data_version_,
+                                                              [this] { reset_cache(); });
             if (const auto cached = _cached_buffer_dbl.get(cache_key))
             {
                 return cached.value();
@@ -873,12 +877,6 @@ void ShuangpinDictionary::reset_cache()
     _cached_buffer_sgl_reversed.clear();
     _cached_buffer_dbl.clear();
     _cached_buffer_series.clear();
-}
-
-void ShuangpinDictionary::reset_cache_if_database_changed()
-{
-    if (metasequoia::sqlite_data_version_changed(quanpin_db_.get(), data_version_))
-        reset_cache();
 }
 
 int ShuangpinDictionary::insert_word_to_cached_buffer_series(const std::string &pinyin, const std::string &word,
