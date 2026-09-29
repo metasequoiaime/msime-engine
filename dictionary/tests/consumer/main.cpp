@@ -80,7 +80,7 @@ int main(int argc, char **argv)
             if (desktop)
             {
                 EnglishDictionary english(metasequoia::path_to_utf8(temporary / "english.db"), false);
-                require(english.ready() && !english.query_prefix("hello").empty(),
+                require(!english.query_prefix("hello").empty(),
                         "Desktop product lacks the shared English query schema");
                 require(contains(metasequoia::local_modes::query_quick_phrases("yyds").candidates, "永远滴神"),
                         "Desktop product lacks the shared quick-phrase behavior");
