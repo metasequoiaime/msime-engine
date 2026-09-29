@@ -76,8 +76,8 @@ void WubiScheme::handle_key(ImeKeyCode vk, ImeModifierMask modifiers_down, ImeCh
 
 void WubiScheme::set_raw_input(const std::string &raw_input, const std::string &raw_input_with_cases)
 {
-    raw_input_ = normalize_wubi_code(raw_input_with_cases.empty() ? raw_input : raw_input_with_cases, max_code_length(),
-                                     mixed_pinyin_allowed_, z_wildcard_);
+    raw_input_ = normalize_wubi_code(CommonUtils::raw_input_with_cases_or_raw(raw_input, raw_input_with_cases),
+                                     max_code_length(), mixed_pinyin_allowed_, z_wildcard_);
     key_strokes_.clear();
 }
 
