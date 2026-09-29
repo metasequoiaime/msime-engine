@@ -2,6 +2,8 @@
 
 [English README](README.en.md)
 
+> **本仓库已废弃。** 引擎代码、词库、协议和公共模块已经整合到 [MSIME 主仓库](https://github.com/metasequoiaime/msime)，不再在这里独立开发、构建或发布。新代码请提交到主仓库；本仓库仅保留历史记录。
+
 <!-- badges:start -->
 [![CI](https://img.shields.io/github/actions/workflow/status/metasequoiaime/MSIME-Engine/ci.yml?branch=main&label=CI)](https://github.com/metasequoiaime/MSIME-Engine/actions/workflows/ci.yml)
 [![CodeQL](https://img.shields.io/github/actions/workflow/status/metasequoiaime/MSIME-Engine/codeql.yml?branch=main&label=CodeQL)](https://github.com/metasequoiaime/MSIME-Engine/actions/workflows/codeql.yml)

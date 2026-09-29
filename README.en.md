@@ -2,6 +2,8 @@
 
 [中文 README](README.md) · [Website](https://msime.app)
 
+> **This repository is deprecated.** The engine, dictionaries, contracts and shared modules have been integrated into the [MSIME main repository](https://github.com/metasequoiaime/msime). New development, builds and releases happen there; this repository is kept for historical reference only.
+
 <!-- badges:start -->
 [![CI](https://img.shields.io/github/actions/workflow/status/metasequoiaime/MSIME-Engine/ci.yml?branch=main&label=CI)](https://github.com/metasequoiaime/MSIME-Engine/actions/workflows/ci.yml)
 [![CodeQL](https://img.shields.io/github/actions/workflow/status/metasequoiaime/MSIME-Engine/codeql.yml?branch=main&label=CodeQL)](https://github.com/metasequoiaime/MSIME-Engine/actions/workflows/codeql.yml)
