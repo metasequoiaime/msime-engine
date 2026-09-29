@@ -10,7 +10,6 @@
 #include "../local_modes/unicode_query.h"
 #include <algorithm>
 #include <iterator>
-#include <unordered_set>
 namespace metasequoia
 {
 local_modes::LocalQueryResult CandidateQueries::local(LocalInputMode mode, const std::string &preedit,
@@ -117,11 +116,7 @@ std::vector<WordItem> CandidateQueries::mixed(std::vector<WordItem> candidates, 
         return candidates;
     }
 
-    std::unordered_set<std::string> seen;
-    for (const auto &candidate : candidates)
-    {
-        seen.insert(candidate.word);
-    }
+    auto seen = collect_candidate_words(candidates);
 
     const auto collect_unique = [&](std::vector<WordItem> candidates) {
         return take_unique_candidates(std::move(candidates), seen);
