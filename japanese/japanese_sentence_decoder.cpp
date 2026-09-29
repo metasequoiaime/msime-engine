@@ -6,7 +6,6 @@
 #include <cstring>
 #include <fstream>
 #include <string_view>
-#include <unordered_set>
 #ifndef _WIN32
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -43,7 +42,6 @@ struct ModelToken
 #pragma pack(pop)
 
 constexpr char kMagic[8] = {'M', 'S', 'J', 'P', 'D', 'T', '1', '\0'};
-constexpr std::int64_t kUnknownKanaCost = 12000;
 constexpr size_t kShortPrefixCandidateCount = 64;
 
 } // namespace
@@ -333,73 +331,4 @@ std::vector<JapaneseLemma> JapaneseSentenceDecoder::PrefixLemmasContinuing(const
     return BestLemmas(matches, limit);
 }
 
-std::vector<SentenceCandidate> JapaneseSentenceDecoder::Decode(const std::string &reading, size_t limit) const
-{
-    if (!ready_ || reading.empty() || limit == 0)
-        return {};
-    struct Path
-    {
-        std::string text;
-        std::int64_t cost;
-        std::uint16_t right_id;
-    };
-    const auto boundaries = CommonUtils::utf8_boundaries(reading);
-    std::vector<std::vector<Path>> paths(reading.size() + 1);
-    paths[0].push_back({{}, 0, 0});
-    const size_t beam = (std::max)(size_t{16}, limit * 4);
-
-    for (size_t boundary_index = 0; boundary_index + 1 < boundaries.size(); ++boundary_index)
-    {
-        const size_t start = boundaries[boundary_index];
-        if (paths[start].empty())
-            continue;
-        for (size_t end_index = boundary_index + 1; end_index < boundaries.size(); ++end_index)
-        {
-            const size_t end = boundaries[end_index];
-            const std::string key = reading.substr(start, end - start);
-            const auto lemmas = ExactLemmas(key, 24);
-            for (const auto &lemma : lemmas)
-            {
-                for (const auto &previous : paths[start])
-                {
-                    paths[end].push_back(
-                        {previous.text + lemma.surface,
-                         previous.cost + lemma.word_cost + ConnectionCost(previous.right_id, lemma.left_id),
-                         lemma.right_id});
-                }
-            }
-        }
-
-        const size_t next = boundaries[boundary_index + 1];
-        const std::string kana = reading.substr(start, next - start);
-        for (const auto &previous : paths[start])
-            paths[next].push_back({previous.text + kana, previous.cost + kUnknownKanaCost, 0});
-
-        for (size_t end_index = boundary_index + 1; end_index < boundaries.size(); ++end_index)
-        {
-            auto &bucket = paths[boundaries[end_index]];
-            if (bucket.size() > beam)
-            {
-                std::partial_sort(bucket.begin(), bucket.begin() + beam, bucket.end(),
-                                  [](const Path &a, const Path &b) { return a.cost < b.cost; });
-                bucket.resize(beam);
-            }
-        }
-    }
-
-    auto finals = std::move(paths[reading.size()]);
-    for (auto &path : finals)
-        path.cost += ConnectionCost(path.right_id, 0);
-    std::sort(finals.begin(), finals.end(), [](const Path &a, const Path &b) { return a.cost < b.cost; });
-    std::vector<SentenceCandidate> result;
-    std::unordered_set<std::string> seen;
-    for (auto &path : finals)
-    {
-        if (seen.insert(path.text).second)
-            result.push_back({std::move(path.text), path.cost});
-        if (result.size() == limit)
-            break;
-    }
-    return result;
-}
 } // namespace japanese
