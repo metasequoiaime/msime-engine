@@ -15,6 +15,23 @@ enum class PersonalDictionaryKind
     QuickPhrase,
     English
 };
+
+inline const char *personal_dictionary_kind_name(PersonalDictionaryKind kind)
+{
+    switch (kind)
+    {
+    case PersonalDictionaryKind::Pinyin:
+        return "pinyin";
+    case PersonalDictionaryKind::Wubi:
+        return "wubi";
+    case PersonalDictionaryKind::QuickPhrase:
+        return "quick";
+    case PersonalDictionaryKind::English:
+        return "english";
+    }
+    return nullptr;
+}
+
 struct PersonalDictionaryEntry
 {
     PersonalDictionaryKind kind = PersonalDictionaryKind::Pinyin;
