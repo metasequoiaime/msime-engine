@@ -51,6 +51,11 @@ bool is_ascii_hex_digit(unsigned char character)
            (character >= 'A' && character <= 'F');
 }
 
+bool is_ascii_identifier_character(unsigned char character)
+{
+    return is_ascii_letter(character) || is_ascii_digit(character) || character == '-' || character == '_';
+}
+
 bool is_ascii_lowercase_string(std::string_view text)
 {
     return !text.empty() &&

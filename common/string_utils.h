@@ -14,6 +14,7 @@ bool is_ascii_uppercase(unsigned char character);
 bool is_ascii_letter(unsigned char character);
 bool is_ascii_digit(unsigned char character);
 bool is_ascii_hex_digit(unsigned char character);
+bool is_ascii_identifier_character(unsigned char character);
 bool is_ascii_lowercase_string(std::string_view text);
 char lowercase_ascii_char(unsigned char character);
 char uppercase_ascii_char(unsigned char character);

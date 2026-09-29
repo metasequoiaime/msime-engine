@@ -1287,9 +1287,8 @@ PersonalDictionaryEditResult edit_personal_dictionary(const RuntimePaths &paths,
                                                       const std::string &request_id)
 {
     using namespace user_dictionary;
-    if (request_id.size() > 128 || !std::all_of(request_id.begin(), request_id.end(), [](unsigned char ch) {
-            return CommonUtils::is_ascii_letter(ch) || CommonUtils::is_ascii_digit(ch) || ch == '-' || ch == '_';
-        }))
+    if (request_id.size() > 128 ||
+        !std::all_of(request_id.begin(), request_id.end(), CommonUtils::is_ascii_identifier_character))
         return {false, "Invalid personal dictionary request ID"};
     if (!previous && !replacement)
         return {false, "An entry is required"};
