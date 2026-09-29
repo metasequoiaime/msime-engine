@@ -31,6 +31,25 @@ bool is_han_code_point(std::uint32_t code_point)
            (code_point >= 0x20000 && code_point <= 0x2FA1F) || (code_point >= 0x30000 && code_point <= 0x323AF);
 }
 
+std::string find_han_char(const std::string &words, bool first)
+{
+    auto it = words.begin();
+    const auto end = words.end();
+    std::string result;
+    while (it != end)
+    {
+        const auto start = it;
+        const auto code_point = utf8::next(it, end);
+        if (is_han_code_point(code_point))
+        {
+            if (first)
+                return std::string(start, it);
+            result.assign(start, it);
+        }
+    }
+    return result;
+}
+
 constexpr char kUtf8Bom[] = "\xEF\xBB\xBF";
 
 void strip_line(std::string &line, bool first_line)
@@ -205,35 +224,12 @@ const Keymap &helpcode_keymap()
 
 std::string get_first_han_char(const std::string &words)
 {
-    auto it = words.begin();
-    const auto end = words.end();
-    while (it != end)
-    {
-        const auto start = it;
-        const auto code_point = utf8::next(it, end);
-        if (is_han_code_point(code_point))
-        {
-            return std::string(start, it);
-        }
-    }
-    return "";
+    return find_han_char(words, true);
 }
 
 std::string get_last_han_char(const std::string &words)
 {
-    auto it = words.begin();
-    const auto end = words.end();
-    std::string result;
-    while (it != end)
-    {
-        const auto start = it;
-        const auto code_point = utf8::next(it, end);
-        if (is_han_code_point(code_point))
-        {
-            result.assign(start, it);
-        }
-    }
-    return result;
+    return find_han_char(words, false);
 }
 
 std::string::size_type count_han_chars(const std::string &words)
