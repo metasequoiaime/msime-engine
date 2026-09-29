@@ -6,6 +6,7 @@
 #include "../core/data_path.h"
 #include "../common/string_utils.h"
 #include "../quanpin/quanpin_query.h"
+#include "../quanpin/quanpin_utils.h"
 
 #include <sqlite3.h>
 
@@ -51,19 +52,6 @@ quanpin::Segments expand_code(const std::string &normalized, SchemeType scheme, 
     return segments;
 }
 
-std::string syllable_initial(const std::string &syllable)
-{
-    if (syllable.size() >= 2)
-    {
-        const std::string prefix = syllable.substr(0, 2);
-        if (prefix == "zh" || prefix == "ch" || prefix == "sh")
-        {
-            return prefix;
-        }
-    }
-    return syllable.empty() ? std::string{} : syllable.substr(0, 1);
-}
-
 bool key_matches_initials(const std::string &key, const quanpin::Segments &initials)
 {
     const auto syllables = CommonUtils::split_by_delimiter(key, '\'');
@@ -73,7 +61,7 @@ bool key_matches_initials(const std::string &key, const quanpin::Segments &initi
     }
     for (std::size_t index = 0; index < initials.size(); ++index)
     {
-        if (syllable_initial(syllables[index]) != initials[index])
+        if (quanpin::initial_token(syllables[index]) != initials[index])
         {
             return false;
         }
