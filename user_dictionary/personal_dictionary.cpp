@@ -18,9 +18,7 @@ PersonalDictionaryValidation validate_personal_dictionary_entry(PersonalDictiona
     for (unsigned char ch : entry.value)
         if ((ch < 32 && !(quick && (ch == '\n' || ch == '\t'))) || ch == 127)
             return invalid("The word contains an unsupported control character");
-    for (char &ch : entry.key)
-        if (CommonUtils::is_ascii_uppercase(static_cast<unsigned char>(ch)))
-            ch = CommonUtils::lowercase_ascii_char(static_cast<unsigned char>(ch));
+    entry.key = CommonUtils::lowercase_ascii(std::move(entry.key));
     auto letters = [](unsigned char ch) { return CommonUtils::is_ascii_lowercase(ch); };
     switch (entry.kind)
     {
@@ -54,10 +52,7 @@ PersonalDictionaryValidation validate_personal_dictionary_entry(PersonalDictiona
             return invalid("Quick-phrase codes contain one to 32 letters or digits");
         break;
     case PersonalDictionaryKind::English: {
-        std::string normalized = entry.value;
-        for (char &ch : normalized)
-            if (CommonUtils::is_ascii_uppercase(static_cast<unsigned char>(ch)))
-                ch = CommonUtils::lowercase_ascii_char(static_cast<unsigned char>(ch));
+        const std::string normalized = CommonUtils::lowercase_ascii(entry.value);
         if (entry.key.size() > 64 || !std::all_of(entry.key.begin(), entry.key.end(), letters) ||
             normalized != entry.key)
             return invalid("English code must match the word's letters, ignoring case");
