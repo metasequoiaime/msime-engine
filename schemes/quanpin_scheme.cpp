@@ -30,14 +30,7 @@ QueryRequest QuanpinScheme::build_request() const
         quanpin::detect_active_helpcode_length(request.raw_input, request.raw_input_with_cases);
     std::string normalized_source = quanpin::strip_active_helpcodes(request.raw_input, request.raw_input_with_cases);
 
-    request.normalized_input.reserve(normalized_source.size());
-    for (const char ch : normalized_source)
-    {
-        if (ch != '\'')
-        {
-            request.normalized_input.push_back(ch);
-        }
-    }
+    request.normalized_input = CommonUtils::remove_apostrophe_delimiters(normalized_source);
     if (!request.normalized_input.empty())
     {
         try
