@@ -106,7 +106,6 @@ class QuanpinDictionary
         std::vector<WordItem> result);
     void mark_autocorrect_candidates(std::vector<WordItem> &candidates, const std::string &raw_input);
 
-    std::vector<std::string> select_data(const std::string &sql_str);
     int check_data(const std::string &sql_str);
     int insert_data(const std::string &sql_str);
     int update_data(const std::string &sql_str);
