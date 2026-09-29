@@ -105,7 +105,6 @@ class QuanpinDictionary
     void mark_autocorrect_candidates(std::vector<WordItem> &candidates, const std::string &raw_input);
 
     std::string build_sql_for_updating_word(std::string pinyin, const std::string &word);
-    void reset_cache_if_database_changed();
     int insert_word_to_series_cache_key(const std::string &cache_key, const std::string &pinyin,
                                         const std::vector<std::string> &words, CandidateSource source);
     int insert_word_to_series_cache_key(const std::string &cache_key, const std::string &pinyin,

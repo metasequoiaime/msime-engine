@@ -125,7 +125,7 @@ QuanpinDictionary::QuanpinDictionary(std::string db_path, metasequoia::RuntimePa
     // host already does off the typing path.
     quanpin::NgramTable::shared(paths_.dictionary(quanpin::kBigramFileName));
     quanpin::NgramTable::shared(paths_.dictionary(quanpin::kTrigramFileName));
-    reset_cache_if_database_changed();
+    metasequoia::reset_if_sqlite_data_version_changed(db_.get(), data_version_, [this] { reset_cache(); });
 }
 
 QuanpinDictionary::~QuanpinDictionary()
@@ -193,7 +193,7 @@ std::vector<WordItem> QuanpinDictionary::query_exact(const std::string &raw_inpu
                                                                                neural_keyboard_model_ != nullptr);
     if (!neural_enabled && series_cache_.contains(resolution.cache_key))
     {
-        reset_cache_if_database_changed();
+        metasequoia::reset_if_sqlite_data_version_changed(db_.get(), data_version_, [this] { reset_cache(); });
         if (auto cached = series_cache_.get(resolution.cache_key))
         {
             // CircularBuffer::get returns std::optional<Value> by value, so `cached` already owns a private copy and
@@ -837,12 +837,6 @@ void QuanpinDictionary::reset_cache()
     segmentation_cache_.clear();
 }
 
-void QuanpinDictionary::reset_cache_if_database_changed()
-{
-    if (metasequoia::sqlite_data_version_changed(db_.get(), data_version_))
-        reset_cache();
-}
-
 std::string QuanpinDictionary::build_sql_for_updating_word(std::string pinyin, const std::string &word)
 {
     pinyin = CommonUtils::remove_apostrophe_delimiters(pinyin);
@@ -875,7 +869,7 @@ std::vector<WordItem> QuanpinDictionary::fuzzy_candidates(const std::string &seg
     std::vector<WordItem> result;
     if (!options.rules || !db_)
         return result;
-    reset_cache_if_database_changed();
+    metasequoia::reset_if_sqlite_data_version_changed(db_.get(), data_version_, [this] { reset_cache(); });
     const auto cache_key = "fuzzy:" + std::to_string(options.rules) + ":" + segmentation;
     if (const auto cached = series_cache_.get(cache_key))
         return *cached;
