@@ -173,9 +173,7 @@ SharedKeymap load_helpcode_keymap(const std::filesystem::path &resources, const 
         if (pos == std::string::npos || pos == 0)
             continue;
         const auto code = line.substr(pos + 1, 2);
-        if (code.empty() || !std::all_of(code.begin(), code.end(), [](char ch) {
-                return CommonUtils::is_ascii_lowercase(static_cast<unsigned char>(ch));
-            }))
+        if (!CommonUtils::is_ascii_lowercase_string(code))
             continue;
         (*result)[line.substr(0, pos)] = code;
     }
