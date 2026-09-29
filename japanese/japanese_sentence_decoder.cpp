@@ -319,7 +319,7 @@ std::vector<JapaneseLemma> JapaneseSentenceDecoder::PrefixLemmasContinuing(const
         bool matched = false;
         for (const auto &kana : next_kana)
         {
-            if (remaining.size() >= kana.size() && remaining.compare(0, kana.size(), kana) == 0)
+            if (CommonUtils::starts_with(remaining, kana))
             {
                 matched = true;
                 break;
