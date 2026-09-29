@@ -1,4 +1,5 @@
 #include "../contracts/assets/assets.h"
+#include "../common/sqlite_query.h"
 #include "../common/string_utils.h"
 #include "quick_phrase_query.h"
 #include "local_database.h"
@@ -38,13 +39,9 @@ QuickPhraseQueryResult query_quick_phrases(const std::string &prefix, const std:
                                  "ORDER BY weight DESC,key,value LIMIT ?3";
     QuickPhraseQueryResult result;
     if (!query_prefix_rows(database.get(), {prefix}, kSql, limit, [&](sqlite3_stmt *statement) {
-            const auto *key = reinterpret_cast<const char *>(sqlite3_column_text(statement, 0));
-            const auto *value = reinterpret_cast<const char *>(sqlite3_column_text(statement, 1));
-            if (key != nullptr && value != nullptr)
-            {
-                result.candidates.emplace_back(key, value, sqlite3_column_int64(statement, 2),
-                                               CandidateSource::QuickPhrase);
-            }
+            if (const auto candidate =
+                    metasequoia::sqlite_read_word_item(statement, CandidateSource::QuickPhrase, false))
+                result.candidates.push_back(*candidate);
         }))
     {
         return database_query_failure("Quick phrase database could not be queried.");
