@@ -3,6 +3,7 @@
 #include "quanpin_query.h"
 
 #include "../common/helpcode_utils.h"
+#include "../common/sqlite_query.h"
 #include "../common/string_utils.h"
 #include "../common/sqlite_database.h"
 #include "../common/sqlite_statement.h"
@@ -813,6 +814,11 @@ std::string join_segments(const Segments &segments, const std::string &delimiter
 std::string build_table_name(const Segments &segments)
 {
     return build_table_name_impl(segments);
+}
+
+std::optional<WordItem> find_candidate(sqlite3 *database, const std::string &key, const std::string &value)
+{
+    return metasequoia::sqlite_query_word_item(database, build_table_name(split_segments(key)), key, value);
 }
 
 bool has_valid_word_pinyin(const std::string &key, const std::string &jp, const std::string &word,

@@ -795,8 +795,7 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::query_from_quanpin_da
 
 std::optional<WordItem> ShuangpinDictionary::find_candidate(const std::string &key, const std::string &value)
 {
-    const std::string table = quanpin::build_table_name(quanpin::split_segments(key));
-    return metasequoia::sqlite_query_word_item(quanpin_db_.get(), table, key, value);
+    return quanpin::find_candidate(quanpin_db_.get(), key, value);
 }
 
 vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::query_initial_from_quanpin_database(const std::string &code,

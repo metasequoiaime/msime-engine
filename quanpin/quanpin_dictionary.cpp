@@ -262,8 +262,7 @@ std::vector<WordItem> QuanpinDictionary::query_exact(const std::string &raw_inpu
 
 std::optional<WordItem> QuanpinDictionary::find_candidate(const std::string &key, const std::string &value)
 {
-    const std::string table = quanpin::build_table_name(quanpin::split_segments(key));
-    return metasequoia::sqlite_query_word_item(db_.get(), table, key, value);
+    return quanpin::find_candidate(db_.get(), key, value);
 }
 
 bool QuanpinDictionary::expand_initial_candidates(const std::string &code, std::vector<WordItem> &candidates)
