@@ -844,11 +844,6 @@ std::string ShuangpinDictionary::normalize_shuangpin_to_quanpin_input(const std:
     return CommonUtils::remove_apostrophe_delimiters(normalize_shuangpin_to_quanpin_segmentation(pinyin));
 }
 
-std::string ShuangpinDictionary::build_quanpin_sql_for_updating_word(const std::string &word) const
-{
-    return build_quanpin_sql_for_updating_word(get_quanpin(), word);
-}
-
 std::string ShuangpinDictionary::build_quanpin_sql_for_updating_word(std::string pinyin, const std::string &word) const
 {
     // The caller has already normalized the key to canonical Quanpin. Running
@@ -875,25 +870,6 @@ std::string ShuangpinDictionary::build_quanpin_sql_for_updating_word(std::string
     }
 
     return quanpin::build_sql_for_updating_word(segments, pinyin, word);
-}
-
-std::string ShuangpinDictionary::build_quanpin_sql_for_deleting_canonical_word(const std::string &canonical_pinyin,
-                                                                               const std::string &word) const
-{
-    const auto cuts = quanpin::cut_pinyin_by_mode(canonical_pinyin, "correction");
-    if (cuts.empty())
-    {
-        return "";
-    }
-
-    const std::string normalized = quanpin::join_segments(cuts.front());
-    const std::string jp = quanpin::segments_to_jianpin(cuts.front());
-    if (!quanpin::has_valid_word_pinyin(normalized, jp, word, true))
-    {
-        return "";
-    }
-
-    return quanpin::build_sql_for_deleting_word(cuts.front(), normalized, word);
 }
 
 string ShuangpinDictionary::search_sentence_from_ime_engine(const string &user_pinyin)

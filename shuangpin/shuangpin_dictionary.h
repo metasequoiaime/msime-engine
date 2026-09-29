@@ -115,14 +115,7 @@ class ShuangpinDictionary
     std::vector<WordItem> query_initial_from_quanpin_database(const std::string &code, int limit);
     std::string normalize_shuangpin_to_quanpin_segmentation(const std::string &pinyin) const;
     std::string normalize_shuangpin_to_quanpin_input(const std::string &pinyin) const;
-    std::string build_quanpin_sql_for_updating_word(const std::string &word) const;
     std::string build_quanpin_sql_for_updating_word(std::string pinyin, const std::string &word) const;
-    // The caller has already resolved the input (raw shuangpin or canonical
-    // quanpin) to a canonical quanpin key before reaching this helper.  Do
-    // not normalize it as shuangpin again: canonical keys are database keys,
-    // not user input.
-    std::string build_quanpin_sql_for_deleting_canonical_word(const std::string &canonical_pinyin,
-                                                              const std::string &word) const;
 
   private:
     // Lock
