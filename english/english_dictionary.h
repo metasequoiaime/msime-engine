@@ -22,8 +22,6 @@ class EnglishDictionary
     std::vector<WordItem> query_prefix(const std::string &prefix, size_t limit = 5);
     std::string query_chinese_gloss(const std::string &english);
     std::string query_english_gloss(const std::string &chinese);
-    bool ready();
-
     // 记下一条出货词库里没有的释义。写的是独立的用户文件,不是 english.db —— 换一代词库时
     // english.db 会从资源目录重新拷贝、只回放 msime_user.db,写进去的释义会被静默清掉。
     bool cache_gloss(bool chinese_to_english, const std::string &key, const std::string &gloss);

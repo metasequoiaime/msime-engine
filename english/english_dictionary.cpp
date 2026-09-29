@@ -86,11 +86,6 @@ std::vector<WordItem> EnglishDictionary::query_prefix(const std::string &prefix,
     return candidates;
 }
 
-bool EnglishDictionary::ready()
-{
-    return ensure_query_statement();
-}
-
 namespace
 {
 std::string QueryGloss(sqlite3_stmt *statement, const std::string &key)
