@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 #include <cstdint>
+#include <functional>
 
 namespace quanpin
 {
@@ -50,6 +51,10 @@ enum class WordInsertResult
 };
 WordInsertResult insert_word_if_missing(sqlite3 *database, const std::string &key, const std::string &jp,
                                         const std::string &value);
+// Records a newly inserted user word and invalidates the caller's candidate cache. Existing rows are already usable;
+// failed inserts are reported to the dictionary mutation API.
+bool complete_word_insert(WordInsertResult result, const std::string &user_db_path, const std::string &pinyin,
+                          const std::string &word, const std::function<void()> &reset_cache);
 std::string build_sql_for_updating_word(const Segments &segments, const std::string &key, const std::string &value);
 std::string build_sql_for_updating_word(std::string pinyin, const std::string &word,
                                         bool allow_shuangpin_fallback = false);

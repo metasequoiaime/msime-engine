@@ -693,7 +693,11 @@ int QuanpinDictionary::create_word(std::string pinyin, std::string word)
     }
 
     const auto insert_result = quanpin::insert_word_if_missing(db_.get(), pinyin, jp, word);
-    return finish_word_insert(pinyin, word, insert_result);
+    return quanpin::complete_word_insert(insert_result,
+                                         metasequoia::path_to_utf8(paths_.user(metasequoia::assets::user_journal)),
+                                         pinyin, word, [this] { reset_cache(); })
+               ? OK
+               : ERROR_CODE;
 }
 
 int QuanpinDictionary::create_word_from_canonical_pinyin(std::string pinyin, std::string word)
@@ -709,20 +713,11 @@ int QuanpinDictionary::create_word_from_canonical_pinyin(std::string pinyin, std
     // The caller supplied explicit canonical segmentation. Re-running the greedy correction
     // validator would erase those boundaries and reject valid readings such as qi'e'huan.
     const auto insert_result = quanpin::insert_word_if_missing(db_.get(), pinyin, jp, word);
-    return finish_word_insert(pinyin, word, insert_result);
-}
-
-int QuanpinDictionary::finish_word_insert(const std::string &pinyin, const std::string &word,
-                                          quanpin::WordInsertResult insert_result)
-{
-    if (insert_result == quanpin::WordInsertResult::Failed)
-        return ERROR_CODE;
-    if (insert_result == quanpin::WordInsertResult::Existing)
-        return OK;
-    (void)user_dictionary::record_user_insert(metasequoia::path_to_utf8(paths_.user(metasequoia::assets::user_journal)),
-                                              user_dictionary::DictionaryKind::Pinyin, pinyin, word, 10000);
-    reset_cache();
-    return OK;
+    return quanpin::complete_word_insert(insert_result,
+                                         metasequoia::path_to_utf8(paths_.user(metasequoia::assets::user_journal)),
+                                         pinyin, word, [this] { reset_cache(); })
+               ? OK
+               : ERROR_CODE;
 }
 
 int QuanpinDictionary::update_weight_by_pinyin_and_word(std::string pinyin, std::string word)

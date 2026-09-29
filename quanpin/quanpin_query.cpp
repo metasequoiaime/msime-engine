@@ -9,6 +9,7 @@
 #include "../common/sqlite_statement.h"
 #include "../core/data_path.h"
 #include "quanpin_utils.h"
+#include "../user_dictionary/user_dictionary_journal.h"
 #include <algorithm>
 #include <climits>
 #include <map>
@@ -834,6 +835,19 @@ WordInsertResult insert_word_if_missing(sqlite3 *database, const std::string &ke
         return WordInsertResult::Failed;
     }
     return WordInsertResult::Inserted;
+}
+
+bool complete_word_insert(WordInsertResult result, const std::string &user_db_path, const std::string &pinyin,
+                          const std::string &word, const std::function<void()> &reset_cache)
+{
+    if (result == WordInsertResult::Failed)
+        return false;
+    if (result == WordInsertResult::Existing)
+        return true;
+    (void)user_dictionary::record_user_insert(user_db_path, user_dictionary::DictionaryKind::Pinyin, pinyin, word,
+                                              10000);
+    reset_cache();
+    return true;
 }
 
 std::string build_sql_for_updating_word(const Segments &segments, const std::string &key, const std::string &value)
