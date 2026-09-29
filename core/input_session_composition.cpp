@@ -140,20 +140,6 @@ unsigned QuanpinAutocorrectTypes(const QueryRequest &request)
            (request.enable_quanpin_autocorrect_neighbor ? quanpin::kAutocorrectNeighbor : 0u);
 }
 
-std::string QuanpinLettersWithoutDelimiters(const std::string &text)
-{
-    std::string letters;
-    letters.reserve(text.size());
-    for (const char ch : text)
-    {
-        if (ch != '\'')
-        {
-            letters.push_back(ch);
-        }
-    }
-    return letters;
-}
-
 // Folds letters for autocorrect comparisons: lowercases and strips manual
 // delimiters, and maps the u-umlaut style 'v' spelling onto 'u'. The jv/nv
 // normalisation is not a correction, so it must never make the scheme
@@ -222,7 +208,8 @@ std::string BuildQuanpinAutocorrectDisplay(const QueryRequest &request)
 
     const unsigned types = QuanpinAutocorrectTypes(request);
     const std::string folded_input = FoldQuanpinAutocorrectLetters(cased);
-    const bool letters_rewritten = FoldQuanpinAutocorrectLetters(QuanpinLettersWithoutDelimiters(base)) != folded_input;
+    const bool letters_rewritten =
+        FoldQuanpinAutocorrectLetters(CommonUtils::remove_apostrophe_delimiters(base)) != folded_input;
 
     // Fast path: the scheme kept the typed letters and either no correction
     // type is enabled or the input is already a complete pinyin spelling, so
@@ -240,7 +227,7 @@ std::string BuildQuanpinAutocorrectDisplay(const QueryRequest &request)
     // The BFS cannot explain the input (e.g. a length-changing alias such as
     // mihng -> ming): fall back to the plain raw letters when the letters were
     // rewritten, otherwise keep the scheme segmentation untouched.
-    return letters_rewritten ? QuanpinLettersWithoutDelimiters(cased) : base;
+    return letters_rewritten ? CommonUtils::remove_apostrophe_delimiters(cased) : base;
 }
 } // namespace
 
