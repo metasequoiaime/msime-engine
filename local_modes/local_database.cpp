@@ -182,9 +182,7 @@ bool query_prefix_rows(sqlite3 *database, const std::vector<std::string> &prefix
             return false;
         }
         const std::string upper_bound = prefix_upper_bound(prefix);
-        if (sqlite3_bind_text(statement.get(), 1, prefix.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
-            sqlite3_bind_text(statement.get(), 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
-            sqlite3_bind_int(statement.get(), 3, limit) != SQLITE_OK)
+        if (!metasequoia::sqlite_bind_text_range_limit(statement.get(), prefix, upper_bound, limit))
         {
             return false;
         }

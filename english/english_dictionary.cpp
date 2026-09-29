@@ -55,9 +55,7 @@ std::vector<WordItem> EnglishDictionary::query_prefix(const std::string &prefix,
 
     sqlite3_reset(query_statement_.get());
     sqlite3_clear_bindings(query_statement_.get());
-    if (sqlite3_bind_text(query_statement_.get(), 1, prefix.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
-        sqlite3_bind_text(query_statement_.get(), 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
-        sqlite3_bind_int(query_statement_.get(), 3, sqlite_limit) != SQLITE_OK)
+    if (!metasequoia::sqlite_bind_text_range_limit(query_statement_.get(), prefix, upper_bound, sqlite_limit))
     {
         sqlite3_reset(query_statement_.get());
         return {};

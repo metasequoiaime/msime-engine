@@ -1,5 +1,6 @@
 #include "wubi_candidate_provider.h"
 #include "../core/candidate_utils.h"
+#include "../common/sqlite_statement.h"
 #include "../contracts/assets/assets.h"
 #include "../core/data_path.h"
 #include "../quanpin/quanpin_query.h"
@@ -57,10 +58,8 @@ std::vector<WordItem> WubiCandidateProvider::query(const QueryRequest &request)
     }
     const std::string upper_bound = prefix_upper_bound(request.normalized_input);
     sqlite3_clear_bindings(query_statement_.get());
-    if (sqlite3_bind_text(query_statement_.get(), 1, request.normalized_input.c_str(), -1, SQLITE_TRANSIENT) !=
-            SQLITE_OK ||
-        sqlite3_bind_text(query_statement_.get(), 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK ||
-        sqlite3_bind_int(query_statement_.get(), 3, kMaxCandidates) != SQLITE_OK)
+    if (!metasequoia::sqlite_bind_text_range_limit(query_statement_.get(), request.normalized_input, upper_bound,
+                                                   kMaxCandidates))
     {
         return {};
     }
