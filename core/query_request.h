@@ -47,3 +47,8 @@ inline const std::string &query_request_raw_input_with_cases(const QueryRequest 
 {
     return CommonUtils::raw_input_with_cases_or_raw(request.raw_input, request.raw_input_with_cases);
 }
+
+inline const std::string &query_request_normalized_segmentation(const QueryRequest &request)
+{
+    return request.normalized_segmentation.empty() ? request.segmentation : request.normalized_segmentation;
+}
