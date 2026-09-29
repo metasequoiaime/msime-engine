@@ -24,8 +24,6 @@ namespace quanpin
 namespace
 {
 
-using Statement = metasequoia::SqliteStatement;
-
 constexpr size_t kCorrectionPathLimit = 32;
 
 sqlite3_stmt *prepare_cached_statement(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache,
@@ -39,13 +37,14 @@ sqlite3_stmt *prepare_cached_statement(sqlite3 *db, metasequoia::SqliteStatement
         return statement;
     }
 
-    sqlite3_stmt *statement = nullptr;
-    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &statement, nullptr) != SQLITE_OK)
+    auto statement = metasequoia::sqlite_prepare_statement(db, sql);
+    if (!statement)
     {
         return nullptr;
     }
-    statement_cache.emplace(sql, metasequoia::SqliteStatement(statement));
-    return statement;
+    sqlite3_stmt *raw_statement = statement.get();
+    statement_cache.emplace(sql, std::move(statement));
+    return raw_statement;
 }
 
 using CorrectionAliases = std::unordered_map<std::string, std::vector<std::string>>;
@@ -430,16 +429,15 @@ std::vector<KeyedQueryItem> execute_keyed_query(sqlite3_stmt *statement, Binder 
 
 std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, const std::string &sql, const std::string &value, int limit)
 {
-    sqlite3_stmt *stmt = nullptr;
-    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
+    auto statement = metasequoia::sqlite_prepare_statement(db, sql);
+    if (!statement)
     {
         return {};
     }
-    Statement guard(stmt);
 
     return execute_keyed_query(
-        stmt, [&](sqlite3_stmt *statement) { (void)metasequoia::sqlite_bind_text_limit(statement, value, limit); },
-        false);
+        statement.get(),
+        [&](sqlite3_stmt *statement) { (void)metasequoia::sqlite_bind_text_limit(statement, value, limit); }, false);
 }
 
 std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache,
@@ -457,15 +455,14 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, metasequoia::SqliteStat
 std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, const std::string &sql, const std::string &lower_bound,
                                             const std::string &upper_bound, int limit)
 {
-    sqlite3_stmt *stmt = nullptr;
-    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
+    auto statement = metasequoia::sqlite_prepare_statement(db, sql);
+    if (!statement)
     {
         return {};
     }
-    Statement guard(stmt);
 
     return execute_keyed_query(
-        stmt,
+        statement.get(),
         [&](sqlite3_stmt *statement) {
             (void)metasequoia::sqlite_bind_text_range_limit(statement, lower_bound, upper_bound, limit);
         },
@@ -902,19 +899,19 @@ std::vector<KeyedQueryItem> query_initial(sqlite3 *db, const std::string &prefix
     const std::string table = "tbl_1_" + std::string(1, prefix.front());
     const std::string sql = "SELECT \"key\", \"value\", \"weight\" FROM \"" + table +
                             "\" WHERE \"key\" >= ?1 AND \"key\" < ?2 ORDER BY \"weight\" DESC LIMIT ?3";
-    sqlite3_stmt *stmt = nullptr;
-    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
+    auto statement = metasequoia::sqlite_prepare_statement(db, sql);
+    if (!statement)
     {
         return {};
     }
-    Statement guard(stmt);
 
     const std::string upper_bound = CommonUtils::ascii_prefix_upper_bound(prefix);
-    sqlite3_bind_text(stmt, 1, prefix.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_int(stmt, 3, limit);
+    if (!metasequoia::sqlite_bind_text_range_limit(statement.get(), prefix, upper_bound, limit))
+    {
+        return {};
+    }
 
-    return collect_keyed_query_rows(stmt);
+    return collect_keyed_query_rows(statement.get());
 }
 
 std::vector<KeyedQueryItem> query_segments_keyed_flat(const Segments &segments, const std::string &db_path, int limit,
