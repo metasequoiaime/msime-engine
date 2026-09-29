@@ -108,14 +108,7 @@ KeyResult InputSession::set_candidate_position(std::size_t index, int position)
                                   : user_dictionary::set_fixed_position(journal, context, key, selected.word, position);
     if (!ok)
         return {true, std::nullopt, "Unable to persist candidate position."};
-    reset_cache();
-    if (dedicated_english_mode_)
-        update_dedicated_english_candidates();
-    else if (local_input_mode_ != LocalInputMode::None)
-        return {true, std::nullopt, update_local_candidates()};
-    else
-        recompute_candidates();
-    return {true, std::nullopt, std::nullopt};
+    return {true, std::nullopt, refresh_after_candidate_change()};
 }
 
 KeyResult InputSession::remove_candidate(std::size_t index)
@@ -142,13 +135,6 @@ KeyResult InputSession::remove_candidate(std::size_t index)
             path_to_utf8(paths_.user(assets::user_journal)), kind, key, selected.word))
         return {true, std::nullopt, "Unable to persist candidate removal."};
 
-    reset_cache();
-    if (dedicated_english_mode_)
-        update_dedicated_english_candidates();
-    else if (local_input_mode_ != LocalInputMode::None)
-        return {true, std::nullopt, update_local_candidates()};
-    else
-        recompute_candidates();
-    return {true, std::nullopt, std::nullopt};
+    return {true, std::nullopt, refresh_after_candidate_change()};
 }
 } // namespace metasequoia
