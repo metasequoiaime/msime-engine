@@ -56,7 +56,7 @@ std::vector<WordItem> EnglishDictionary::query_prefix(const std::string &prefix,
     metasequoia::sqlite_reset_and_clear(query_statement_.get());
     if (!metasequoia::sqlite_bind_text_range_limit(query_statement_.get(), prefix, upper_bound, sqlite_limit))
     {
-        sqlite3_reset(query_statement_.get());
+        metasequoia::sqlite_reset_and_clear(query_statement_.get());
         return {};
     }
 
@@ -74,7 +74,7 @@ std::vector<WordItem> EnglishDictionary::query_prefix(const std::string &prefix,
                                 CandidateSource::EnglishDictionary);
     }
 
-    sqlite3_reset(query_statement_.get());
+    metasequoia::sqlite_reset_and_clear(query_statement_.get());
     if (result != SQLITE_DONE)
     {
         (void)0;
@@ -97,7 +97,7 @@ std::string QueryGloss(sqlite3_stmt *statement, const std::string &key)
         if (value != nullptr)
             result = value;
     }
-    sqlite3_reset(statement);
+    metasequoia::sqlite_reset_and_clear(statement);
     return result;
 }
 } // namespace

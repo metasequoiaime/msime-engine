@@ -81,8 +81,7 @@ Stmt prepare_upsert_journal(sqlite3 *db)
 bool write_upsert_journal(sqlite3_stmt *stmt, DictionaryKind kind, const std::string &key, const std::string &value,
                           std::int64_t weight, const std::string &display = {})
 {
-    sqlite3_reset(stmt);
-    sqlite3_clear_bindings(stmt);
+    metasequoia::sqlite_reset_and_clear(stmt);
     return bind_text(stmt, 1, kind_name(kind)) && bind_text(stmt, 2, key) && bind_text(stmt, 3, value) &&
            sqlite3_bind_int64(stmt, 4, weight) == SQLITE_OK && bind_text(stmt, 5, display) &&
            sqlite3_step(stmt) == SQLITE_DONE;

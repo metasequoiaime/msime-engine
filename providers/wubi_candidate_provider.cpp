@@ -38,8 +38,8 @@ std::vector<WordItem> WubiCandidateProvider::query(const QueryRequest &request)
         return {};
     }
 
-    sqlite3_reset(query_statement_.get());
-    sqlite3_reset(wildcard_statement_.get());
+    metasequoia::sqlite_reset_and_clear(query_statement_.get());
+    metasequoia::sqlite_reset_and_clear(wildcard_statement_.get());
     if (request.wubi_z_wildcard)
     {
         std::string pattern;
@@ -52,7 +52,6 @@ std::vector<WordItem> WubiCandidateProvider::query(const QueryRequest &request)
         return collect_rows(wildcard_statement_.get());
     }
     const std::string upper_bound = CommonUtils::ascii_prefix_upper_bound(request.normalized_input);
-    sqlite3_clear_bindings(query_statement_.get());
     if (!metasequoia::sqlite_bind_text_range_limit(query_statement_.get(), request.normalized_input, upper_bound,
                                                    kMaxCandidates))
     {

@@ -35,8 +35,7 @@ sqlite3_stmt *prepare_cached_statement(sqlite3 *db, metasequoia::SqliteStatement
     if (found != statement_cache.end())
     {
         sqlite3_stmt *statement = found->second.get();
-        sqlite3_reset(statement);
-        sqlite3_clear_bindings(statement);
+        metasequoia::sqlite_reset_and_clear(statement);
         return statement;
     }
 
@@ -438,10 +437,7 @@ std::vector<KeyedQueryItem> execute_keyed_query(sqlite3_stmt *statement, Binder 
 
     auto rows = collect_keyed_query_rows(statement);
     if (reset_statement)
-    {
-        sqlite3_reset(statement);
-        sqlite3_clear_bindings(statement);
-    }
+        metasequoia::sqlite_reset_and_clear(statement);
     return rows;
 }
 
