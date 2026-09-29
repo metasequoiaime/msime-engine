@@ -118,7 +118,7 @@ KeyResult InputSession::remove_candidate(std::size_t index)
     const auto selected = candidates()[index];
     const bool english = is_english_candidate_source(selected.source);
     if (!english && (!is_dictionary_candidate_source(selected.source) || scheme() == SchemeType::JapaneseRomaji ||
-                     HelpcodeUtils::count_utf8_chars(selected.word) <= 1))
+                     CommonUtils::count_utf8_chars(selected.word) <= 1))
         return {};
 
     const bool wubi = selected.scheme == SchemeType::Wubi && local_input_mode_ != LocalInputMode::SuperJianpin;

@@ -419,7 +419,7 @@ KeyResult NineKeySession::pin(std::size_t index)
 
 KeyResult NineKeySession::remove(std::size_t index)
 {
-    if (!editable(index) || HelpcodeUtils::count_utf8_chars(candidates_[index].word) <= 1)
+    if (!editable(index) || CommonUtils::count_utf8_chars(candidates_[index].word) <= 1)
         return {};
     const auto item = candidates_[index];
     if (!user_dictionary::delete_dictionary_candidate(
