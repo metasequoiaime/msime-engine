@@ -53,6 +53,24 @@ enum class FrequencyAdjustmentMode
     Promote,
 };
 
+inline const char *frequency_adjustment_mode_name(FrequencyAdjustmentMode mode)
+{
+    switch (mode)
+    {
+    case FrequencyAdjustmentMode::Disabled:
+        return "disabled";
+    case FrequencyAdjustmentMode::Pin:
+        return "pin";
+    case FrequencyAdjustmentMode::Halve:
+        return "halve";
+    case FrequencyAdjustmentMode::Linear:
+        return "linear";
+    case FrequencyAdjustmentMode::Promote:
+        return "promote";
+    }
+    return nullptr;
+}
+
 struct FrequencyAdjustmentOptions
 {
     FrequencyAdjustmentMode mode = FrequencyAdjustmentMode::Disabled;
