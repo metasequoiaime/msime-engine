@@ -19,16 +19,10 @@ namespace
 {
 std::shared_ptr<sqlite3> open_read_only(const std::filesystem::path &path)
 {
-    sqlite3 *raw = nullptr;
     // FULLMUTEX: a shared connection is used by the input worker and local-mode
     // query workers.
-    const int status =
-        sqlite3_open_v2(path_to_utf8(path).c_str(), &raw, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, nullptr);
-    metasequoia::SqliteDatabase database(raw);
-    if (status != SQLITE_OK)
-        return {};
-    sqlite3_busy_timeout(database.get(), 1000);
-    return std::shared_ptr<sqlite3>(database.release(), metasequoia::SqliteDatabaseCloser{});
+    return metasequoia::sqlite_open_shared_database(path_to_utf8(path), SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX,
+                                                    1000);
 }
 
 // Only the shipped dictionaries are shared. Other paths belong to tests or
