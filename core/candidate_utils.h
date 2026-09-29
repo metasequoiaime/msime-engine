@@ -230,12 +230,19 @@ inline bool append_unique_candidate(std::vector<WordItem> &target, std::unordere
     return append_unique_candidate(target, seen_words, pinyin, word, weight, source, pinyin);
 }
 
-inline void append_unique_candidates(std::vector<WordItem> &target, std::vector<WordItem> extra)
+inline std::unordered_set<std::string> collect_candidate_words(const std::vector<WordItem> &candidates,
+                                                               std::size_t additional_capacity = 0)
 {
     std::unordered_set<std::string> seen_words;
-    seen_words.reserve(target.size() + extra.size());
-    for (const auto &item : target)
+    seen_words.reserve(candidates.size() + additional_capacity);
+    for (const auto &item : candidates)
         seen_words.insert(item.word);
+    return seen_words;
+}
+
+inline void append_unique_candidates(std::vector<WordItem> &target, std::vector<WordItem> extra)
+{
+    auto seen_words = collect_candidate_words(target, extra.size());
     auto unique = take_unique_candidates(std::move(extra), seen_words);
     for (auto &item : unique)
         target.push_back(std::move(item));
@@ -243,10 +250,7 @@ inline void append_unique_candidates(std::vector<WordItem> &target, std::vector<
 
 inline void append_unique_candidates_copy(std::vector<WordItem> &target, const std::vector<WordItem> &extra)
 {
-    std::unordered_set<std::string> seen_words;
-    seen_words.reserve(target.size() + extra.size());
-    for (const auto &item : target)
-        seen_words.insert(item.word);
+    auto seen_words = collect_candidate_words(target, extra.size());
     for (const auto &item : extra)
     {
         if (seen_words.insert(item.word).second)
