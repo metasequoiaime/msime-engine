@@ -32,6 +32,19 @@ inline const char *personal_dictionary_kind_name(PersonalDictionaryKind kind)
     return nullptr;
 }
 
+inline std::optional<PersonalDictionaryKind> personal_dictionary_kind_from_name(const std::string &name)
+{
+    if (name == "pinyin")
+        return PersonalDictionaryKind::Pinyin;
+    if (name == "wubi")
+        return PersonalDictionaryKind::Wubi;
+    if (name == "quick")
+        return PersonalDictionaryKind::QuickPhrase;
+    if (name == "english")
+        return PersonalDictionaryKind::English;
+    return std::nullopt;
+}
+
 struct PersonalDictionaryEntry
 {
     PersonalDictionaryKind kind = PersonalDictionaryKind::Pinyin;
