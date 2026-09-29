@@ -310,19 +310,6 @@ bool needs_mixed_jianpin_query(const Segments &segments, QuerySource source)
     });
 }
 
-std::string extract_initial_token(const std::string &segment)
-{
-    if (segment.size() >= 2)
-    {
-        const auto prefix = segment.substr(0, 2);
-        if (prefix == "zh" || prefix == "ch" || prefix == "sh")
-        {
-            return prefix;
-        }
-    }
-    return segment.empty() ? "" : segment.substr(0, 1);
-}
-
 bool matches_mixed_segments(const std::string &key, const Segments &segments, QuerySource source)
 {
     const auto key_segments = CommonUtils::split_by_delimiter(key, '\'');
@@ -347,7 +334,7 @@ bool matches_mixed_segments(const std::string &key, const Segments &segments, Qu
         {
             if (source == QuerySource::Shuangpin)
             {
-                if (extract_initial_token(actual) != expected)
+                if (initial_token(actual) != expected)
                 {
                     return false;
                 }

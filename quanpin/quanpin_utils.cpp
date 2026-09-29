@@ -123,6 +123,19 @@ const std::unordered_set<std::string> &prefix_pinyin_set()
     return kSet;
 }
 
+std::string initial_token(const std::string &syllable)
+{
+    if (syllable.size() >= 2)
+    {
+        const auto prefix = syllable.substr(0, 2);
+        if (prefix == "zh" || prefix == "ch" || prefix == "sh")
+        {
+            return prefix;
+        }
+    }
+    return syllable.empty() ? std::string{} : syllable.substr(0, 1);
+}
+
 bool has_only_complete_pinyin_segments(const Segments &segments)
 {
     if (segments.empty())
