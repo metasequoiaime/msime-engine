@@ -31,7 +31,6 @@ bool has_only_complete_pinyin_segments(const Segments &segments);
 bool has_expected_complete_pinyin_segments(const Segments &segments, std::size_t expected_count);
 SyllableGraph build_syllable_graph(const std::string &pinyin);
 std::vector<Segments> enumerate_complete_segmentations(const SyllableGraph &graph, size_t path_limit = 32);
-std::vector<std::string> cut_one_piece_greedy(const std::string &pinyin, bool intact_only);
 std::vector<std::string> cut_one_piece_min_segments(const std::string &pinyin, bool intact_only);
 bool is_complete_pinyin_input(const std::string &pinyin);
 // Converts canonical v spellings to the forms accepted by the Google decoders.
