@@ -630,42 +630,37 @@ bool InputSession::has_composition() const
     return !preedit().empty();
 }
 
-const std::string &InputSession::preedit() const
+const std::string *InputSession::preedit_override() const
 {
     if (dedicated_english_mode_)
     {
-        return dedicated_english_preedit_;
+        return &dedicated_english_preedit_;
     }
     if (local_input_mode_ != LocalInputMode::None)
     {
-        return local_preedit_;
+        return &local_preedit_;
     }
+    return nullptr;
+}
+
+const std::string &InputSession::preedit() const
+{
+    if (const auto *special = preedit_override())
+        return *special;
     return engine_.get_preedit();
 }
 
 const std::string &InputSession::raw_segmentation() const
 {
-    if (dedicated_english_mode_)
-    {
-        return dedicated_english_preedit_;
-    }
-    if (local_input_mode_ != LocalInputMode::None)
-    {
-        return local_preedit_;
-    }
+    if (const auto *special = preedit_override())
+        return *special;
     return engine_.get_request().raw_segmentation;
 }
 
 const std::string &InputSession::normalized_segmentation() const
 {
-    if (dedicated_english_mode_)
-    {
-        return dedicated_english_preedit_;
-    }
-    if (local_input_mode_ != LocalInputMode::None)
-    {
-        return local_preedit_;
-    }
+    if (const auto *special = preedit_override())
+        return *special;
     return engine_.get_request().normalized_segmentation;
 }
 

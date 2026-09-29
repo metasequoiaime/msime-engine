@@ -251,6 +251,7 @@ class InputSession
 
   private:
     const QueryRequest &request() const;
+    const std::string *preedit_override() const;
     bool is_shuangpin() const;
     bool is_wubi() const;
     // Wubi whose candidates came from the wubi table. A code answered by the quanpin
