@@ -566,7 +566,9 @@ void deduplicate_keyed_items_by_value(std::vector<KeyedQueryItem> &items)
                 items.end());
 }
 
-std::vector<KeyedQueryItem> query_single_cut_keyed(sqlite3 *db, const Segments &segments, int limit, QuerySource source)
+template <typename ExactQuery, typename RangeQuery>
+std::vector<KeyedQueryItem> query_single_cut_keyed_impl(const Segments &segments, int limit, QuerySource source,
+                                                        ExactQuery exact_query, RangeQuery range_query)
 {
     const auto table = build_table_name_impl(segments);
     if (table.empty())
@@ -587,7 +589,7 @@ std::vector<KeyedQueryItem> query_single_cut_keyed(sqlite3 *db, const Segments &
     std::vector<KeyedQueryItem> rows;
     if (has_only_complete_pinyin_segments(segments))
     {
-        rows = run_keyed_query(db, exact_sql, key, limit);
+        rows = exact_query(exact_sql, key, limit);
         if (!rows.empty())
         {
             return rows;
@@ -596,7 +598,7 @@ std::vector<KeyedQueryItem> query_single_cut_keyed(sqlite3 *db, const Segments &
 
     const auto prefix_sql = "SELECT \"key\", \"value\", \"weight\" FROM \"" + table +
                             "\" WHERE \"key\" >= ? AND \"key\" < ? ORDER BY \"weight\" DESC LIMIT ?";
-    rows = run_keyed_query(db, prefix_sql, key_prefix, key_prefix_upper_bound, limit);
+    rows = range_query(prefix_sql, key_prefix, key_prefix_upper_bound, limit);
     if (!rows.empty())
     {
         return rows;
@@ -606,8 +608,7 @@ std::vector<KeyedQueryItem> query_single_cut_keyed(sqlite3 *db, const Segments &
     {
         const auto mixed_sql = "SELECT \"key\", \"value\", \"weight\" FROM \"" + table +
                                "\" WHERE \"jp\" = ? ORDER BY \"weight\" DESC LIMIT ?";
-        rows =
-            filter_mixed_jianpin_rows(run_keyed_query(db, mixed_sql, jp, mixed_query_limit), segments, limit, source);
+        rows = filter_mixed_jianpin_rows(exact_query(mixed_sql, jp, mixed_query_limit), segments, limit, source);
         if (!rows.empty())
         {
             return rows;
@@ -621,66 +622,33 @@ std::vector<KeyedQueryItem> query_single_cut_keyed(sqlite3 *db, const Segments &
 
     const auto jp_sql = "SELECT \"key\", \"value\", \"weight\" FROM \"" + table +
                         "\" WHERE \"jp\" = ? ORDER BY \"weight\" DESC LIMIT ?";
-    return run_keyed_query(db, jp_sql, jp, limit);
+    return exact_query(jp_sql, jp, limit);
+}
+
+std::vector<KeyedQueryItem> query_single_cut_keyed(sqlite3 *db, const Segments &segments, int limit, QuerySource source)
+{
+    return query_single_cut_keyed_impl(
+        segments, limit, source,
+        [db](const std::string &sql, const std::string &value, int query_limit) {
+            return run_keyed_query(db, sql, value, query_limit);
+        },
+        [db](const std::string &sql, const std::string &lower_bound, const std::string &upper_bound, int query_limit) {
+            return run_keyed_query(db, sql, lower_bound, upper_bound, query_limit);
+        });
 }
 
 std::vector<KeyedQueryItem> query_single_cut_keyed(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache,
                                                    const Segments &segments, int limit, QuerySource source)
 {
-    const auto table = build_table_name_impl(segments);
-    if (table.empty())
-    {
-        return {};
-    }
-
-    const auto key = join_segments(segments);
-    const auto jp = segments_to_jianpin_impl(segments);
-    const auto mixed_query_limit = build_mixed_jianpin_scan_limit(limit);
-    const auto needs_mixed_query = needs_mixed_jianpin_query(segments, source);
-    const auto key_prefix_pattern = build_key_like_pattern(segments);
-    const auto key_prefix = key_prefix_pattern.substr(0, key_prefix_pattern.size() - 1);
-    const auto key_prefix_upper_bound = CommonUtils::ascii_prefix_upper_bound(key_prefix);
-
-    const auto exact_sql = "SELECT \"key\", \"value\", \"weight\" FROM \"" + table +
-                           "\" WHERE \"key\" = ? ORDER BY \"weight\" DESC LIMIT ?";
-    std::vector<KeyedQueryItem> rows;
-    if (has_only_complete_pinyin_segments(segments))
-    {
-        rows = run_keyed_query(db, statement_cache, exact_sql, key, limit);
-        if (!rows.empty())
-        {
-            return rows;
-        }
-    }
-
-    const auto prefix_sql = "SELECT \"key\", \"value\", \"weight\" FROM \"" + table +
-                            "\" WHERE \"key\" >= ? AND \"key\" < ? ORDER BY \"weight\" DESC LIMIT ?";
-    rows = run_keyed_query(db, statement_cache, prefix_sql, key_prefix, key_prefix_upper_bound, limit);
-    if (!rows.empty())
-    {
-        return rows;
-    }
-
-    if (needs_mixed_query)
-    {
-        const auto mixed_sql = "SELECT \"key\", \"value\", \"weight\" FROM \"" + table +
-                               "\" WHERE \"jp\" = ? ORDER BY \"weight\" DESC LIMIT ?";
-        rows = filter_mixed_jianpin_rows(run_keyed_query(db, statement_cache, mixed_sql, jp, mixed_query_limit),
-                                         segments, limit, source);
-        if (!rows.empty())
-        {
-            return rows;
-        }
-    }
-
-    if (!is_pure_jianpin(segments))
-    {
-        return {};
-    }
-
-    const auto jp_sql = "SELECT \"key\", \"value\", \"weight\" FROM \"" + table +
-                        "\" WHERE \"jp\" = ? ORDER BY \"weight\" DESC LIMIT ?";
-    return run_keyed_query(db, statement_cache, jp_sql, jp, limit);
+    return query_single_cut_keyed_impl(
+        segments, limit, source,
+        [db, &statement_cache](const std::string &sql, const std::string &value, int query_limit) {
+            return run_keyed_query(db, statement_cache, sql, value, query_limit);
+        },
+        [db, &statement_cache](const std::string &sql, const std::string &lower_bound, const std::string &upper_bound,
+                               int query_limit) {
+            return run_keyed_query(db, statement_cache, sql, lower_bound, upper_bound, query_limit);
+        });
 }
 
 void stable_sort_keyed_query_items_by_weight(std::vector<KeyedQueryItem> &items)
