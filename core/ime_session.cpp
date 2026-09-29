@@ -237,12 +237,7 @@ int ImeSession::cache_dynamic_candidate_for_current_request(const std::string &w
 
 int ImeSession::apply_dynamic_candidate(const std::string &word, CandidateSource source)
 {
-    const int result = cache_dynamic_candidate_for_current_request(word, source);
-    if (result == 0)
-    {
-        refresh_candidates();
-    }
-    return result;
+    return finish_dynamic_candidate_update(cache_dynamic_candidate_for_current_request(word, source));
 }
 
 SchemeType ImeSession::current_scheme_type() const
@@ -350,7 +345,12 @@ std::unique_ptr<IInputScheme> ImeSession::create_scheme(SchemeType scheme_type) 
 
 int ImeSession::apply_dynamic_candidates(const std::vector<std::string> &words, CandidateSource source)
 {
-    const int result = provider_registry_.cache_dynamic_candidate_for_request(state_.request, words, source);
+    return finish_dynamic_candidate_update(
+        provider_registry_.cache_dynamic_candidate_for_request(state_.request, words, source));
+}
+
+int ImeSession::finish_dynamic_candidate_update(int result)
+{
     if (result == 0)
         refresh_candidates();
     return result;
