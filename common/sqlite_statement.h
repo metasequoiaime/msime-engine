@@ -23,6 +23,15 @@ struct SqliteStatementCloser
 using SqliteStatement = std::unique_ptr<sqlite3_stmt, SqliteStatementCloser>;
 using SqliteStatementCache = std::unordered_map<std::string, SqliteStatement>;
 
+inline void sqlite_reset_and_clear(sqlite3_stmt *statement)
+{
+    if (statement != nullptr)
+    {
+        sqlite3_reset(statement);
+        sqlite3_clear_bindings(statement);
+    }
+}
+
 inline SqliteStatement sqlite_prepare_statement(sqlite3 *database, const char *sql)
 {
     if (database == nullptr || sql == nullptr)

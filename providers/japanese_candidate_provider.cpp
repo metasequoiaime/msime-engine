@@ -182,8 +182,7 @@ std::optional<WordItem> JapaneseCandidateProvider::find_candidate(SchemeType sch
 void JapaneseCandidateProvider::bind_query_statement(const std::string &raw_input_with_cases,
                                                      const std::string &raw_input)
 {
-    sqlite3_reset(query_statement_.get());
-    sqlite3_clear_bindings(query_statement_.get());
+    metasequoia::sqlite_reset_and_clear(query_statement_.get());
     sqlite3_bind_text(query_statement_.get(), 1, raw_input_with_cases.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(query_statement_.get(), 2, raw_input.c_str(), -1, SQLITE_TRANSIENT);
     const std::string like_raw = EscapeLikePrefix(raw_input);

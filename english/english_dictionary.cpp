@@ -53,8 +53,7 @@ std::vector<WordItem> EnglishDictionary::query_prefix(const std::string &prefix,
     const int sqlite_limit =
         static_cast<int>((std::min)(limit, static_cast<size_t>((std::numeric_limits<int>::max)())));
 
-    sqlite3_reset(query_statement_.get());
-    sqlite3_clear_bindings(query_statement_.get());
+    metasequoia::sqlite_reset_and_clear(query_statement_.get());
     if (!metasequoia::sqlite_bind_text_range_limit(query_statement_.get(), prefix, upper_bound, sqlite_limit))
     {
         sqlite3_reset(query_statement_.get());
@@ -88,8 +87,7 @@ namespace
 {
 std::string QueryGloss(sqlite3_stmt *statement, const std::string &key)
 {
-    sqlite3_reset(statement);
-    sqlite3_clear_bindings(statement);
+    metasequoia::sqlite_reset_and_clear(statement);
     if (sqlite3_bind_text(statement, 1, key.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK)
         return {};
     std::string result;
