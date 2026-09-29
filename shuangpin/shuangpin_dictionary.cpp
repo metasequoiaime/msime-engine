@@ -671,15 +671,11 @@ int ShuangpinDictionary::create_word_from_quanpin(string pinyin, string word)
         return ERROR_CODE;
     }
     const auto insert_result = quanpin::insert_word_if_missing(quanpin_db_.get(), pinyin, jp, word);
-    if (insert_result == quanpin::WordInsertResult::Failed)
-        return ERROR_CODE;
-    if (insert_result == quanpin::WordInsertResult::Existing)
-        return OK;
-    (void)user_dictionary::record_user_insert(metasequoia::path_to_utf8(paths_.user(metasequoia::assets::user_journal)),
-                                              user_dictionary::DictionaryKind::Pinyin, pinyin, word, 10000);
-    /* 插入新词之后要清理缓存 */
-    reset_cache();
-    return OK;
+    return quanpin::complete_word_insert(insert_result,
+                                         metasequoia::path_to_utf8(paths_.user(metasequoia::assets::user_journal)),
+                                         pinyin, word, [this] { reset_cache(); })
+               ? OK
+               : ERROR_CODE;
 }
 
 int ShuangpinDictionary::update_weight_by_pinyin_and_word(string pinyin, string word)
