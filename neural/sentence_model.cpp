@@ -1,5 +1,6 @@
 #include "sentence_model.h"
 
+#include "../common/string_utils.h"
 #include "json.h"
 
 #include <algorithm>
@@ -25,29 +26,6 @@ std::size_t utf8_character_count(const std::string &text)
         }
     }
     return count;
-}
-
-std::string last_utf8_characters(const std::string &text, std::size_t count)
-{
-    if (count == 0)
-    {
-        return {};
-    }
-    std::size_t seen = 0;
-    std::size_t start = text.size();
-    for (std::size_t i = text.size(); i-- > 0;)
-    {
-        if ((static_cast<unsigned char>(text[i]) & 0xC0) == 0x80)
-        {
-            continue;
-        }
-        start = i;
-        if (++seen == count)
-        {
-            break;
-        }
-    }
-    return text.substr(start);
 }
 
 // The exact GELU, matching torch.nn.functional.gelu with its default settings. The tanh
@@ -378,7 +356,7 @@ std::string rerank_context(const std::string &context, std::size_t window, std::
     {
         return context;
     }
-    return last_utf8_characters(context, keep);
+    return CommonUtils::last_utf8_characters(context, keep);
 }
 
 float Matrix::dot_row(const float *x, std::size_t row, std::size_t width) const

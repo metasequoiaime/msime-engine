@@ -72,6 +72,29 @@ std::string::size_type count_utf8_chars(const std::string &text)
     return utf8::distance(text.begin(), text.end());
 }
 
+std::string last_utf8_characters(std::string_view text, std::size_t count)
+{
+    if (count == 0)
+    {
+        return {};
+    }
+    std::size_t seen = 0;
+    std::size_t start = text.size();
+    for (std::size_t index = text.size(); index-- > 0;)
+    {
+        if ((static_cast<unsigned char>(text[index]) & 0xC0) == 0x80)
+        {
+            continue;
+        }
+        start = index;
+        if (++seen == count)
+        {
+            break;
+        }
+    }
+    return std::string(text.substr(start));
+}
+
 std::size_t utf8_code_point_length(std::string_view text)
 {
     if (text.empty())

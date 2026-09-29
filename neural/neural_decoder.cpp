@@ -1,5 +1,6 @@
 #include "neural_decoder.h"
 
+#include "../common/string_utils.h"
 #include "sentence_model.h"
 
 #include <algorithm>
@@ -22,25 +23,7 @@ constexpr double kLog10ToNats = 2.302585092994046;
 
 std::string last_characters(const std::string &text, std::size_t count)
 {
-    if (count == 0)
-    {
-        return {};
-    }
-    std::size_t seen = 0;
-    std::size_t start = text.size();
-    for (std::size_t i = text.size(); i-- > 0;)
-    {
-        if ((static_cast<unsigned char>(text[i]) & 0xC0) == 0x80)
-        {
-            continue; // continuation byte
-        }
-        start = i;
-        if (++seen == count)
-        {
-            break;
-        }
-    }
-    return text.substr(start);
+    return CommonUtils::last_utf8_characters(text, count);
 }
 
 const SentenceModel *shared_sentence_model(const std::string &path)
