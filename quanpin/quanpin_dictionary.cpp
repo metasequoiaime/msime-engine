@@ -160,8 +160,8 @@ void QuanpinDictionary::set_rescoring_context(const std::string &context)
     // The committed context only affects ordering when a neural model is active. Keep the
     // dictionary cache warm for the normal path, where every selection would otherwise make the
     // next few keystrokes cold queries.
-    const bool rescoring_active = (sentence_association_.neural_keyboard && neural_keyboard_model_ != nullptr) ||
-                                  (sentence_association_.neural_desktop && neural_desktop_model_ != nullptr);
+    const bool rescoring_active = sentence_association_.neural_reranking_enabled(neural_desktop_model_ != nullptr,
+                                                                                 neural_keyboard_model_ != nullptr);
     if (rescoring_active)
         reset_cache();
 }
@@ -189,8 +189,8 @@ std::vector<WordItem> QuanpinDictionary::query_exact(const std::string &raw_inpu
 
     // Autocorrected results get their own cache slot so they never leak the
     // fallback tail into plain (correct) spellings sharing the same key.
-    const bool neural_enabled = (sentence_association_.neural_keyboard && neural_keyboard_model_ != nullptr) ||
-                                (sentence_association_.neural_desktop && neural_desktop_model_ != nullptr);
+    const bool neural_enabled = sentence_association_.neural_reranking_enabled(neural_desktop_model_ != nullptr,
+                                                                               neural_keyboard_model_ != nullptr);
     if (!neural_enabled && series_cache_.contains(resolution.cache_key))
     {
         reset_cache_if_database_changed();
