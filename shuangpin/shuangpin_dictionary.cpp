@@ -127,11 +127,7 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generate( //
  */
 void ShuangpinDictionary::set_sentence_alternatives(bool enabled)
 {
-    if (sentence_alternatives_ == enabled)
-        return;
-    sentence_alternatives_ = enabled;
-    // The cached series were assembled under the previous answer.
-    _cached_buffer_series.clear();
+    (void)update_sentence_alternatives(sentence_alternatives_, enabled, [this] { _cached_buffer_series.clear(); });
 }
 
 vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generateSeries( //

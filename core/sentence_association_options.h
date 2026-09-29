@@ -45,6 +45,16 @@ struct SentenceAssociationOptions
     }
 };
 
+template <typename ClearCaches>
+bool update_sentence_alternatives(bool &stored_value, bool enabled, ClearCaches &&clear_caches)
+{
+    if (stored_value == enabled)
+        return false;
+    stored_value = enabled;
+    std::forward<ClearCaches>(clear_caches)();
+    return true;
+}
+
 template <typename ResetCache>
 bool update_sentence_association_options(SentenceAssociationOptions &stored_options,
                                          const SentenceAssociationOptions &options, ResetCache &&reset_cache)
