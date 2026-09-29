@@ -973,6 +973,22 @@ void InputSession::update_dedicated_english_candidates()
     }
 }
 
+std::optional<std::string> InputSession::refresh_after_candidate_change()
+{
+    reset_cache();
+    if (dedicated_english_mode_)
+    {
+        update_dedicated_english_candidates();
+        return std::nullopt;
+    }
+    if (local_input_mode_ != LocalInputMode::None)
+    {
+        return update_local_candidates();
+    }
+    recompute_candidates();
+    return std::nullopt;
+}
+
 void InputSession::reset_composition()
 {
     caret_.reset();
@@ -1064,14 +1080,7 @@ KeyResult InputSession::pin_candidate(std::size_t index)
     auto diagnostic = adjust_candidate_frequency(index, {FrequencyAdjustmentMode::Pin, 1, 1}, true);
     if (diagnostic)
         return {true, std::nullopt, std::move(diagnostic)};
-    reset_cache();
-    if (dedicated_english_mode_)
-        update_dedicated_english_candidates();
-    else if (local_input_mode_ != LocalInputMode::None)
-        diagnostic = update_local_candidates();
-    else
-        recompute_candidates();
-    return {true, std::nullopt, std::move(diagnostic)};
+    return {true, std::nullopt, refresh_after_candidate_change()};
 }
 
 std::optional<std::string> InputSession::adjust_candidate_frequency(std::size_t index,
