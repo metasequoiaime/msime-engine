@@ -270,33 +270,6 @@ std::vector<Segments> enumerate_complete_segmentations(const SyllableGraph &grap
     return result;
 }
 
-std::vector<std::string> cut_one_piece_greedy(const std::string &pinyin, bool intact_only)
-{
-    const auto &pinyin_set = intact_only ? intact_pinyin_set() : prefix_pinyin_set();
-    std::vector<std::string> result;
-    size_t index = 0;
-    while (index < pinyin.size())
-    {
-        std::string matched;
-        for (size_t end = pinyin.size(); end > index; --end)
-        {
-            const auto piece = pinyin.substr(index, end - index);
-            if (pinyin_set.find(piece) != pinyin_set.end())
-            {
-                matched = piece;
-                break;
-            }
-        }
-        if (matched.empty())
-        {
-            return {};
-        }
-        result.push_back(matched);
-        index += matched.size();
-    }
-    return result;
-}
-
 std::vector<std::string> cut_one_piece_min_segments(const std::string &pinyin, bool intact_only)
 {
     const auto &pinyin_set = intact_only ? intact_pinyin_set() : prefix_pinyin_set();
