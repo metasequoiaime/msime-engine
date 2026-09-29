@@ -423,6 +423,32 @@ void append_keyed_query_rows(std::vector<KeyedQueryItem> &rows, sqlite3_stmt *st
     }
 }
 
+std::vector<KeyedQueryItem> collect_keyed_query_rows(sqlite3_stmt *statement)
+{
+    std::vector<KeyedQueryItem> rows;
+    append_keyed_query_rows(rows, statement);
+    return rows;
+}
+
+template <typename Binder>
+std::vector<KeyedQueryItem> execute_keyed_query(sqlite3_stmt *statement, Binder &&bind, bool reset_statement)
+{
+    if (statement == nullptr)
+    {
+        return {};
+    }
+
+    bind(statement);
+
+    auto rows = collect_keyed_query_rows(statement);
+    if (reset_statement)
+    {
+        sqlite3_reset(statement);
+        sqlite3_clear_bindings(statement);
+    }
+    return rows;
+}
+
 std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, const std::string &sql, const std::string &value, int limit)
 {
     sqlite3_stmt *stmt = nullptr;
@@ -432,12 +458,13 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, const std::string &sql,
     }
     Statement guard(stmt);
 
-    sqlite3_bind_text(stmt, 1, value.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_int(stmt, 2, limit);
-
-    std::vector<KeyedQueryItem> rows;
-    append_keyed_query_rows(rows, stmt);
-    return rows;
+    return execute_keyed_query(
+        stmt,
+        [&](sqlite3_stmt *statement) {
+            sqlite3_bind_text(statement, 1, value.c_str(), -1, SQLITE_TRANSIENT);
+            sqlite3_bind_int(statement, 2, limit);
+        },
+        false);
 }
 
 std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache,
@@ -447,14 +474,13 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, metasequoia::SqliteStat
     if (stmt == nullptr)
         return {};
 
-    sqlite3_bind_text(stmt, 1, value.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_int(stmt, 2, limit);
-
-    std::vector<KeyedQueryItem> rows;
-    append_keyed_query_rows(rows, stmt);
-    sqlite3_reset(stmt);
-    sqlite3_clear_bindings(stmt);
-    return rows;
+    return execute_keyed_query(
+        stmt,
+        [&](sqlite3_stmt *statement) {
+            sqlite3_bind_text(statement, 1, value.c_str(), -1, SQLITE_TRANSIENT);
+            sqlite3_bind_int(statement, 2, limit);
+        },
+        true);
 }
 
 std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, const std::string &sql, const std::string &lower_bound,
@@ -467,13 +493,14 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, const std::string &sql,
     }
     Statement guard(stmt);
 
-    sqlite3_bind_text(stmt, 1, lower_bound.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_int(stmt, 3, limit);
-
-    std::vector<KeyedQueryItem> rows;
-    append_keyed_query_rows(rows, stmt);
-    return rows;
+    return execute_keyed_query(
+        stmt,
+        [&](sqlite3_stmt *statement) {
+            sqlite3_bind_text(statement, 1, lower_bound.c_str(), -1, SQLITE_TRANSIENT);
+            sqlite3_bind_text(statement, 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT);
+            sqlite3_bind_int(statement, 3, limit);
+        },
+        false);
 }
 
 std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache,
@@ -484,15 +511,14 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, metasequoia::SqliteStat
     if (stmt == nullptr)
         return {};
 
-    sqlite3_bind_text(stmt, 1, lower_bound.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_int(stmt, 3, limit);
-
-    std::vector<KeyedQueryItem> rows;
-    append_keyed_query_rows(rows, stmt);
-    sqlite3_reset(stmt);
-    sqlite3_clear_bindings(stmt);
-    return rows;
+    return execute_keyed_query(
+        stmt,
+        [&](sqlite3_stmt *statement) {
+            sqlite3_bind_text(statement, 1, lower_bound.c_str(), -1, SQLITE_TRANSIENT);
+            sqlite3_bind_text(statement, 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT);
+            sqlite3_bind_int(statement, 3, limit);
+        },
+        true);
 }
 
 std::vector<KeyedQueryItem> run_keyed_batch_query(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache,
@@ -520,17 +546,16 @@ std::vector<KeyedQueryItem> run_keyed_batch_query(sqlite3 *db, metasequoia::Sqli
     if (stmt == nullptr)
         return {};
 
-    for (size_t index = 0; index < keys.size(); ++index)
-    {
-        sqlite3_bind_text(stmt, static_cast<int>(index + 1), keys[index].c_str(), -1, SQLITE_TRANSIENT);
-    }
-    sqlite3_bind_int(stmt, static_cast<int>(keys.size() + 1), limit);
-
-    std::vector<KeyedQueryItem> rows;
-    append_keyed_query_rows(rows, stmt);
-    sqlite3_reset(stmt);
-    sqlite3_clear_bindings(stmt);
-    return rows;
+    return execute_keyed_query(
+        stmt,
+        [&](sqlite3_stmt *statement) {
+            for (size_t index = 0; index < keys.size(); ++index)
+            {
+                sqlite3_bind_text(statement, static_cast<int>(index + 1), keys[index].c_str(), -1, SQLITE_TRANSIENT);
+            }
+            sqlite3_bind_int(statement, static_cast<int>(keys.size() + 1), limit);
+        },
+        true);
 }
 
 std::vector<KeyedQueryItem> filter_mixed_jianpin_rows(const std::vector<KeyedQueryItem> &rows, const Segments &segments,
@@ -903,9 +928,7 @@ std::vector<KeyedQueryItem> query_initial(sqlite3 *db, const std::string &prefix
     sqlite3_bind_text(stmt, 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_int(stmt, 3, limit);
 
-    std::vector<KeyedQueryItem> rows;
-    append_keyed_query_rows(rows, stmt);
-    return rows;
+    return collect_keyed_query_rows(stmt);
 }
 
 std::vector<KeyedQueryItem> query_segments_keyed_flat(const Segments &segments, const std::string &db_path, int limit,
