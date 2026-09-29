@@ -3,7 +3,6 @@
 #include "japanese_sentence_decoder.h"
 #include "romaji_converter.h"
 #include <string>
-#include <string_view>
 #include <vector>
 
 namespace japanese
@@ -38,7 +37,6 @@ class JapaneseMatrixSearch
 
     explicit JapaneseMatrixSearch(const JapaneseSentenceDecoder &decoder);
 
-    std::vector<SentenceCandidate> Search(std::string_view romaji, size_t limit = 16) const;
     std::vector<SentenceCandidate> SearchConverted(const RomajiConversion &conversion, size_t limit = 16) const;
     std::vector<SentenceCandidate> SearchReading(const std::string &reading, const std::string &pending,
                                                  size_t limit = 16) const;
