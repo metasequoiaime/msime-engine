@@ -110,7 +110,6 @@ class QuanpinDictionary
     int check_data(const std::string &sql_str);
     int insert_data(const std::string &sql_str);
     int update_data(const std::string &sql_str);
-    int delete_data(const std::string &sql_str);
 
     std::string build_sql_for_updating_word(const std::string &word);
     std::string build_sql_for_updating_word(std::string pinyin, const std::string &word);

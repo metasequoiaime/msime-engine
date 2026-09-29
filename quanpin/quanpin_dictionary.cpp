@@ -889,11 +889,6 @@ int QuanpinDictionary::update_data(const std::string &sql_str)
     return metasequoia::sqlite_execute_statement(db_.get(), sql_str) ? OK : ERROR_CODE;
 }
 
-int QuanpinDictionary::delete_data(const std::string &sql_str)
-{
-    return metasequoia::sqlite_execute_statement(db_.get(), sql_str) ? OK : ERROR_CODE;
-}
-
 std::string QuanpinDictionary::build_sql_for_updating_word(const std::string &word)
 {
     return build_sql_for_updating_word(CommonUtils::remove_apostrophe_delimiters(pinyin_segmentation_), word);
