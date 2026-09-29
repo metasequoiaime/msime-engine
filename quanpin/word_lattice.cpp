@@ -1,5 +1,6 @@
 #include "word_lattice.h"
 #include "../core/candidate_utils.h"
+#include "../common/string_utils.h"
 
 #include <algorithm>
 #include <cmath>
@@ -121,17 +122,6 @@ std::vector<std::vector<LatticeEdge>> build_graph(const Segments &syllables, con
         }
     }
     return graph;
-}
-
-size_t utf8_codepoints(const std::string &text)
-{
-    size_t n = 0;
-    for (unsigned char c : text)
-    {
-        if ((c & 0xC0) != 0x80)
-            ++n;
-    }
-    return n;
 }
 
 // The beam carries one word of history, so a third word of context cannot be searched without widening every
@@ -313,7 +303,7 @@ bool covers_all_syllables(const WordItem &item, size_t n_syllables)
 {
     if (n_syllables == 0)
         return false;
-    if (utf8_codepoints(item.word) == n_syllables)
+    if (CommonUtils::count_utf8_chars(item.word) == n_syllables)
         return true;
     if (!item.canonical_pinyin.empty() && syllable_count_from_key(item.canonical_pinyin) == n_syllables)
         return true;
