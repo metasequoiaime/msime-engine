@@ -17,12 +17,6 @@ namespace
 {
 using Statement = metasequoia::SqliteStatement;
 
-bool IsLowerAsciiWord(const std::string &value)
-{
-    return !value.empty() && std::all_of(value.begin(), value.end(),
-                                         [](unsigned char ch) { return CommonUtils::is_ascii_lowercase(ch); });
-}
-
 } // namespace
 
 EnglishDictionary::EnglishDictionary(std::string db_path, bool initialize_schema, std::string translations_path,
@@ -44,7 +38,7 @@ EnglishDictionary::~EnglishDictionary()
 
 std::vector<WordItem> EnglishDictionary::query_prefix(const std::string &prefix, size_t limit)
 {
-    if (!IsLowerAsciiWord(prefix) || limit == 0 || !ensure_query_statement())
+    if (!CommonUtils::is_ascii_lowercase_string(prefix) || limit == 0 || !ensure_query_statement())
     {
         return {};
     }
