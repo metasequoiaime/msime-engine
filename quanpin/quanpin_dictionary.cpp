@@ -131,12 +131,10 @@ QuanpinDictionary::~QuanpinDictionary()
 
 void QuanpinDictionary::set_sentence_alternatives(bool enabled)
 {
-    if (sentence_alternatives_ == enabled)
-        return;
-    sentence_alternatives_ = enabled;
-    // The caches hold lists assembled under the previous answer, so they cannot be reused.
-    cache_.clear();
-    series_cache_.clear();
+    (void)update_sentence_alternatives(sentence_alternatives_, enabled, [this] {
+        cache_.clear();
+        series_cache_.clear();
+    });
 }
 
 void QuanpinDictionary::set_sentence_association(const SentenceAssociationOptions &options)
