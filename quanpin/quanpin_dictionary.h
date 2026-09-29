@@ -108,6 +108,7 @@ class QuanpinDictionary
                                         const std::vector<std::string> &words, CandidateSource source);
     int insert_word_to_series_cache_key(const std::string &cache_key, const std::string &pinyin,
                                         const std::string &word, CandidateSource source);
+    int finish_word_insert(const std::string &pinyin, const std::string &word, quanpin::WordInsertResult insert_result);
 
   private:
     CircularBuffer<std::string, std::vector<WordItem>> cache_;
