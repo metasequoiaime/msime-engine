@@ -1,5 +1,6 @@
 #include "../contracts/assets/assets.h"
 #include "english_dictionary.h"
+#include "../common/sqlite_query.h"
 #include "../common/string_utils.h"
 #include "../core/data_path.h"
 #include "../common/sqlite_database.h"
@@ -58,14 +59,9 @@ std::vector<WordItem> EnglishDictionary::query_prefix(const std::string &prefix,
     int result = SQLITE_ROW;
     while ((result = sqlite3_step(query_statement_.get())) == SQLITE_ROW)
     {
-        const auto *word = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_.get(), 0));
-        const auto *display = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_.get(), 1));
-        if (word == nullptr || display == nullptr)
-        {
-            continue;
-        }
-        candidates.emplace_back(word, display, sqlite3_column_int64(query_statement_.get(), 2),
-                                CandidateSource::EnglishDictionary);
+        if (const auto candidate =
+                metasequoia::sqlite_read_word_item(query_statement_.get(), CandidateSource::EnglishDictionary, false))
+            candidates.push_back(*candidate);
     }
 
     metasequoia::sqlite_reset_and_clear(query_statement_.get());
