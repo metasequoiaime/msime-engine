@@ -14,23 +14,6 @@ namespace metasequoia
 {
 namespace
 {
-const char *frequency_mode_name(FrequencyAdjustmentMode mode)
-{
-    switch (mode)
-    {
-    case FrequencyAdjustmentMode::Disabled:
-        return "disabled";
-    case FrequencyAdjustmentMode::Pin:
-        return "pin";
-    case FrequencyAdjustmentMode::Halve:
-        return "halve";
-    case FrequencyAdjustmentMode::Linear:
-        return "linear";
-    case FrequencyAdjustmentMode::Promote:
-        return "promote";
-    }
-    return "disabled";
-}
 constexpr std::size_t kPathLimit = 48;
 constexpr std::size_t kDigitLimit = 32;
 std::string encode(const std::string &pinyin)
@@ -396,12 +379,14 @@ bool NineKeySession::editable(std::size_t index) const
 std::optional<std::string> NineKeySession::adjust_frequency(std::size_t index, bool force_top)
 {
     const auto &item = candidates_[index];
+    const char *mode_name = frequency_adjustment_mode_name(frequency_.mode);
+    if (mode_name == nullptr)
+        mode_name = "disabled";
     bool changed = false;
     if (!user_dictionary::adjust_candidate_ranking(
             path_to_utf8(paths_.dictionary(assets::main_dictionary)), path_to_utf8(paths_.user(assets::user_journal)),
-            ranking_context(), candidates_, item.canonical_pinyin, item.word,
-            force_top ? "pin" : frequency_mode_name(frequency_.mode), frequency_.linear_step, frequency_.trigger_count,
-            force_top, &changed))
+            ranking_context(), candidates_, item.canonical_pinyin, item.word, force_top ? "pin" : mode_name,
+            frequency_.linear_step, frequency_.trigger_count, force_top, &changed))
         return "Unable to persist nine-key candidate frequency adjustment.";
     if (changed && dictionary_)
         dictionary_->reset_cache();

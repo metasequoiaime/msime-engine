@@ -25,24 +25,6 @@ namespace metasequoia
 {
 namespace
 {
-const char *frequency_mode_name(FrequencyAdjustmentMode mode)
-{
-    switch (mode)
-    {
-    case FrequencyAdjustmentMode::Disabled:
-        return "disabled";
-    case FrequencyAdjustmentMode::Pin:
-        return "pin";
-    case FrequencyAdjustmentMode::Halve:
-        return "halve";
-    case FrequencyAdjustmentMode::Linear:
-        return "linear";
-    case FrequencyAdjustmentMode::Promote:
-        return "promote";
-    }
-    return nullptr;
-}
-
 bool local_mode_enabled(LocalInputMode mode, const LocalModeOptions &options)
 {
     switch (mode)
@@ -467,8 +449,8 @@ bool InputSession::select_helpcode_schema(const std::string &schema)
 
 bool InputSession::set_frequency_adjustment(FrequencyAdjustmentOptions options)
 {
-    if (frequency_mode_name(options.mode) == nullptr || options.trigger_count < 1 || options.trigger_count > 10 ||
-        options.linear_step < 1 || options.linear_step > 10)
+    if (frequency_adjustment_mode_name(options.mode) == nullptr || options.trigger_count < 1 ||
+        options.trigger_count > 10 || options.linear_step < 1 || options.linear_step > 10)
     {
         return false;
     }
@@ -1123,7 +1105,8 @@ std::optional<std::string> InputSession::adjust_candidate_frequency(std::size_t 
         const bool adjusted = user_dictionary::adjust_english_candidate_ranking(
             path_to_utf8(paths_.dictionary(assets::english_dictionary)),
             path_to_utf8(paths_.user(assets::user_journal)), "english:" + context, ranked_candidates, selected.pinyin,
-            selected.word, frequency_mode_name(options.mode), options.linear_step, options.trigger_count, force_top);
+            selected.word, frequency_adjustment_mode_name(options.mode), options.linear_step, options.trigger_count,
+            force_top);
         return adjusted ? std::nullopt
                         : std::optional<std::string>("English candidate frequency could not be persisted.");
     }
@@ -1157,7 +1140,7 @@ std::optional<std::string> InputSession::adjust_candidate_frequency(std::size_t 
     bool ranking_changed = false;
     const bool adjusted = user_dictionary::adjust_candidate_ranking(
         path_to_utf8(paths_.dictionary(assets::main_dictionary)), path_to_utf8(paths_.user(assets::user_journal)),
-        context_key, ranked_candidates, entry_key, selected.word, frequency_mode_name(options.mode),
+        context_key, ranked_candidates, entry_key, selected.word, frequency_adjustment_mode_name(options.mode),
         options.linear_step, options.trigger_count, force_top, &ranking_changed,
         (wubi && !super_jianpin) ? user_dictionary::DictionaryKind::Wubi : user_dictionary::DictionaryKind::Pinyin);
     if (!adjusted)
