@@ -238,15 +238,7 @@ std::string get_last_han_char(const std::string &words)
 
 std::string::size_type count_han_chars(const std::string &words)
 {
-    size_t index = 0;
-    size_t cnt = 0;
-    while (index < words.size())
-    {
-        const size_t cplen = CommonUtils::utf8_code_point_length(std::string_view(words).substr(index));
-        index += cplen;
-        cnt += 1;
-    }
-    return cnt;
+    return CommonUtils::count_utf8_chars(words);
 }
 
 std::string compute_helpcodes(const std::string &words, bool uppercase_all, const Keymap *configured_keymap)
