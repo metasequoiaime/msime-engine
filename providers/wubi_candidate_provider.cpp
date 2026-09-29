@@ -1,6 +1,7 @@
 #include "wubi_candidate_provider.h"
 #include "../core/candidate_utils.h"
 #include "../common/string_utils.h"
+#include "../common/sqlite_query.h"
 #include "../common/sqlite_statement.h"
 #include "../contracts/assets/assets.h"
 #include "../core/data_path.h"
@@ -72,14 +73,13 @@ std::vector<WordItem> WubiCandidateProvider::collect_rows(sqlite3_stmt *statemen
     int result = SQLITE_ROW;
     while ((result = sqlite3_step(statement)) == SQLITE_ROW)
     {
-        const auto *key = reinterpret_cast<const char *>(sqlite3_column_text(statement, 0));
-        const auto *value = reinterpret_cast<const char *>(sqlite3_column_text(statement, 1));
-        if (key == nullptr || value == nullptr)
+        const auto candidate = metasequoia::sqlite_read_word_item(statement, CandidateSource::Database, false);
+        if (!candidate)
         {
             continue;
         }
-        if (append_unique_candidate(candidates, seen, key, value, sqlite3_column_int64(statement, 2),
-                                    CandidateSource::Database, {}))
+        if (append_unique_candidate(candidates, seen, candidate->pinyin, candidate->word, candidate->weight,
+                                    candidate->source, candidate->canonical_pinyin))
         {
             candidates.back().scheme = SchemeType::Wubi;
         }

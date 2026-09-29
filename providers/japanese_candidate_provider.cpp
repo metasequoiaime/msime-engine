@@ -2,6 +2,7 @@
 #include "../core/candidate_utils.h"
 #include "../japanese/japanese_matrix_search.h"
 #include "../japanese/romaji_converter.h"
+#include "../common/sqlite_query.h"
 #include "../quanpin/quanpin_query.h"
 #include <algorithm>
 #include <mutex>
@@ -129,11 +130,10 @@ std::vector<WordItem> JapaneseCandidateProvider::query(const QueryRequest &reque
         bind_query_statement(request.raw_input_with_cases, request.raw_input);
         while (sqlite3_step(query_statement_.get()) == SQLITE_ROW)
         {
-            const auto *code = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_.get(), 0));
-            const auto *value = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_.get(), 1));
-            if (code && value)
+            if (const auto candidate = metasequoia::sqlite_read_word_item(query_statement_.get()))
             {
-                append_unique_candidate(candidates, seen, code, value, sqlite3_column_int64(query_statement_.get(), 2));
+                append_unique_candidate(candidates, seen, candidate->pinyin, candidate->word, candidate->weight,
+                                        candidate->source, candidate->canonical_pinyin);
             }
         }
     }
@@ -170,11 +170,9 @@ std::optional<WordItem> JapaneseCandidateProvider::find_candidate(SchemeType sch
     bind_query_statement(key, key);
     while (sqlite3_step(query_statement_.get()) == SQLITE_ROW)
     {
-        const auto *code = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_.get(), 0));
-        const auto *candidate = reinterpret_cast<const char *>(sqlite3_column_text(query_statement_.get(), 1));
-        if (code && candidate && value == candidate)
-            return WordItem(code, candidate, sqlite3_column_int64(query_statement_.get(), 2), CandidateSource::Database,
-                            code);
+        if (const auto candidate = metasequoia::sqlite_read_word_item(query_statement_.get());
+            candidate && value == candidate->word)
+            return candidate;
     }
     return std::nullopt;
 }
