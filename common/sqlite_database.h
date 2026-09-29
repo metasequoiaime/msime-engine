@@ -23,9 +23,12 @@ using SqliteDatabase = std::unique_ptr<sqlite3, SqliteDatabaseCloser>;
 inline SqliteDatabase sqlite_open_database(const std::string &path, int flags)
 {
     sqlite3 *raw = nullptr;
-    if (sqlite3_open_v2(path.c_str(), &raw, flags, nullptr) != SQLITE_OK)
+    const int status = sqlite3_open_v2(path.c_str(), &raw, flags, nullptr);
+    // sqlite3_open_v2 usually allocates a handle even when it fails, and that handle still has to be closed.
+    SqliteDatabase database(raw);
+    if (status != SQLITE_OK)
         return {};
-    return SqliteDatabase(raw);
+    return database;
 }
 
 inline std::shared_ptr<sqlite3> sqlite_open_shared_database(const std::string &path, int flags, int busy_timeout_ms)
