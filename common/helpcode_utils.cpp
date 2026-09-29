@@ -320,7 +320,8 @@ bool is_quanpin_double_help_mode(const std::string &pinyin_with_cases)
 
     const char help_code_1 = pinyin_with_cases[pinyin_with_cases.size() - 2];
     const char help_code_2 = pinyin_with_cases[pinyin_with_cases.size() - 1];
-    return help_code_1 >= 'A' && help_code_1 <= 'Z' && help_code_2 >= 'A' && help_code_2 <= 'Z';
+    return CommonUtils::is_ascii_uppercase(static_cast<unsigned char>(help_code_1)) &&
+           CommonUtils::is_ascii_uppercase(static_cast<unsigned char>(help_code_2));
 }
 
 SingleHelpcodeMatch match_single_helpcode(const std::string &word, const std::string &help_code,
