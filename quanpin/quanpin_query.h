@@ -40,7 +40,6 @@ bool has_valid_word_pinyin(const std::string &key, const std::string &jp, const 
 std::string build_sql_for_checking_word(const std::string &key, const std::string &value);
 std::string build_sql_for_inserting_word(const std::string &key, const std::string &jp, const std::string &value);
 std::string build_sql_for_updating_word(const Segments &segments, const std::string &key, const std::string &value);
-std::string build_sql_for_deleting_word(const Segments &segments, const std::string &key, const std::string &value);
 std::string segments_to_jianpin(const Segments &segments);
 std::string get_default_db_path();
 // A learning write holds the dictionary lock only for a short commit. Readers
