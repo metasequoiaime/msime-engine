@@ -141,6 +141,11 @@ std::vector<std::string> split_by_delimiter(const std::string &text, char delimi
     }
 }
 
+bool contains_apostrophe_delimiter(std::string_view text)
+{
+    return text.find('\'') != std::string_view::npos;
+}
+
 std::string remove_apostrophe_delimiters(const std::string &text)
 {
     std::string result;
