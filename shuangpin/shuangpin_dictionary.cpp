@@ -191,7 +191,7 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generateSeries( //
             {
                 string quanpin_str =
                     ShuangpinUtil::convert_seg_shuangpin_to_seg_complete_pinyin(pinyin_segmentation, profile_);
-                string res = search_sentence_from_ime_engine(quanpin_str);
+                string res = decoder_.sentence(quanpin_str);
                 if (res.size() > 0)
                 {
                     // Whole-sentence fallbacks must retain the converted
@@ -237,7 +237,7 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generateSeries( //
         if (sentence_association_.google && quanpin_segments.size() >= 3 &&
             quanpin_segmentation.find('\'') != std::string::npos)
         {
-            google_sentence = search_sentence_from_ime_engine(quanpin_segmentation);
+            google_sentence = decoder_.sentence(quanpin_segmentation);
             const bool duplicate = contains_candidate_word(candidate_list, google_sentence);
             if (!google_sentence.empty() && !duplicate)
             {
@@ -870,11 +870,6 @@ std::string ShuangpinDictionary::build_quanpin_sql_for_updating_word(std::string
     }
 
     return quanpin::build_sql_for_updating_word(segments, pinyin, word);
-}
-
-string ShuangpinDictionary::search_sentence_from_ime_engine(const string &user_pinyin)
-{
-    return decoder_.sentence(user_pinyin);
 }
 
 void ShuangpinDictionary::reset_state()

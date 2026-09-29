@@ -286,8 +286,8 @@ if(BUILD_TESTING)
     add_executable(test_longer_phrase_candidates tests/src/test_longer_phrase_candidates.cpp)
     target_link_libraries(test_longer_phrase_candidates PRIVATE MetasequoiaIme::Engine)
     # The whole-sentence ranking assertion needs the real decoder model: without it
-    # search_sentence_from_ime_engine returns empty and the ranking code never runs, which is
-    # exactly how the defect it guards stayed invisible in shipped builds.
+    # the sentence fallback is empty and the ranking code never runs, which is exactly how the
+    # defect it guards stayed invisible in shipped builds.
     target_compile_definitions(test_longer_phrase_candidates PRIVATE METASEQUOIA_TEST_PINYIN_MODEL="${CMAKE_CURRENT_SOURCE_DIR}/googlepinyinime-rev/data/dict_pinyin.dat")
     add_test(NAME longer_phrase_candidates COMMAND test_longer_phrase_candidates)
 
