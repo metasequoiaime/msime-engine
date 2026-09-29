@@ -33,6 +33,7 @@ std::vector<Segments> cut_pinyin_by_mode(const std::string &pinyin, const std::s
 Segments split_segments(const std::string &segmentation);
 std::string join_segments(const Segments &segments, const std::string &delimiter = "'");
 std::string build_table_name(const Segments &segments);
+std::optional<WordItem> find_candidate(sqlite3 *database, const std::string &key, const std::string &value);
 // Validates the pinyin, jianpin, and Han-character counts used by dictionary word writes.
 // Shuangpin may additionally accept an unresolved two-key-per-character input.
 bool has_valid_word_pinyin(const std::string &key, const std::string &jp, const std::string &word,
