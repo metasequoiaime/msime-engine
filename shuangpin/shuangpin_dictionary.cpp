@@ -306,7 +306,7 @@ void ShuangpinDictionary::filter_with_single_helpcode(           //
 {
     if (candidate_list.empty() || help_code.size() != 1)
         return;
-    const bool prefer_last_helpcode = help_code[0] >= 'A' && help_code[0] <= 'Z';
+    const bool prefer_last_helpcode = CommonUtils::is_ascii_uppercase(static_cast<unsigned char>(help_code[0]));
     const string normalized_help_code(1, CommonUtils::lowercase_ascii_char(static_cast<unsigned char>(help_code[0])));
     vector<ShuangpinDictionary::WordItem> first_helpcode_matched_list;
     vector<ShuangpinDictionary::WordItem> last_helpcode_matched_list;
@@ -401,7 +401,8 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generate_with_helpcod
 )
 {
     vector<WordItem> candidate_list;
-    const bool reversed_single_helpcode = help_codes.size() == 1 && help_codes[0] >= 'A' && help_codes[0] <= 'Z';
+    const bool reversed_single_helpcode =
+        help_codes.size() == 1 && CommonUtils::is_ascii_uppercase(static_cast<unsigned char>(help_codes[0]));
     // Check cache first
     if (help_codes.size() == 1)
     {
@@ -458,7 +459,7 @@ vector<ShuangpinDictionary::WordItem> ShuangpinDictionary::generate_with_helpcod
 
 std::string VkCodeToChar(ImeKeyCode vk)
 {
-    if (vk >= 'A' && vk <= 'Z')
+    if (ImeKey::is_ascii_letter(vk))
     {
         return std::string(1, char(vk + ('a' - 'A')));
     }
@@ -525,7 +526,7 @@ int ShuangpinDictionary::handleVkCode(ImeKeyCode vk, ImeModifierMask modifiers_d
     if (vk != 0)
     { /* 0 是造词过程中的 dummy code */
         _kb_input_sequence.push_back(vk);
-        if (vk >= 'A' && vk <= 'Z')
+        if (ImeKey::is_ascii_letter(vk))
         {
             const char lowerAlpha = static_cast<char>(vk + ('a' - 'A'));
             _pinyin_sequence += lowerAlpha;
