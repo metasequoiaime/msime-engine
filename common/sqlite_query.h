@@ -11,6 +11,23 @@
 
 namespace metasequoia
 {
+namespace detail
+{
+inline std::optional<WordItem> sqlite_read_word_item_impl(sqlite3_stmt *statement, CandidateSource source,
+                                                          const char *pinyin_override, bool require_key)
+{
+    if (statement == nullptr)
+        return std::nullopt;
+    const auto *key = reinterpret_cast<const char *>(sqlite3_column_text(statement, 0));
+    const auto *value = reinterpret_cast<const char *>(sqlite3_column_text(statement, 1));
+    if (value == nullptr || (require_key && key == nullptr))
+        return std::nullopt;
+    const char *pinyin = pinyin_override == nullptr ? key : pinyin_override;
+    return WordItem(pinyin == nullptr ? "" : pinyin, value, sqlite3_column_int64(statement, 2), source,
+                    key == nullptr ? "" : key);
+}
+} // namespace detail
+
 inline bool sqlite_execute_statement(sqlite3 *database, const std::string &sql)
 {
     if (database == nullptr)
@@ -54,25 +71,16 @@ inline std::optional<WordItem> sqlite_read_word_item(sqlite3_stmt *statement,
                                                      CandidateSource source = CandidateSource::Database,
                                                      bool include_canonical_pinyin = true)
 {
-    if (statement == nullptr)
-        return std::nullopt;
-    const auto *key = reinterpret_cast<const char *>(sqlite3_column_text(statement, 0));
-    const auto *value = reinterpret_cast<const char *>(sqlite3_column_text(statement, 1));
-    if (key == nullptr || value == nullptr)
-        return std::nullopt;
-    return WordItem(key, value, sqlite3_column_int64(statement, 2), source, include_canonical_pinyin ? key : "");
+    auto candidate = detail::sqlite_read_word_item_impl(statement, source, nullptr, true);
+    if (candidate && !include_canonical_pinyin)
+        candidate->canonical_pinyin.clear();
+    return candidate;
 }
 
 inline std::optional<WordItem> sqlite_read_word_item_with_pinyin(sqlite3_stmt *statement, const std::string &pinyin,
                                                                  CandidateSource source = CandidateSource::Database)
 {
-    if (statement == nullptr)
-        return std::nullopt;
-    const auto *key = reinterpret_cast<const char *>(sqlite3_column_text(statement, 0));
-    const auto *value = reinterpret_cast<const char *>(sqlite3_column_text(statement, 1));
-    if (value == nullptr)
-        return std::nullopt;
-    return WordItem(pinyin, value, sqlite3_column_int64(statement, 2), source, key == nullptr ? "" : key);
+    return detail::sqlite_read_word_item_impl(statement, source, pinyin.c_str(), false);
 }
 
 inline std::vector<WordItem> sqlite_query_word_items(sqlite3 *database, const std::string &sql)
