@@ -15,7 +15,7 @@ std::string InputSession::editing_text() const
     if (local_input_mode_ != LocalInputMode::None)
         return local_preedit_;
     const auto &value = engine_.get_request();
-    return value.raw_input_with_cases.empty() ? value.raw_input : value.raw_input_with_cases;
+    return query_request_raw_input_with_cases(value);
 }
 
 std::size_t InputSession::caret_position() const

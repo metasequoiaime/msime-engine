@@ -70,8 +70,7 @@ struct ShuangpinCompositionBase
 
 ShuangpinCompositionBase ResolveShuangpinCompositionBase(const QueryRequest &request, const ShuangpinProfile &profile)
 {
-    ShuangpinCompositionBase base{
-        request.raw_input, request.raw_input_with_cases.empty() ? request.raw_input : request.raw_input_with_cases};
+    ShuangpinCompositionBase base{request.raw_input, query_request_raw_input_with_cases(request)};
     base.effective_raw_input = shuangpin::remove_manual_delimiters(base.raw_input);
     base.effective_raw_input_with_cases = shuangpin::remove_manual_delimiters(base.raw_input_with_cases);
 
@@ -214,7 +213,7 @@ std::string RebuildQuanpinDisplayFromCut(const std::string &cased_input, const q
 // autocorrect switches, and AC1 only constrains the candidate list.
 std::string BuildQuanpinAutocorrectDisplay(const QueryRequest &request)
 {
-    const std::string &cased = request.raw_input_with_cases.empty() ? request.raw_input : request.raw_input_with_cases;
+    const std::string &cased = query_request_raw_input_with_cases(request);
     const std::string base = request.raw_segmentation.empty() ? cased : request.raw_segmentation;
     if (request.raw_input.empty() || cased.empty())
     {
@@ -311,7 +310,7 @@ const std::string &InputSession::get_pinyin_sequence() const
 
 const std::string &InputSession::get_pinyin_sequence_with_cases() const
 {
-    return request().raw_input_with_cases.empty() ? request().raw_input : request().raw_input_with_cases;
+    return query_request_raw_input_with_cases(request());
 }
 
 const std::string &InputSession::get_pure_pinyin_sequence() const
@@ -332,7 +331,7 @@ std::string InputSession::get_pinyin_segmentation_with_cases() const
     }
     if (is_japanese())
     {
-        return request().raw_input_with_cases.empty() ? request().raw_input : request().raw_input_with_cases;
+        return query_request_raw_input_with_cases(request());
     }
     if (is_shuangpin() && shuangpin_preedit_uses_raw_)
     {
