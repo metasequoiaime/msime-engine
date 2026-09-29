@@ -30,6 +30,12 @@ inline std::vector<CandidateSource> collect_candidate_sources(const std::vector<
     return sources;
 }
 
+inline bool contains_candidate_source(const std::vector<WordItem> &candidates, CandidateSource source)
+{
+    return std::any_of(candidates.begin(), candidates.end(),
+                       [source](const WordItem &candidate) { return candidate.source == source; });
+}
+
 inline bool is_english_candidate_source(CandidateSource source)
 {
     return source == CandidateSource::EnglishDictionary;

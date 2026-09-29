@@ -85,8 +85,7 @@ void InputSession::apply_candidate_positions(std::vector<WordItem> &items)
             has_active_helpcode());
     else if (local_input_mode_ == LocalInputMode::SuperJianpin)
         user_dictionary::apply_fixed_positions(journal, position_context(false), items, false);
-    if (std::any_of(items.begin(), items.end(),
-                    [](const auto &item) { return is_english_candidate_source(item.source); }))
+    if (contains_candidate_source(items, CandidateSource::EnglishDictionary))
         user_dictionary::apply_fixed_positions(journal, position_context(true), items, false, {}, true);
 }
 
