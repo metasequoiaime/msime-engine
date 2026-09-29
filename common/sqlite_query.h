@@ -63,6 +63,18 @@ inline std::optional<WordItem> sqlite_read_word_item(sqlite3_stmt *statement,
     return WordItem(key, value, sqlite3_column_int64(statement, 2), source, include_canonical_pinyin ? key : "");
 }
 
+inline std::optional<WordItem> sqlite_read_word_item_with_pinyin(sqlite3_stmt *statement, const std::string &pinyin,
+                                                                 CandidateSource source = CandidateSource::Database)
+{
+    if (statement == nullptr)
+        return std::nullopt;
+    const auto *key = reinterpret_cast<const char *>(sqlite3_column_text(statement, 0));
+    const auto *value = reinterpret_cast<const char *>(sqlite3_column_text(statement, 1));
+    if (value == nullptr)
+        return std::nullopt;
+    return WordItem(pinyin, value, sqlite3_column_int64(statement, 2), source, key == nullptr ? "" : key);
+}
+
 inline std::vector<WordItem> sqlite_query_word_items(sqlite3 *database, const std::string &sql)
 {
     std::vector<WordItem> result;

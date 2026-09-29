@@ -1,4 +1,5 @@
 #include "../contracts/assets/assets.h"
+#include "../common/sqlite_query.h"
 #include "../common/sqlite_statement.h"
 #include "jianpin_query.h"
 #include "local_database.h"
@@ -138,19 +139,16 @@ LocalQueryResult query_jianpin(const std::string &code, SchemeType scheme, const
     int step_result = SQLITE_ROW;
     while ((step_result = sqlite3_step(statement.get())) == SQLITE_ROW)
     {
-        const auto *key = reinterpret_cast<const char *>(sqlite3_column_text(statement.get(), 0));
-        const auto *value = reinterpret_cast<const char *>(sqlite3_column_text(statement.get(), 1));
-        if (value == nullptr)
+        const auto candidate = metasequoia::sqlite_read_word_item_with_pinyin(statement.get(), matched_code);
+        if (!candidate)
         {
             continue;
         }
-        const std::string canonical = key == nullptr ? std::string{} : std::string(key);
-        if (filter_initials && !key_matches_initials(canonical, segments))
+        if (filter_initials && !key_matches_initials(candidate->canonical_pinyin, segments))
         {
             continue;
         }
-        result.candidates.emplace_back(matched_code, value, sqlite3_column_int64(statement.get(), 2),
-                                       CandidateSource::Database, canonical);
+        result.candidates.push_back(*candidate);
         if (static_cast<int>(result.candidates.size()) >= limit)
         {
             break;
