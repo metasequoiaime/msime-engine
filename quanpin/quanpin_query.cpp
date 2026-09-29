@@ -872,6 +872,20 @@ std::string build_sql_for_inserting_word(const std::string &key, const std::stri
            "', '10000');";
 }
 
+WordInsertResult insert_word_if_missing(sqlite3 *database, const std::string &key, const std::string &jp,
+                                        const std::string &value)
+{
+    if (metasequoia::sqlite_query_has_row(database, build_sql_for_checking_word(key, value)))
+    {
+        return WordInsertResult::Existing;
+    }
+    if (!metasequoia::sqlite_execute_statement(database, build_sql_for_inserting_word(key, jp, value)))
+    {
+        return WordInsertResult::Failed;
+    }
+    return WordInsertResult::Inserted;
+}
+
 std::string build_sql_for_updating_word(const Segments &segments, const std::string &key, const std::string &value)
 {
     const std::string table = build_table_name(segments);

@@ -40,6 +40,14 @@ bool has_valid_word_pinyin(const std::string &key, const std::string &jp, const 
                            bool allow_shuangpin_fallback = false);
 std::string build_sql_for_checking_word(const std::string &key, const std::string &value);
 std::string build_sql_for_inserting_word(const std::string &key, const std::string &jp, const std::string &value);
+enum class WordInsertResult
+{
+    Existing,
+    Inserted,
+    Failed,
+};
+WordInsertResult insert_word_if_missing(sqlite3 *database, const std::string &key, const std::string &jp,
+                                        const std::string &value);
 std::string build_sql_for_updating_word(const Segments &segments, const std::string &key, const std::string &value);
 std::string build_sql_for_updating_word(std::string pinyin, const std::string &word,
                                         bool allow_shuangpin_fallback = false);
