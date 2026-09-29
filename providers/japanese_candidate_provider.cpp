@@ -234,28 +234,15 @@ int JapaneseCandidateProvider::cache_dynamic_candidate_for_request(const QueryRe
 
 bool JapaneseCandidateProvider::ensure_query_statement()
 {
-    if (query_statement_)
-        return true;
-    if (!db_)
-    {
-        auto opened = metasequoia::sqlite_open_database(db_path_, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX);
-        if (!opened)
-        {
-            close_database();
-            return false;
-        }
-        db_ = std::move(opened);
-    }
     constexpr const char *sql = "SELECT code, value, weight FROM japanese_lexicon "
                                 "WHERE code=?1 OR code=?2 OR code LIKE ?3 ESCAPE '#' OR code LIKE ?4 ESCAPE '#' "
                                 "ORDER BY weight DESC, rowid ASC LIMIT 64";
-    auto query = metasequoia::sqlite_prepare_statement(db_.get(), sql);
-    if (!query)
+    if (!metasequoia::sqlite_ensure_statement(db_, query_statement_, db_path_,
+                                              SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, sql))
     {
         close_database();
         return false;
     }
-    query_statement_ = std::move(query);
     return true;
 }
 
