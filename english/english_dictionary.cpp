@@ -291,34 +291,17 @@ bool EnglishDictionary::ensure_schema(const std::string &db_path)
 
 bool EnglishDictionary::ensure_query_statement()
 {
-    if (query_statement_ != nullptr)
-    {
-        return true;
-    }
-
-    if (!db_)
-    {
-        auto opened = metasequoia::sqlite_open_database(db_path_, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX);
-        if (!opened)
-        {
-            close_database();
-            return false;
-        }
-        db_ = std::move(opened);
-    }
-
     constexpr const char *query_sql =
         "SELECT word,display,weight FROM english_words "
         "WHERE word >= ?1 AND word < ?2 "
         "ORDER BY CASE WHEN word = ?1 THEN 0 ELSE 1 END, weight DESC, length(word), word, display "
         "LIMIT ?3";
-    auto query = metasequoia::sqlite_prepare_statement(db_.get(), query_sql);
-    if (!query)
+    if (!metasequoia::sqlite_ensure_statement(db_, query_statement_, db_path_,
+                                              SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, query_sql))
     {
         close_database();
         return false;
     }
-    query_statement_ = std::move(query);
     return true;
 }
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "sqlite_database.h"
+
 #include <sqlite3.h>
 
 #include <memory>
@@ -46,6 +48,19 @@ inline SqliteStatement sqlite_prepare_statement(sqlite3 *database, const char *s
 inline SqliteStatement sqlite_prepare_statement(sqlite3 *database, const std::string &sql)
 {
     return sqlite_prepare_statement(database, sql.c_str());
+}
+
+inline bool sqlite_ensure_statement(SqliteDatabase &database, SqliteStatement &statement, const std::string &path,
+                                    int flags, const std::string &sql)
+{
+    if (statement)
+        return true;
+    if (!database)
+        database = sqlite_open_database(path, flags);
+    if (!database)
+        return false;
+    statement = sqlite_prepare_statement(database.get(), sql);
+    return static_cast<bool>(statement);
 }
 
 inline bool sqlite_bind_text_range_limit(sqlite3_stmt *statement, const std::string &lower, const std::string &upper,

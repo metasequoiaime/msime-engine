@@ -143,17 +143,6 @@ bool WubiCandidateProvider::ensure_query_statement()
         return true;
     }
 
-    if (!db_)
-    {
-        auto opened = metasequoia::sqlite_open_database(db_path_, SQLITE_OPEN_READONLY);
-        if (!opened)
-        {
-            close_database();
-            return false;
-        }
-        db_ = std::move(opened);
-    }
-
     // An unfinished code is a prefix of the codes it can still become, so it answers with all of
     // them: a table matched on the code alone leaves 你 as the only candidate for wq and the two or
     // three simplified codes as the whole list for most of the alphabet. Shorter codes first, since
@@ -162,24 +151,20 @@ bool WubiCandidateProvider::ensure_query_statement()
     constexpr const char *query_sql = "SELECT \"key\", \"value\", \"weight\" FROM wubi86 "
                                       "WHERE \"key\" >= ?1 AND \"key\" < ?2 "
                                       "ORDER BY length(\"key\") ASC, \"weight\" DESC, rowid ASC LIMIT ?3";
-    auto query = metasequoia::sqlite_prepare_statement(db_.get(), query_sql);
-    if (!query)
+    if (!metasequoia::sqlite_ensure_statement(db_, query_statement_, db_path_, SQLITE_OPEN_READONLY, query_sql))
     {
         (void)0;
         close_database();
         return false;
     }
-    query_statement_ = std::move(query);
     const std::string wildcard_sql = "SELECT \"key\", \"value\", \"weight\" FROM wubi86 WHERE \"key\" GLOB ?1 "
                                      "ORDER BY \"weight\" DESC, \"key\" ASC, rowid ASC LIMIT " +
                                      std::to_string(kMaxCandidates);
-    auto wildcard = metasequoia::sqlite_prepare_statement(db_.get(), wildcard_sql);
-    if (!wildcard)
+    if (!metasequoia::sqlite_ensure_statement(db_, wildcard_statement_, db_path_, SQLITE_OPEN_READONLY, wildcard_sql))
     {
         close_database();
         return false;
     }
-    wildcard_statement_ = std::move(wildcard);
     return true;
 }
 
