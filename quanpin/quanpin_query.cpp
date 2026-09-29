@@ -284,11 +284,6 @@ std::string build_key_like_pattern(const Segments &segments)
     return join_segments(parts);
 }
 
-std::string build_key_prefix_upper_bound(const std::string &prefix)
-{
-    return prefix + "{";
-}
-
 bool is_pure_jianpin(const Segments &segments)
 {
     return std::all_of(segments.begin(), segments.end(),
@@ -602,7 +597,7 @@ std::vector<KeyedQueryItem> query_single_cut_keyed(sqlite3 *db, const Segments &
     const auto needs_mixed_query = needs_mixed_jianpin_query(segments, source);
     const auto key_prefix_pattern = build_key_like_pattern(segments);
     const auto key_prefix = key_prefix_pattern.substr(0, key_prefix_pattern.size() - 1);
-    const auto key_prefix_upper_bound = build_key_prefix_upper_bound(key_prefix);
+    const auto key_prefix_upper_bound = CommonUtils::ascii_prefix_upper_bound(key_prefix);
 
     const auto exact_sql = "SELECT \"key\", \"value\", \"weight\" FROM \"" + table +
                            "\" WHERE \"key\" = ? ORDER BY \"weight\" DESC LIMIT ?";
@@ -661,7 +656,7 @@ std::vector<KeyedQueryItem> query_single_cut_keyed(sqlite3 *db, metasequoia::Sql
     const auto needs_mixed_query = needs_mixed_jianpin_query(segments, source);
     const auto key_prefix_pattern = build_key_like_pattern(segments);
     const auto key_prefix = key_prefix_pattern.substr(0, key_prefix_pattern.size() - 1);
-    const auto key_prefix_upper_bound = build_key_prefix_upper_bound(key_prefix);
+    const auto key_prefix_upper_bound = CommonUtils::ascii_prefix_upper_bound(key_prefix);
 
     const auto exact_sql = "SELECT \"key\", \"value\", \"weight\" FROM \"" + table +
                            "\" WHERE \"key\" = ? ORDER BY \"weight\" DESC LIMIT ?";
@@ -969,7 +964,7 @@ std::vector<KeyedQueryItem> query_initial(sqlite3 *db, const std::string &prefix
     }
     Statement guard(stmt);
 
-    const std::string upper_bound = prefix + "{";
+    const std::string upper_bound = CommonUtils::ascii_prefix_upper_bound(prefix);
     sqlite3_bind_text(stmt, 1, prefix.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_int(stmt, 3, limit);
@@ -1058,9 +1053,9 @@ std::vector<KeyedQueryItem> query_longer_phrases_keyed(const Segments &segments,
     }
 
     // 键里音节之间是 '\'',所以前缀补一个 '\'' 才只命中「整音节的续接」: ping'guo' 命中 ping'guo'ji,
-    // 不会命中别的拼写。上界沿用 build_key_prefix_upper_bound 的 '{',它排在 'z' 之后。
+    // 不会命中别的拼写。上界使用 ASCII 前缀范围的 '{',它排在 'z' 之后。
     const std::string prefix = join_segments(segments) + '\'';
-    const std::string upper_bound = build_key_prefix_upper_bound(prefix);
+    const std::string upper_bound = CommonUtils::ascii_prefix_upper_bound(prefix);
     const char initial = segments.front().front();
 
     std::vector<KeyedQueryItem> result;

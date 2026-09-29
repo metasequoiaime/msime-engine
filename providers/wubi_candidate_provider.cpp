@@ -1,5 +1,6 @@
 #include "wubi_candidate_provider.h"
 #include "../core/candidate_utils.h"
+#include "../common/string_utils.h"
 #include "../common/sqlite_statement.h"
 #include "../contracts/assets/assets.h"
 #include "../core/data_path.h"
@@ -17,12 +18,6 @@ constexpr int kNoMutation = 0;
 // what lies past it types another letter, which is what the remaining letters of the code are for.
 constexpr int kMaxCandidates = 200;
 
-// Wubi codes are lowercase letters, all of which sort below '{', so the range covers exactly the
-// keys carrying the typed prefix.
-std::string prefix_upper_bound(const std::string &prefix)
-{
-    return prefix + "{";
-}
 } // namespace
 
 WubiCandidateProvider::WubiCandidateProvider(std::string db_path, metasequoia::RuntimePaths paths)
@@ -56,7 +51,7 @@ std::vector<WordItem> WubiCandidateProvider::query(const QueryRequest &request)
             return {};
         return collect_rows(wildcard_statement_.get());
     }
-    const std::string upper_bound = prefix_upper_bound(request.normalized_input);
+    const std::string upper_bound = CommonUtils::ascii_prefix_upper_bound(request.normalized_input);
     sqlite3_clear_bindings(query_statement_.get());
     if (!metasequoia::sqlite_bind_text_range_limit(query_statement_.get(), request.normalized_input, upper_bound,
                                                    kMaxCandidates))

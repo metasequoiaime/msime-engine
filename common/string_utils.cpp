@@ -143,4 +143,11 @@ std::string lowercase_ascii(std::string text)
                    [](unsigned char character) { return lowercase_ascii_char(character); });
     return text;
 }
+
+std::string ascii_prefix_upper_bound(const std::string &prefix)
+{
+    std::string result = prefix;
+    result.push_back('{');
+    return result;
+}
 } // namespace CommonUtils

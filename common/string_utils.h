@@ -24,4 +24,6 @@ std::string remove_apostrophe_delimiters(const std::string &text);
 std::string escape_sql_literal(std::string text);
 bool is_ascii_letters_or_apostrophe(const std::string &text);
 std::string lowercase_ascii(std::string text);
+// Returns the exclusive upper bound for a prefix over lowercase ASCII keys.
+std::string ascii_prefix_upper_bound(const std::string &prefix);
 } // namespace CommonUtils
