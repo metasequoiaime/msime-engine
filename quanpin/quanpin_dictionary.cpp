@@ -732,14 +732,13 @@ int QuanpinDictionary::update_weight_by_pinyin_and_word(std::string pinyin, std:
     if (segments.size() > han_count)
         segments.resize(han_count);
     const std::string normalized = quanpin::join_segments(segments);
-    if (!metasequoia::sqlite_execute_statement(db_.get(), quanpin::build_sql_for_updating_word(normalized, word)))
-    {
-        return ERROR_CODE;
-    }
-    (void)user_dictionary::record_pinyin_upsert_from_database(
-        db_path_, normalized, word, metasequoia::path_to_utf8(paths_.user(metasequoia::assets::user_journal)));
-    reset_cache();
-    return OK;
+    const bool updated =
+        metasequoia::sqlite_execute_statement(db_.get(), quanpin::build_sql_for_updating_word(normalized, word));
+    return quanpin::complete_pinyin_weight_update(
+               updated, db_path_, normalized, word,
+               metasequoia::path_to_utf8(paths_.user(metasequoia::assets::user_journal)), [this] { reset_cache(); })
+               ? OK
+               : ERROR_CODE;
 }
 
 int QuanpinDictionary::delete_by_pinyin_and_word(std::string pinyin, std::string word)
