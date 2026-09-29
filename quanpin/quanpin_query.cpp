@@ -821,6 +821,19 @@ std::optional<WordItem> find_candidate(sqlite3 *database, const std::string &key
     return metasequoia::sqlite_query_word_item(database, build_table_name(split_segments(key)), key, value);
 }
 
+metasequoia::SqliteDatabase open_dictionary_database(const std::string &path)
+{
+    sqlite3 *raw = nullptr;
+    const int status = sqlite3_open_v2(path.c_str(), &raw, SQLITE_OPEN_READWRITE, nullptr);
+    metasequoia::SqliteDatabase database(raw);
+    if (status != SQLITE_OK)
+    {
+        return {};
+    }
+    sqlite3_busy_timeout(database.get(), kDictionaryBusyTimeoutMs);
+    return database;
+}
+
 bool has_valid_word_pinyin(const std::string &key, const std::string &jp, const std::string &word,
                            bool allow_shuangpin_fallback)
 {

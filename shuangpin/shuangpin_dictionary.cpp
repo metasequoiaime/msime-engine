@@ -50,15 +50,11 @@ ShuangpinDictionary::ShuangpinDictionary(const ShuangpinProfile &profile, metase
     quanpin_db_path_ = metasequoia::path_to_utf8(paths_.dictionary(metasequoia::assets::main_dictionary));
     // No SQLITE_OPEN_CREATE: a missing dictionary must stay missing instead of being materialised as an empty file,
     // and the handle has to become null so the quanpin_db_ == nullptr guards on the query paths actually fire.
-    sqlite3 *raw = nullptr;
-    const int status = sqlite3_open_v2(quanpin_db_path_.c_str(), &raw, SQLITE_OPEN_READWRITE, nullptr);
-    metasequoia::SqliteDatabase opened(raw);
-    if (status == SQLITE_OK)
+    quanpin_db_ = quanpin::open_dictionary_database(quanpin_db_path_);
+    if (quanpin_db_)
     {
         // See QuanpinDictionary's constructor: readers must wait out a commit
         // rather than fail with SQLITE_BUSY.
-        sqlite3_busy_timeout(opened.get(), quanpin::kDictionaryBusyTimeoutMs);
-        quanpin_db_ = std::move(opened);
         quanpin::warm_up(quanpin_db_.get(), quanpin_statement_cache_);
         // Off the typing path, for the reason QuanpinDictionary's constructor gives.
         quanpin::NgramTable::shared(paths_.dictionary(quanpin::kBigramFileName));
