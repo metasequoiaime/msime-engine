@@ -1,6 +1,7 @@
 #pragma once
 
 #include "word_lattice.h"
+#include "../common/sqlite_database.h"
 #include "../common/sqlite_statement.h"
 
 #include <sqlite3.h>
@@ -34,6 +35,7 @@ Segments split_segments(const std::string &segmentation);
 std::string join_segments(const Segments &segments, const std::string &delimiter = "'");
 std::string build_table_name(const Segments &segments);
 std::optional<WordItem> find_candidate(sqlite3 *database, const std::string &key, const std::string &value);
+metasequoia::SqliteDatabase open_dictionary_database(const std::string &path);
 // Validates the pinyin, jianpin, and Han-character counts used by dictionary word writes.
 // Shuangpin may additionally accept an unresolved two-key-per-character input.
 bool has_valid_word_pinyin(const std::string &key, const std::string &jp, const std::string &word,

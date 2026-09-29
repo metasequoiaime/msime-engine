@@ -107,17 +107,7 @@ QuanpinDictionary::QuanpinDictionary(std::string db_path, metasequoia::RuntimePa
 
     // No SQLITE_OPEN_CREATE: a missing dictionary must stay missing instead of being materialised as an empty file,
     // and the handle has to become null so the db_ == nullptr guards on the query paths actually fire.
-    sqlite3 *raw = nullptr;
-    const int status = sqlite3_open_v2(db_path_.c_str(), &raw, SQLITE_OPEN_READWRITE, nullptr);
-    metasequoia::SqliteDatabase opened(raw);
-    if (status == SQLITE_OK)
-    {
-        // Learning and settings writes briefly hold the commit lock. Waiting
-        // here prevents a query that lands in that window from becoming an
-        // empty candidate page.
-        sqlite3_busy_timeout(opened.get(), quanpin::kDictionaryBusyTimeoutMs);
-        db_ = std::move(opened);
-    }
+    db_ = quanpin::open_dictionary_database(db_path_);
 
     quanpin::warm_up(db_.get(), statement_cache_);
     // Mapping the tables and checking they are sorted is a sequential pass over fifteen megabytes. Left to the first
