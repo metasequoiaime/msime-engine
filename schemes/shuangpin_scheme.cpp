@@ -40,11 +40,8 @@ void ShuangpinScheme::handle_key(ImeKeyCode vk, ImeModifierMask modifiers_down, 
 
 QueryRequest ShuangpinScheme::build_request() const
 {
-    QueryRequest request;
-    request.scheme = type();
-    request.raw_input_with_cases = raw_input_;
-    request.raw_input = CommonUtils::lowercase_ascii(raw_input_);
-    request.key_strokes = key_strokes_;
+    QueryRequest request =
+        input_scheme::make_query_request(type(), CommonUtils::lowercase_ascii(raw_input_), raw_input_, key_strokes_);
     request.valid = shuangpin::effective_input_length(request.raw_input) > 0;
 
     if (!request.valid)
