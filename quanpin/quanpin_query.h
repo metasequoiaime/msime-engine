@@ -55,6 +55,11 @@ WordInsertResult insert_word_if_missing(sqlite3 *database, const std::string &ke
 // failed inserts are reported to the dictionary mutation API.
 bool complete_word_insert(WordInsertResult result, const std::string &user_db_path, const std::string &pinyin,
                           const std::string &word, const std::function<void()> &reset_cache);
+// Persists the shipped frequency as a user-dictionary upsert after a successful weight update and invalidates the
+// caller's candidate cache. A failed database update leaves both unchanged.
+bool complete_pinyin_weight_update(bool update_succeeded, const std::string &main_db_path, const std::string &key,
+                                   const std::string &value, const std::string &user_db_path,
+                                   const std::function<void()> &reset_cache);
 std::string build_sql_for_updating_word(const Segments &segments, const std::string &key, const std::string &value);
 std::string build_sql_for_updating_word(std::string pinyin, const std::string &word,
                                         bool allow_shuangpin_fallback = false);

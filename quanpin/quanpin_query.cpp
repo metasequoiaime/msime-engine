@@ -850,6 +850,17 @@ bool complete_word_insert(WordInsertResult result, const std::string &user_db_pa
     return true;
 }
 
+bool complete_pinyin_weight_update(bool update_succeeded, const std::string &main_db_path, const std::string &key,
+                                   const std::string &value, const std::string &user_db_path,
+                                   const std::function<void()> &reset_cache)
+{
+    if (!update_succeeded)
+        return false;
+    (void)user_dictionary::record_pinyin_upsert_from_database(main_db_path, key, value, user_db_path);
+    reset_cache();
+    return true;
+}
+
 std::string build_sql_for_updating_word(const Segments &segments, const std::string &key, const std::string &value)
 {
     const std::string table = build_table_name(segments);
