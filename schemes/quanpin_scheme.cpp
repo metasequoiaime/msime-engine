@@ -23,11 +23,8 @@ void QuanpinScheme::handle_key(ImeKeyCode vk, ImeModifierMask modifiers_down, Im
 
 QueryRequest QuanpinScheme::build_request() const
 {
-    QueryRequest request;
-    request.scheme = type();
-    request.raw_input_with_cases = raw_input_;
-    request.raw_input = CommonUtils::lowercase_ascii(raw_input_);
-    request.key_strokes = key_strokes_;
+    QueryRequest request =
+        input_scheme::make_query_request(type(), CommonUtils::lowercase_ascii(raw_input_), raw_input_, key_strokes_);
 
     const size_t helpcode_length =
         quanpin::detect_active_helpcode_length(request.raw_input, request.raw_input_with_cases);

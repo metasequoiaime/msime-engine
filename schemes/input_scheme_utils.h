@@ -7,6 +7,18 @@
 
 namespace input_scheme
 {
+inline QueryRequest make_query_request(SchemeType scheme, const std::string &raw_input,
+                                       const std::string &raw_input_with_cases,
+                                       const std::vector<KeyStroke> &key_strokes)
+{
+    QueryRequest request;
+    request.scheme = scheme;
+    request.raw_input = raw_input;
+    request.raw_input_with_cases = raw_input_with_cases;
+    request.key_strokes = key_strokes;
+    return request;
+}
+
 inline void reset_state(std::string &raw_input, std::vector<KeyStroke> &key_strokes)
 {
     raw_input.clear();
