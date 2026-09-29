@@ -272,6 +272,7 @@ class InputSession
     bool try_enter_local_mode(char character, bool shift_only);
     KeyResult append_local_character(char character);
     KeyResult handle_local_character(char character);
+    void refresh_after_sequence_change();
     KeyResult insert_at_caret(char character);
     KeyResult edit_at_caret(Command command);
     KeyResult replace_editing_text(std::string text, std::size_t caret);
