@@ -148,16 +148,8 @@ void QuanpinDictionary::set_sentence_association(const SentenceAssociationOption
 
 void QuanpinDictionary::set_rescoring_context(const std::string &context)
 {
-    if (rescoring_context_ == context)
-        return;
-    rescoring_context_ = context;
-    // The committed context only affects ordering when a neural model is active. Keep the
-    // dictionary cache warm for the normal path, where every selection would otherwise make the
-    // next few keystrokes cold queries.
-    const bool rescoring_active = sentence_association_.neural_reranking_enabled(neural_desktop_model_ != nullptr,
-                                                                                 neural_keyboard_model_ != nullptr);
-    if (rescoring_active)
-        reset_cache();
+    (void)update_rescoring_context(rescoring_context_, context, sentence_association_, neural_desktop_model_ != nullptr,
+                                   neural_keyboard_model_ != nullptr, [this] { reset_cache(); });
 }
 
 std::vector<WordItem> QuanpinDictionary::query_exact(const std::string &raw_input, const std::string &segmentation,
