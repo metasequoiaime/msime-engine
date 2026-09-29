@@ -58,22 +58,12 @@ bool JapaneseRomajiScheme::cycle_last_kana_variant()
     if (!converted.pending.empty() || converted.hiragana.empty())
         return false;
 
-    // Walk back over the last UTF-8 sequence rather than the last byte: every kana is three bytes.
-    std::size_t start = converted.hiragana.size();
-    while (start > 0 && (static_cast<unsigned char>(converted.hiragana[start - 1]) & 0xC0) == 0x80)
-        --start;
-    // 上面停在续字节前,首字节还没算进来。Without this the substring is the tail of a kana rather
-    // than the kana, and nothing in the variant table ever matches it.
-    if (start > 0)
-        --start;
-    else
-        return false;
-    const std::string last = converted.hiragana.substr(start);
+    const std::string last = CommonUtils::last_utf8_characters(converted.hiragana, 1);
     const std::string next = japanese::NextKanaVariant(last);
     if (next == last)
         return false;
 
-    const std::string rewritten = converted.hiragana.substr(0, start) + next;
+    const std::string rewritten = converted.hiragana.substr(0, converted.hiragana.size() - last.size()) + next;
     const std::string romaji = japanese::HiraganaToRomaji(rewritten);
     if (romaji.empty())
         return false;
