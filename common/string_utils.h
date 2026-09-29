@@ -26,4 +26,5 @@ bool is_ascii_letters_or_apostrophe(const std::string &text);
 std::string lowercase_ascii(std::string text);
 // Returns the exclusive upper bound for a prefix over lowercase ASCII keys.
 std::string ascii_prefix_upper_bound(const std::string &prefix);
+const std::string &raw_input_with_cases_or_raw(const std::string &raw_input, const std::string &raw_input_with_cases);
 } // namespace CommonUtils

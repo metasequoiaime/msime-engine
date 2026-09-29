@@ -171,7 +171,7 @@ size_t detect_active_double_helpcode_length(const std::string &raw_input, const 
 {
     const std::string effective_input = remove_manual_delimiters(raw_input);
     const std::string effective_input_with_cases =
-        remove_manual_delimiters(raw_input_with_cases.empty() ? raw_input : raw_input_with_cases);
+        remove_manual_delimiters(CommonUtils::raw_input_with_cases_or_raw(raw_input, raw_input_with_cases));
     if (!ShuangpinUtil::IsFullHelpMode(effective_input_with_cases, profile))
     {
         return 0;

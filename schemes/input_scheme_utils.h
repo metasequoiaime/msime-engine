@@ -28,7 +28,7 @@ inline void reset_state(std::string &raw_input, std::vector<KeyStroke> &key_stro
 inline void set_raw_input(std::string &target, std::vector<KeyStroke> &key_strokes, const std::string &raw_input,
                           const std::string &raw_input_with_cases)
 {
-    target = raw_input_with_cases.empty() ? raw_input : raw_input_with_cases;
+    target = CommonUtils::raw_input_with_cases_or_raw(raw_input, raw_input_with_cases);
     key_strokes.clear();
 }
 

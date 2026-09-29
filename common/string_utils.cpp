@@ -150,4 +150,9 @@ std::string ascii_prefix_upper_bound(const std::string &prefix)
     result.push_back('{');
     return result;
 }
+
+const std::string &raw_input_with_cases_or_raw(const std::string &raw_input, const std::string &raw_input_with_cases)
+{
+    return raw_input_with_cases.empty() ? raw_input : raw_input_with_cases;
+}
 } // namespace CommonUtils

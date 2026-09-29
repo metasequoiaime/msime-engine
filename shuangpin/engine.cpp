@@ -132,7 +132,7 @@ std::vector<WordItem> ShuangpinEngine::query(const QueryRequest &request)
 
     const std::string &raw_input = request.raw_input;
     const std::string &raw_input_with_cases =
-        request.raw_input_with_cases.empty() ? request.raw_input : request.raw_input_with_cases;
+        CommonUtils::raw_input_with_cases_or_raw(request.raw_input, request.raw_input_with_cases);
     const std::string pure_input = shuangpin::remove_manual_delimiters(raw_input);
     const std::string pure_input_with_cases = shuangpin::remove_manual_delimiters(raw_input_with_cases);
 

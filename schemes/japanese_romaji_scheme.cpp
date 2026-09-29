@@ -83,7 +83,7 @@ bool JapaneseRomajiScheme::cycle_last_kana_variant()
 
 void JapaneseRomajiScheme::set_raw_input(const std::string &raw_input, const std::string &raw_input_with_cases)
 {
-    raw_input_ = raw_input_with_cases.empty() ? raw_input : raw_input_with_cases;
+    raw_input_ = CommonUtils::raw_input_with_cases_or_raw(raw_input, raw_input_with_cases);
     raw_input_.erase(std::remove_if(raw_input_.begin(), raw_input_.end(),
                                     [](unsigned char ch) { return !std::isalpha(ch) && ch != '\'' && ch != '-'; }),
                      raw_input_.end());
