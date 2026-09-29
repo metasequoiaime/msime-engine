@@ -81,6 +81,7 @@ class ImeSession
     void refresh_candidates();
     void bind_wubi_scheme();
     void apply_wubi_options();
+    void replace_raw_input(const std::string &raw_input, const std::string &raw_input_with_cases);
     void replace_raw_input_for_scheme(SchemeType expected, const std::string &raw_input,
                                       const std::string &raw_input_with_cases);
     std::unique_ptr<IInputScheme> create_scheme(SchemeType scheme_type) const;
