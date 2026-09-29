@@ -55,4 +55,10 @@ inline bool sqlite_bind_text_range_limit(sqlite3_stmt *statement, const std::str
            sqlite3_bind_text(statement, 2, upper.c_str(), -1, SQLITE_TRANSIENT) == SQLITE_OK &&
            sqlite3_bind_int(statement, 3, limit) == SQLITE_OK;
 }
+
+inline bool sqlite_bind_text_limit(sqlite3_stmt *statement, const std::string &value, int limit)
+{
+    return statement != nullptr && sqlite3_bind_text(statement, 1, value.c_str(), -1, SQLITE_TRANSIENT) == SQLITE_OK &&
+           sqlite3_bind_int(statement, 2, limit) == SQLITE_OK;
+}
 } // namespace metasequoia

@@ -428,20 +428,6 @@ std::vector<KeyedQueryItem> execute_keyed_query(sqlite3_stmt *statement, Binder 
     return rows;
 }
 
-void bind_keyed_query(sqlite3_stmt *statement, const std::string &value, int limit)
-{
-    sqlite3_bind_text(statement, 1, value.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_int(statement, 2, limit);
-}
-
-void bind_keyed_query(sqlite3_stmt *statement, const std::string &lower_bound, const std::string &upper_bound,
-                      int limit)
-{
-    sqlite3_bind_text(statement, 1, lower_bound.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(statement, 2, upper_bound.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_int(statement, 3, limit);
-}
-
 std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, const std::string &sql, const std::string &value, int limit)
 {
     sqlite3_stmt *stmt = nullptr;
@@ -452,7 +438,8 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, const std::string &sql,
     Statement guard(stmt);
 
     return execute_keyed_query(
-        stmt, [&](sqlite3_stmt *statement) { bind_keyed_query(statement, value, limit); }, false);
+        stmt, [&](sqlite3_stmt *statement) { (void)metasequoia::sqlite_bind_text_limit(statement, value, limit); },
+        false);
 }
 
 std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache,
@@ -462,7 +449,9 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, metasequoia::SqliteStat
     if (stmt == nullptr)
         return {};
 
-    return execute_keyed_query(stmt, [&](sqlite3_stmt *statement) { bind_keyed_query(statement, value, limit); }, true);
+    return execute_keyed_query(
+        stmt, [&](sqlite3_stmt *statement) { (void)metasequoia::sqlite_bind_text_limit(statement, value, limit); },
+        true);
 }
 
 std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, const std::string &sql, const std::string &lower_bound,
@@ -476,7 +465,11 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, const std::string &sql,
     Statement guard(stmt);
 
     return execute_keyed_query(
-        stmt, [&](sqlite3_stmt *statement) { bind_keyed_query(statement, lower_bound, upper_bound, limit); }, false);
+        stmt,
+        [&](sqlite3_stmt *statement) {
+            (void)metasequoia::sqlite_bind_text_range_limit(statement, lower_bound, upper_bound, limit);
+        },
+        false);
 }
 
 std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache,
@@ -488,7 +481,11 @@ std::vector<KeyedQueryItem> run_keyed_query(sqlite3 *db, metasequoia::SqliteStat
         return {};
 
     return execute_keyed_query(
-        stmt, [&](sqlite3_stmt *statement) { bind_keyed_query(statement, lower_bound, upper_bound, limit); }, true);
+        stmt,
+        [&](sqlite3_stmt *statement) {
+            (void)metasequoia::sqlite_bind_text_range_limit(statement, lower_bound, upper_bound, limit);
+        },
+        true);
 }
 
 std::vector<KeyedQueryItem> run_keyed_batch_query(sqlite3 *db, metasequoia::SqliteStatementCache &statement_cache,
