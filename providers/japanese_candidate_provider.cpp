@@ -248,6 +248,5 @@ bool JapaneseCandidateProvider::ensure_query_statement()
 
 void JapaneseCandidateProvider::close_database()
 {
-    query_statement_.reset();
-    db_.reset();
+    metasequoia::sqlite_close_database(db_, query_statement_);
 }

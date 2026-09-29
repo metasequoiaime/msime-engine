@@ -25,6 +25,14 @@ struct SqliteStatementCloser
 using SqliteStatement = std::unique_ptr<sqlite3_stmt, SqliteStatementCloser>;
 using SqliteStatementCache = std::unordered_map<std::string, SqliteStatement>;
 
+// Statements must be finalized before their owning connection is released. Keep that ordering in one helper for
+// providers that hold more than one prepared statement against the same connection.
+template <typename... Statements> inline void sqlite_close_database(SqliteDatabase &database, Statements &...statements)
+{
+    (statements.reset(), ...);
+    database.reset();
+}
+
 inline void sqlite_reset_and_clear(sqlite3_stmt *statement)
 {
     if (statement != nullptr)

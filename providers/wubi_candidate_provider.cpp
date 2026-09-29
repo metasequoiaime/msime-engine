@@ -175,7 +175,5 @@ std::string WubiCandidateProvider::journal_db_path() const
 
 void WubiCandidateProvider::close_database()
 {
-    query_statement_.reset();
-    wildcard_statement_.reset();
-    db_.reset();
+    metasequoia::sqlite_close_database(db_, query_statement_, wildcard_statement_);
 }
