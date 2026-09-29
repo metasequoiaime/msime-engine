@@ -9,7 +9,10 @@
 #include "../neural/neural_decoder.h"
 #include "word_lattice.h"
 
+#include "../core/sentence_association_options.h"
+
 #include <string>
+#include <vector>
 
 namespace quanpin
 {
@@ -23,5 +26,10 @@ namespace quanpin
 // trimmed here to the last `options.context_chars` characters, which is what actually gets scored.
 LatticeReranker make_neural_reranker(const neural::SentenceModel *model, const std::string &context,
                                      const neural::RerankOptions &options = {});
+
+std::vector<SourcedLatticeReranker> make_neural_rerankers(const SentenceAssociationOptions &association,
+                                                          const neural::SentenceModel *keyboard_model,
+                                                          const neural::SentenceModel *desktop_model,
+                                                          const std::string &context);
 
 } // namespace quanpin
