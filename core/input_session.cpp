@@ -611,15 +611,20 @@ bool InputSession::online_source_is_eligible(const OnlineQuery &query, Candidate
     return false;
 }
 
+bool InputSession::online_query_matches(const OnlineQuery &query, CandidateSource source) const
+{
+    const auto current = online_query();
+    return current.has_value() && online_requests_.matches(*current, query) &&
+           online_source_is_eligible(*current, source);
+}
+
 bool InputSession::apply_online_candidate(const OnlineQuery &query, std::string candidate, CandidateSource source)
 {
     if (candidate.empty() || !is_online_candidate_source(source))
     {
         return false;
     }
-    const auto current = online_query();
-    if (!current.has_value() || !online_requests_.matches(*current, query) ||
-        !online_source_is_eligible(*current, source) || contains_candidate_word(candidates(), candidate))
+    if (!online_query_matches(query, source) || contains_candidate_word(candidates(), candidate))
     {
         return false;
     }
@@ -1184,8 +1189,7 @@ bool InputSession::apply_online_candidates(const OnlineQuery &query, const std::
     std::vector<WordItem> validated;
     if (!replace_online_candidate_batch(validated, query.cache_key, words, source))
         return false;
-    const auto current = online_query();
-    if (!current || !online_requests_.matches(*current, query) || !online_source_is_eligible(*current, source))
+    if (!online_query_matches(query, source))
         return false;
     if (engine_.apply_dynamic_candidates(words, source) != 0)
         return false;
