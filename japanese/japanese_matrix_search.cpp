@@ -39,11 +39,6 @@ JapaneseMatrixSearch::JapaneseMatrixSearch(const JapaneseSentenceDecoder &decode
 {
 }
 
-std::vector<SentenceCandidate> JapaneseMatrixSearch::Search(std::string_view romaji, size_t limit) const
-{
-    return SearchConverted(ConvertRomaji(romaji), limit);
-}
-
 std::vector<SentenceCandidate> JapaneseMatrixSearch::SearchConverted(const RomajiConversion &conversion,
                                                                      size_t limit) const
 {
