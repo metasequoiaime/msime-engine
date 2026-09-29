@@ -403,26 +403,44 @@ KeyResult InputSession::select_candidate_edge(std::size_t index, CandidateEdge e
 
 void InputSession::set_shuangpin_helpcode_enabled(bool enabled)
 {
-    if (shuangpin_helpcode_enabled_ == enabled)
-    {
-        return;
-    }
-    shuangpin_helpcode_enabled_ = enabled;
-    engine_.set_shuangpin_helpcode_enabled(enabled);
-    // The engine reads the flag only while querying, so a live composition has to be asked again instead of re-wrapped.
-    recompute_candidates();
-    online_requests_.invalidate();
+    set_helpcode_enabled(SchemeType::Shuangpin, enabled);
 }
 
 void InputSession::set_quanpin_helpcode_enabled(bool enabled)
 {
-    if (quanpin_helpcode_enabled_ == enabled)
+    set_helpcode_enabled(SchemeType::Quanpin, enabled);
+}
+
+void InputSession::set_helpcode_enabled(SchemeType scheme_type, bool enabled)
+{
+    bool *setting = nullptr;
+    if (scheme_type == SchemeType::Shuangpin)
+    {
+        setting = &shuangpin_helpcode_enabled_;
+    }
+    else if (scheme_type == SchemeType::Quanpin)
+    {
+        setting = &quanpin_helpcode_enabled_;
+    }
+    else
     {
         return;
     }
-    quanpin_helpcode_enabled_ = enabled;
-    engine_.set_quanpin_helpcode_enabled(enabled);
-    // Same as the shuangpin toggle: the flag alone does not refresh a composition that is already on screen.
+
+    if (*setting == enabled)
+    {
+        return;
+    }
+    *setting = enabled;
+    if (scheme_type == SchemeType::Shuangpin)
+    {
+        engine_.set_shuangpin_helpcode_enabled(enabled);
+    }
+    else
+    {
+        engine_.set_quanpin_helpcode_enabled(enabled);
+    }
+    // The engine reads the flag only while querying, so a live composition has to be asked again instead of re-wrapped.
     recompute_candidates();
     online_requests_.invalidate();
 }
