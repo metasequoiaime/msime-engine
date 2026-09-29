@@ -21,6 +21,15 @@ inline const std::string &candidate_canonical_pinyin(const WordItem &item)
     return item.canonical_pinyin.empty() ? item.pinyin : item.canonical_pinyin;
 }
 
+inline std::vector<CandidateSource> collect_candidate_sources(const std::vector<WordItem> &candidates)
+{
+    std::vector<CandidateSource> sources;
+    sources.reserve(candidates.size());
+    for (const auto &candidate : candidates)
+        sources.push_back(candidate.source);
+    return sources;
+}
+
 inline bool is_english_candidate_source(CandidateSource source)
 {
     return source == CandidateSource::EnglishDictionary;
