@@ -1115,7 +1115,7 @@ std::optional<std::string> InputSession::adjust_candidate_frequency(std::size_t 
     // stored as pinyin; only a code the wubi table answered is ranked under the code itself. The
     // fallback reuses the context the fixed positions are written under, otherwise a pinned
     // candidate would not be recognised here.
-    const bool wubi = is_wubi_native_candidate(selected);
+    const bool wubi = is_wubi_candidate(selected);
     const bool pinyin_fallback = is_wubi() && !wubi;
     std::string context_key =
         super_jianpin     ? local_modes::jianpin_ranking_context(local_preedit_.substr(1), scheme(), shuangpin_profile_)

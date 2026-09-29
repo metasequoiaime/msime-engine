@@ -257,7 +257,6 @@ class InputSession
     // fallback carries pinyin words, so ranking, fixed positions and removal have to key
     // off the pinyin rather than off the code that produced them.
     bool wubi_candidates_are_native() const;
-    static bool is_wubi_native_candidate(const WordItem &item);
     std::size_t wubi_native_candidate_count() const;
     bool wubi_four_code_is_eligible() const;
     // The candidates on offer behave like pinyin: quanpin, shuangpin, or a wubi code the

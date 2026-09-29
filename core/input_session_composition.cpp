@@ -417,7 +417,7 @@ int InputSession::store_user_phrase_from_canonical_pinyin(std::string pinyin, st
 std::optional<std::string> InputSession::learn_sentence_candidate(const WordItem &selected)
 {
     if (local_input_mode_ != LocalInputMode::None || dedicated_english_mode_ || is_japanese() ||
-        is_wubi_native_candidate(selected))
+        is_wubi_candidate(selected))
     {
         return std::nullopt;
     }
@@ -737,17 +737,12 @@ bool InputSession::wubi_four_code_is_eligible() const
 
 bool InputSession::wubi_candidates_are_native() const
 {
-    return is_wubi() && std::any_of(candidates().begin(), candidates().end(), is_wubi_native_candidate);
-}
-
-bool InputSession::is_wubi_native_candidate(const WordItem &item)
-{
-    return item.scheme == SchemeType::Wubi;
+    return is_wubi() && std::any_of(candidates().begin(), candidates().end(), is_wubi_candidate);
 }
 
 std::size_t InputSession::wubi_native_candidate_count() const
 {
-    return static_cast<std::size_t>(std::count_if(candidates().begin(), candidates().end(), is_wubi_native_candidate));
+    return static_cast<std::size_t>(std::count_if(candidates().begin(), candidates().end(), is_wubi_candidate));
 }
 
 bool InputSession::candidates_follow_pinyin() const

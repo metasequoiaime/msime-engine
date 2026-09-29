@@ -50,6 +50,11 @@ inline bool is_dictionary_candidate_source(CandidateSource source)
     return source == CandidateSource::Database || source == CandidateSource::UserDatabase;
 }
 
+inline bool is_wubi_candidate(const WordItem &item)
+{
+    return item.scheme == SchemeType::Wubi;
+}
+
 inline bool is_limited_initial_candidate(const WordItem &item, std::string_view code)
 {
     return item.source == CandidateSource::Database && item.pinyin == code;
