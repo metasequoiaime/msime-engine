@@ -10,7 +10,6 @@
 #include "../common/string_utils.h"
 #include "quanpin_query.h"
 #include "quanpin_utils.h"
-#include "../common/sqlite_statement.h"
 #include "lattice_rerank.h"
 #include "../neural/neural_decoder.h"
 #include "../shuangpin/shuangpin_utils.h"
@@ -22,8 +21,6 @@
 
 namespace
 {
-using Statement = metasequoia::SqliteStatement;
-
 constexpr size_t kSparsePinyinFallbackThreshold = 8;
 // 续接词只取前三档音节长度:再长的条目权重已经掉到几十,占位不如留给前缀单字。
 constexpr size_t kLongerPhraseExtraSyllables = 3;
@@ -849,29 +846,6 @@ void QuanpinDictionary::reset_cache_if_database_changed()
 {
     if (metasequoia::sqlite_data_version_changed(db_.get(), data_version_))
         reset_cache();
-}
-
-std::vector<std::string> QuanpinDictionary::select_data(const std::string &sql_str)
-{
-    std::vector<std::string> candidate_list;
-    if (db_ == nullptr)
-    {
-        return candidate_list;
-    }
-
-    sqlite3_stmt *stmt = nullptr;
-    if (sqlite3_prepare_v2(db_.get(), sql_str.c_str(), -1, &stmt, 0) != SQLITE_OK)
-    {
-        (void)0;
-        return candidate_list;
-    }
-    Statement guard(stmt);
-
-    while (sqlite3_step(stmt) == SQLITE_ROW)
-    {
-        candidate_list.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2))));
-    }
-    return candidate_list;
 }
 
 int QuanpinDictionary::check_data(const std::string &sql_str)
