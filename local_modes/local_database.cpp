@@ -160,13 +160,6 @@ std::shared_ptr<sqlite3> open_local_database(const std::filesystem::path &path)
     return connection;
 }
 
-std::string prefix_upper_bound(const std::string &prefix)
-{
-    std::string result = prefix;
-    result.push_back(static_cast<char>(0x7f));
-    return result;
-}
-
 bool query_prefix_rows(sqlite3 *database, const std::vector<std::string> &prefixes, const char *sql, int limit,
                        const std::function<void(sqlite3_stmt *)> &on_row)
 {
@@ -181,7 +174,7 @@ bool query_prefix_rows(sqlite3 *database, const std::vector<std::string> &prefix
         {
             return false;
         }
-        const std::string upper_bound = prefix_upper_bound(prefix);
+        const std::string upper_bound = CommonUtils::ascii_prefix_upper_bound(prefix);
         if (!metasequoia::sqlite_bind_text_range_limit(statement.get(), prefix, upper_bound, limit))
         {
             return false;
