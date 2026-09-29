@@ -43,6 +43,32 @@ const char *frequency_mode_name(FrequencyAdjustmentMode mode)
     return nullptr;
 }
 
+bool local_mode_enabled(LocalInputMode mode, const LocalModeOptions &options)
+{
+    switch (mode)
+    {
+    case LocalInputMode::Unicode:
+        return options.unicode;
+    case LocalInputMode::DateTime:
+        return options.date_time;
+    case LocalInputMode::QuickPhrase:
+        return options.quick_phrase;
+    case LocalInputMode::Emoji:
+        return options.emoji;
+    case LocalInputMode::Kaomoji:
+        return options.kaomoji;
+    case LocalInputMode::SuperJianpin:
+        return options.super_jianpin;
+    case LocalInputMode::TemporaryEnglish:
+        return options.temporary_english;
+    case LocalInputMode::TemporaryJapanese:
+        return options.temporary_japanese;
+    case LocalInputMode::None:
+        return false;
+    }
+    return false;
+}
+
 std::string online_identity(const QueryRequest &request)
 {
     const std::string &input = request.raw_input_with_cases.empty() ? request.raw_input : request.raw_input_with_cases;
@@ -82,46 +108,37 @@ bool InputSession::try_enter_local_mode(char character, bool shift_only)
     }
 
     LocalInputMode mode = LocalInputMode::None;
-    bool enabled = false;
     switch (character)
     {
     case 'U':
         mode = LocalInputMode::Unicode;
-        enabled = local_mode_options_.unicode;
         break;
     case 'T':
         mode = LocalInputMode::DateTime;
-        enabled = local_mode_options_.date_time;
         break;
     case 'K':
         mode = LocalInputMode::QuickPhrase;
-        enabled = local_mode_options_.quick_phrase;
         break;
     case 'E':
         mode = LocalInputMode::Emoji;
-        enabled = local_mode_options_.emoji;
         break;
     case 'M':
         mode = LocalInputMode::Kaomoji;
-        enabled = local_mode_options_.kaomoji;
         break;
     case 'J':
         mode = LocalInputMode::SuperJianpin;
-        enabled = local_mode_options_.super_jianpin;
         break;
     case 'Y':
         mode = LocalInputMode::TemporaryEnglish;
-        enabled = local_mode_options_.temporary_english;
         break;
     case 'R':
         mode = LocalInputMode::TemporaryJapanese;
-        enabled = local_mode_options_.temporary_japanese;
         break;
     default:
         return false;
     }
 
-    if (!enabled)
+    if (!local_mode_enabled(mode, local_mode_options_))
     {
         return false;
     }
@@ -445,14 +462,7 @@ bool InputSession::set_frequency_adjustment(FrequencyAdjustmentOptions options)
 void InputSession::set_local_mode_options(LocalModeOptions options)
 {
     local_mode_options_ = options;
-    if ((local_input_mode_ == LocalInputMode::Unicode && !local_mode_options_.unicode) ||
-        (local_input_mode_ == LocalInputMode::DateTime && !local_mode_options_.date_time) ||
-        (local_input_mode_ == LocalInputMode::QuickPhrase && !local_mode_options_.quick_phrase) ||
-        (local_input_mode_ == LocalInputMode::Emoji && !local_mode_options_.emoji) ||
-        (local_input_mode_ == LocalInputMode::Kaomoji && !local_mode_options_.kaomoji) ||
-        (local_input_mode_ == LocalInputMode::SuperJianpin && !local_mode_options_.super_jianpin) ||
-        (local_input_mode_ == LocalInputMode::TemporaryEnglish && !local_mode_options_.temporary_english) ||
-        (local_input_mode_ == LocalInputMode::TemporaryJapanese && !local_mode_options_.temporary_japanese))
+    if (local_input_mode_ != LocalInputMode::None && !local_mode_enabled(local_input_mode_, local_mode_options_))
     {
         reset_composition();
     }
