@@ -666,6 +666,12 @@ std::vector<KeyedQueryItem> sort_and_limit_keyed_query_items(std::vector<KeyedQu
     return items;
 }
 
+std::vector<KeyedQueryItem> finalize_keyed_query_items(std::vector<KeyedQueryItem> items, int limit)
+{
+    deduplicate_keyed_items_by_value(items);
+    return sort_and_limit_keyed_query_items(std::move(items), limit);
+}
+
 } // namespace
 
 Segments cut_pinyin_greedy(const std::string &pinyin, bool intact_only)
@@ -937,9 +943,7 @@ std::vector<KeyedQueryItem> query_segments_keyed_flat(const Segments &segments, 
         return {};
     }
 
-    auto items = query_single_cut_keyed(db.get(), segments, limit, source);
-    deduplicate_keyed_items_by_value(items);
-    return sort_and_limit_keyed_query_items(std::move(items), limit);
+    return finalize_keyed_query_items(query_single_cut_keyed(db.get(), segments, limit, source), limit);
 }
 
 std::vector<KeyedQueryItem> query_segments_keyed_flat(const Segments &segments, sqlite3 *db,
@@ -951,9 +955,7 @@ std::vector<KeyedQueryItem> query_segments_keyed_flat(const Segments &segments, 
         return {};
     }
 
-    auto items = query_single_cut_keyed(db, statement_cache, segments, limit, source);
-    deduplicate_keyed_items_by_value(items);
-    return sort_and_limit_keyed_query_items(std::move(items), limit);
+    return finalize_keyed_query_items(query_single_cut_keyed(db, statement_cache, segments, limit, source), limit);
 }
 
 std::vector<KeyedQueryItem> query_exact_segmentations_keyed_flat(const std::vector<Segments> &segmentations,
