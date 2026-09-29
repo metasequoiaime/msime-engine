@@ -110,9 +110,7 @@ class QuanpinDictionary
     int insert_data(const std::string &sql_str);
     int update_data(const std::string &sql_str);
 
-    std::string build_sql_for_updating_word(const std::string &word);
     std::string build_sql_for_updating_word(std::string pinyin, const std::string &word);
-    std::string build_sql_for_deleting_word(std::string pinyin, const std::string &word);
     void reset_cache_if_database_changed();
     int insert_word_to_series_cache_key(const std::string &cache_key, const std::string &pinyin,
                                         const std::vector<std::string> &words, CandidateSource source);

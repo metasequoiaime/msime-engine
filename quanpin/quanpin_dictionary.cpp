@@ -863,11 +863,6 @@ int QuanpinDictionary::update_data(const std::string &sql_str)
     return metasequoia::sqlite_execute_statement(db_.get(), sql_str) ? OK : ERROR_CODE;
 }
 
-std::string QuanpinDictionary::build_sql_for_updating_word(const std::string &word)
-{
-    return build_sql_for_updating_word(CommonUtils::remove_apostrophe_delimiters(pinyin_segmentation_), word);
-}
-
 std::string QuanpinDictionary::build_sql_for_updating_word(std::string pinyin, const std::string &word)
 {
     pinyin = CommonUtils::remove_apostrophe_delimiters(pinyin);
@@ -892,25 +887,6 @@ std::string QuanpinDictionary::build_sql_for_updating_word(std::string pinyin, c
     }
 
     return quanpin::build_sql_for_updating_word(segments, pinyin, word);
-}
-
-std::string QuanpinDictionary::build_sql_for_deleting_word(std::string pinyin, const std::string &word)
-{
-    pinyin = CommonUtils::remove_apostrophe_delimiters(pinyin);
-    const auto cuts = quanpin::cut_pinyin_by_mode(pinyin, "correction");
-    if (cuts.empty())
-    {
-        return "";
-    }
-
-    const std::string normalized = quanpin::join_segments(cuts.front());
-    const std::string jp = quanpin::segments_to_jianpin(cuts.front());
-    if (!quanpin::has_valid_word_pinyin(normalized, jp, word))
-    {
-        return "";
-    }
-
-    return quanpin::build_sql_for_deleting_word(cuts.front(), normalized, word);
 }
 
 std::vector<WordItem> QuanpinDictionary::fuzzy_candidates(const std::string &segmentation,
